@@ -56,3 +56,59 @@ console.log(response.choices[0].message.content);`,
   -d '{"model": "${model}", "messages": [{"role": "user", "content": "Hello!"}]}'`,
   };
 }
+
+/**
+ * El mismo request con streaming, para /docs. Pide `include_usage`: sin eso, el gateway no
+ * reenvía el chunk de uso (docs/04 › Parámetros). Ese último chunk llega con `choices` vacío,
+ * por eso el código revisa `choices` antes de leer el texto.
+ */
+export function buildStreamingSnippets({
+  baseUrl,
+  apiKey,
+  model,
+}: QuickstartOptions): Record<SnippetLanguage, string> {
+  return {
+    python: `from openai import OpenAI
+
+client = OpenAI(
+    base_url="${baseUrl}",
+    api_key="${apiKey}",
+)
+
+stream = client.chat.completions.create(
+    model="${model}",
+    messages=[{"role": "user", "content": "Hello!"}],
+    stream=True,
+    stream_options={"include_usage": True},
+)
+for chunk in stream:
+    if chunk.choices:
+        print(chunk.choices[0].delta.content or "", end="", flush=True)
+    if chunk.usage:
+        print("\\n", chunk.usage)`,
+
+    javascript: `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "${baseUrl}",
+  apiKey: "${apiKey}",
+});
+
+const stream = await client.chat.completions.create({
+  model: "${model}",
+  messages: [{ role: "user", content: "Hello!" }],
+  stream: true,
+  stream_options: { include_usage: true },
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+  if (chunk.usage) console.log("\\n", chunk.usage);
+}`,
+
+    curl: `curl -N ${baseUrl}/chat/completions \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model": "${model}", "messages": [{"role": "user", "content": "Hello!"}], "stream": true, "stream_options": {"include_usage": true}}'`,
+  };
+}

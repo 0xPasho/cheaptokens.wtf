@@ -67,9 +67,11 @@ export const UPSTREAMS: UpstreamDefinition[] = [
     environments: ["development", "preview"],
     // Los mismos modelos que InferHub, detrás de él. No cobra de verdad: el costo existe para probar
     // el tope de precio y el registro del costo, y va a la mitad del de InferHub para que siempre deje margen.
+    // `upstreamModel` sin el prefijo `mock/`: así el escenario lo elige cada prueba con `x_mock` en el body.
+    // Un `mock/<escenario>` aquí tendría prioridad y fijaría el mismo escenario para todo request.
     models: INFERHUB_MODELS.map((mapping) => ({
       model: mapping.model,
-      upstreamModel: "mock/ok",
+      upstreamModel: mapping.model,
       costInputPer1M: Math.floor(mapping.costInputPer1M / 2),
       costOutputPer1M: Math.floor(mapping.costOutputPer1M / 2),
       priority: 2,

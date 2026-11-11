@@ -12,6 +12,7 @@ export const en = {
     label: "Main",
     home: "cheaptokens.wtf home",
     models: "Models",
+    docs: "Docs",
     howItWorks: "How it works",
     getKey: "Get your API key",
   },
@@ -105,6 +106,101 @@ export const en = {
     similar: "Similar models",
     notFoundTitle: "We don't have that model",
     notFoundBody: "It may have been retired, or the ID is wrong.",
+  },
+  // Lo que va entre `backticks` se muestra como código (RichText en src/components/docs/).
+  docs: {
+    title: "Docs",
+    description:
+      "The API speaks OpenAI Chat Completions. Change the base URL and the key, and keep the rest of your code.",
+    metaDescription:
+      "Connect to cheaptokens.wtf in a minute: base URL, authentication, streaming, models, billing, errors and rate limits.",
+    auth: {
+      title: "Base URL and authentication",
+      baseUrl: "Every request goes to this base URL:",
+      header: "Send your API key as a bearer token in the `Authorization` header:",
+      serverTitle: "Call it from your server",
+      serverBody:
+        "The API doesn't accept calls from the browser: there's no CORS. A key in your frontend is a leaked key.",
+    },
+    quickstart: {
+      title: "Your first request",
+      body: "The Python and JavaScript examples use the official OpenAI SDK, and the JavaScript one works in TypeScript too. Only the base URL and the key change.",
+    },
+    streaming: {
+      title: "Streaming",
+      body: "Pass `stream: true` and the response arrives as Server-Sent Events, just like with OpenAI. To get token usage in the last chunk, set `stream_options.include_usage` to `true`.",
+      wireTitle: "What you get",
+      wireBody:
+        "Each event is a `data:` line with a `chat.completion.chunk`. With `include_usage`, the last one has empty `choices` and the `usage`. The stream ends with `data: [DONE]`.",
+      keepAlive:
+        "During long pauses, for example while a model reasons, you'll get `: keep-alive` comment lines. The SSE standard says to ignore them, and the SDKs already do.",
+      errorTitle: "Errors mid-stream",
+      errorBody:
+        "If the model fails after the stream has started, the HTTP status is already `200`. The error arrives as one last chunk, with an `error` object and `finish_reason: \"error\"`, followed by `[DONE]`. The OpenAI SDKs raise it as an `APIError`.",
+      reasoningTitle: "Reasoning",
+      reasoningBody:
+        "Reasoning models send their reasoning in `reasoning_content`: in `delta` when streaming, in `message` when not. The OpenAI SDKs don't type it, but they don't drop it either: read it as an extra field.",
+    },
+    models: {
+      title: "Choosing a model",
+      body: "Each model has an ID in the form `author/model`, like `{model}`. That's what goes in `model`.",
+      list: "The catalog shows every model with its price and discount. From code, call `GET /v1/models`: it's public and doesn't need a key.",
+      browse: "Browse models",
+    },
+    billing: {
+      title: "How billing works",
+      body: "You pay per token from your prepaid credits, at each model's cheaptokens.wtf price.",
+      tokens:
+        "We count the tokens the model reports in `usage`: `prompt_tokens` at the input price and `completion_tokens` at the output price. Prices are per 1M tokens.",
+      reasoning: "Reasoning tokens are output tokens: they're included in `completion_tokens`.",
+      minimum: "Every request that gets a response costs at least {amount}.",
+      cancel:
+        "If you cancel a stream, you pay for everything the model generated until it finished, not only what reached you. To cap it, set `max_tokens`.",
+      cached: "Cached input is billed as regular input, for now.",
+    },
+    errors: {
+      title: "Errors",
+      body: "Errors use OpenAI's format, so the SDKs read them as usual. Messages are always in English: they're meant for programs, and that way you can search for them.",
+      tableLabel: "Error codes",
+      when: "When",
+      codes: {
+        invalid_request: "Invalid JSON, `model` or `messages` missing, or the model rejected a parameter",
+        invalid_api_key: "The key is missing, malformed, doesn't exist or was revoked",
+        insufficient_credits: "Your workspace is out of credits",
+        key_limit_exceeded: "The key reached its spending limit",
+        account_suspended: "The workspace is suspended, for example after a chargeback",
+        model_not_found: "The model doesn't exist or isn't available to you",
+        model_retired: "The model was retired",
+        request_too_large: "The body is larger than {size} MB",
+        rate_limit_exceeded: "You hit the workspace rate limit (see `retry-after`)",
+        upstream_error: "The model failed with an error",
+        no_upstream_available: "The model is temporarily unavailable",
+        upstream_timeout: "The model took too long to start responding",
+      },
+      requestId:
+        "Every response has an `x-request-id` header. If you need help with a request, send us that ID.",
+    },
+    rateLimit: {
+      title: "Rate limit",
+      body: "By default, each workspace can make {count} requests per minute, across all its keys. Go over it and you get a `429` with a `retry-after` header: the seconds to wait before trying again. The OpenAI SDKs already retry and respect it.",
+    },
+    tools: {
+      title: "Compatible tools",
+      body: "Anything that lets you change the OpenAI base URL should work.",
+      tableLabel: "Compatible tools",
+      tool: "Tool",
+      status: "Status",
+      rows: {
+        openaiSdk: { name: "OpenAI SDK (Python, JS/TS)", status: "Works. It's the reference client." },
+        langchain: { name: "LangChain (`ChatOpenAI` with `base_url`)", status: "Works." },
+        vercelAiSdk: { name: "Vercel AI SDK (OpenAI-compatible provider)", status: "Works." },
+        editors: {
+          name: "Editors that accept an OpenAI base URL",
+          status: "Should work. We haven't tested them one by one yet.",
+        },
+        claudeCode: { name: "Claude Code", status: "Not yet: it needs `/v1/messages`, which comes later." },
+      },
+    },
   },
   tags: {
     fast: "Fast",
