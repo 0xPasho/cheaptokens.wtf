@@ -136,7 +136,42 @@ describe("SSE protocol", () => {
     });
     const iterator = readSseEvents(body)[Symbol.asyncIterator]();
     await iterator.next();
-    await expect(iterator.return?.()).rejects.toThrow(failure);
+    await expect(iterator.return?.()).resolves.toEqual({ done: true, value: undefined });
+    expect(body.locked).toBe(false);
+  });
+
+  it("returns and releases the reader when the stream errors after the first event", async () => {
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+        controller.enqueue(encoder.encode("data: first\n\n"));
+      },
+    });
+    const iterator = readSseEvents(body)[Symbol.asyncIterator]();
+    expect(await iterator.next()).toEqual({ done: false, value: { type: "data", data: "first" } });
+    streamController?.error(new DOMException("Aborted", "AbortError"));
+    await expect(iterator.return?.()).resolves.toEqual({ done: true, value: undefined });
+    expect(body.locked).toBe(false);
+    body.getReader().releaseLock();
+  });
+
+  it("does not throw when a for-await consumer breaks after the stream errors", async () => {
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+        controller.enqueue(encoder.encode("data: first\n\n"));
+      },
+    });
+    const consume = async () => {
+      for await (const event of readSseEvents(body)) {
+        expect(event).toEqual({ type: "data", data: "first" });
+        streamController?.error(new DOMException("Aborted", "AbortError"));
+        break;
+      }
+    };
+    await expect(consume()).resolves.toBeUndefined();
     expect(body.locked).toBe(false);
   });
 
