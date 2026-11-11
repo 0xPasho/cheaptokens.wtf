@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { createServer, type IncomingHttpHeaders, type ServerResponse } from "node:http";
+import { randomBytes, randomUUID } from "node:crypto";
+import { createServer, STATUS_CODES, type IncomingHttpHeaders, type ServerResponse } from "node:http";
 
 import errors from "../fixtures/inferhub/errors.json";
 
@@ -80,11 +80,11 @@ function promptTokens(body: Record<string, unknown>): number {
   let characters = 0;
   for (const message of body.messages) {
     const content = object(message).content;
-    if (typeof content === "string") characters += content.length;
+    if (typeof content === "string") characters += [...content].length;
     else if (Array.isArray(content)) {
       for (const part of content) {
         const text = object(part).text;
-        if (typeof text === "string") characters += text.length;
+        if (typeof text === "string") characters += [...text].length;
       }
     }
   }
@@ -168,18 +168,31 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       const control = object(body.x_mock);
       const model = typeof body.model === "string" ? body.model : "alicn/qwen3.8-flash";
       const scenario = request.headers["x-mock-scenario"] ?? (model.startsWith("mock/") ? model.slice(5) : control.scenario) ?? "ok";
+      const modelLatency = typeof scenario === "string" ? /^slow-first-byte:(\d+)$/.exec(scenario) : null;
       const chunks = nonnegativeInteger(control.chunks, 3);
       const chunkDelayMs = nonnegativeInteger(control.chunkDelayMs, 0);
-      const latencyMs = nonnegativeInteger(control.latencyMs, scenario === "slow-first-byte" ? 2000 : 0);
-      const requestId = randomUUID();
+      // La latencia del mapeo prevalece sobre el body compartido entre upstreams.
+      const latencyMs = modelLatency
+        ? nonnegativeInteger(parseInt(modelLatency[1], 10), 2000)
+        : nonnegativeInteger(control.latencyMs, scenario === "slow-first-byte" ? 2000 : 0);
+      const requestId = randomBytes(8).toString("hex");
       const id = `chatcmpl-${randomUUID()}`;
       const created = Math.floor(Date.now() / 1000);
 
       response.setHeader("x-inferhub-request-id", requestId);
       response.setHeader("x-inferhub-publisher", randomUUID());
       response.setHeader("x-inferhub-model", model);
+      response.setHeader("x-inferhub-attempt", "1");
+      response.setHeader("x-inferhub-backend", `node-${randomBytes(5).toString("hex")}`);
       response.setHeader("x-ratelimit-limit", "1000");
       response.setHeader("x-ratelimit-remaining", "996");
+      response.setHeader("x-ratelimit-reset", (created + 60).toString());
+
+      if (scenario === "reset") {
+        serverAborted = true;
+        response.destroy();
+        return;
+      }
 
       if (belowAsk(request.headers["x-max-input-price"]?.toString(), input)
         || belowAsk(request.headers["x-max-output-price"]?.toString(), output)
@@ -205,27 +218,55 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
         "error-500": { status: 500, body: { error: { message: "Internal server error", type: "server_error", source: "inferhub" } } },
         "error-503": { status: 503, body: { error: { message: "No provider available", type: "server_error", source: "inferhub" } } },
       };
-      const failure = typeof scenario === "string" && Object.hasOwn(httpErrors, scenario) ? httpErrors[scenario] : undefined;
+      const statusMatch = typeof scenario === "string" ? /^error-([45]\d{2})$/.exec(scenario) : null;
+      const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
+      const failure = typeof scenario === "string" && Object.hasOwn(httpErrors, scenario)
+        ? httpErrors[scenario]
+        : status === null ? undefined : {
+          status,
+          body: { error: { message: STATUS_CODES[status] ?? `HTTP ${status}`, type: status < 500 ? "invalid_request_error" : "server_error", source: "inferhub" } },
+        };
       if (failure) {
         json(response, failure.status, failure.body);
         return;
       }
 
       const prompt = promptTokens(body);
-      const completion = chunks * tokensPerChunk;
+      const contentTokens = chunks * tokensPerChunk;
+      const completion = reasoning.length + contentTokens;
       const tokens = { prompt_tokens: prompt, completion_tokens: completion, total_tokens: prompt + completion };
       const vendorUsage = {
         ...tokens,
         prompt_tokens_details: { cached_tokens: 0, image_tokens: 0, text_tokens: prompt },
-        completion_tokens_details: { reasoning_tokens: reasoning.length, text_tokens: completion },
+        completion_tokens_details: { reasoning_tokens: reasoning.length, text_tokens: contentTokens },
       };
       const cost = usageCost(prompt, completion, input, output);
+      const error = { message: "InferHub provider failed", type: "server_error", source: "inferhub" };
       if (body.stream !== true) {
-        json(response, 200, {
+        if (scenario === "stream-error-200" || scenario === "mid-stream-error") {
+          json(response, 200, { error });
+          return;
+        }
+        if (scenario === "empty-stream") {
+          json(response, 200, {});
+          return;
+        }
+        const payload = {
           id, model, created, object: "chat.completion", request_id: requestId, provider: "inferhub",
           choices: [{ index: 0, message: { role: "assistant", content: contentChunk.repeat(chunks), reasoning_content: reasoning.join("") }, finish_reason: "stop" }],
           ...(scenario === "no-usage" ? {} : { usage: { ...vendorUsage, cost } }),
-        });
+        };
+        if (scenario === "cut") {
+          const serialized = Buffer.from(JSON.stringify(payload));
+          response.writeHead(200, { "content-type": "application/json", "content-length": serialized.length });
+          response.write(serialized.subarray(0, Math.floor(serialized.length / 2)));
+          // Deja salir el body parcial antes de destruir el socket.
+          if (!await pause(response, 0)) return;
+          serverAborted = true;
+          response.destroy();
+          return;
+        }
+        json(response, 200, payload);
         return;
       }
 
@@ -242,19 +283,24 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       });
       const streamError = () => event(response, {
         ...delta({}, "error"),
-        error: { message: "InferHub provider failed", type: "server_error", source: "inferhub" },
+        error,
       });
+      response.write(": INFERHUB PROCESSING\n\n");
       if (scenario === "stream-error-200") {
         streamError();
         response.end("data: [DONE]\n\n");
         return;
       }
-      response.write(": INFERHUB PROCESSING\n\n");
       event(response, delta({ role: "assistant", content: "", reasoning_content: "" }));
-      for (const text of reasoning) event(response, delta({ reasoning_content: text }));
+      const finishesNormally = scenario !== "cut" && scenario !== "mid-stream-error";
+      for (const [index, text] of reasoning.entries()) {
+        const last = chunks === 0 && index === reasoning.length - 1 && finishesNormally;
+        event(response, delta({ reasoning_content: text }, last ? "stop" : null));
+      }
       for (let index = 0; index < chunks; index++) {
         if (response.destroyed) return;
-        event(response, delta({ content: contentChunk }));
+        const last = index === chunks - 1 && finishesNormally;
+        event(response, delta({ content: contentChunk }, last ? "stop" : null));
         if (!await pause(response, index < chunks - 1 ? chunkDelayMs : 0)) return;
       }
       if (scenario === "cut") {
@@ -265,7 +311,6 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       if (scenario === "mid-stream-error") {
         streamError();
       } else {
-        event(response, delta({}, "stop"));
         if (scenario !== "no-usage") {
           event(response, { ...chunkBase, choices: [], usage: vendorUsage });
           event(response, {

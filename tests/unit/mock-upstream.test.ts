@@ -28,6 +28,7 @@ interface Payload {
     total_tokens: number;
     cost?: number;
     prompt_tokens_details?: { text_tokens: number; cached_tokens: number };
+    completion_tokens_details?: { reasoning_tokens: number; text_tokens?: number };
   } | null;
 }
 
@@ -72,23 +73,28 @@ describe("mock upstream: respuestas InferHub", () => {
     });
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/json");
-    expect(response.headers.get("x-inferhub-request-id")).toBeTruthy();
+    expect(response.headers.get("x-inferhub-request-id")).toMatch(/^[\da-f]{16}$/);
     expect(response.headers.get("x-inferhub-publisher")).toMatch(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/);
     expect(response.headers.get("x-inferhub-model")).toBe("alicn/qwen3.8-flash");
+    expect(response.headers.get("x-inferhub-attempt")).toBe("1");
+    expect(response.headers.get("x-inferhub-backend")).toMatch(/^node-[\da-f]{10}$/);
     expect(response.headers.get("x-ratelimit-limit")).toBe("1000");
     expect(response.headers.get("x-ratelimit-remaining")).toBe("996");
+    expect(response.headers.get("x-ratelimit-reset")).toMatch(/^\d+$/);
     const body = await response.json() as Payload;
     expect(body).toMatchObject({
       object: "chat.completion", provider: "inferhub", model: "alicn/qwen3.8-flash",
       request_id: response.headers.get("x-inferhub-request-id"),
       choices: [{ message: { role: "assistant", content: expect.any(String), reasoning_content: expect.any(String) }, finish_reason: "stop" }],
       usage: {
-        prompt_tokens: 3, completion_tokens: 12, total_tokens: 15, cost: 0.00001,
+        prompt_tokens: 3, completion_tokens: 14, total_tokens: 17, cost: 0.00001,
         prompt_tokens_details: { text_tokens: 3, cached_tokens: 0 },
+        completion_tokens_details: { reasoning_tokens: 2, text_tokens: 12 },
       },
     });
     expect(body.id).toMatch(/^chatcmpl-/);
     expect(body.id).not.toContain(body.request_id);
+    expect(response.headers.get("x-ratelimit-reset")).toBe((body.created! + 60).toString());
   });
 
   it.each([undefined, { include_usage: true }, { include_usage: false }])("manda ambos usage aunque stream_options sea %j", async (streamOptions) => {
@@ -105,14 +111,23 @@ describe("mock upstream: respuestas InferHub", () => {
     expect(contentIndex).toBeGreaterThan(reasonIndex);
     expect(payloads.filter((payload) => payload.choices[0]?.delta?.content)).toHaveLength(3);
     expect(payloads.at(-3)?.choices[0]?.finish_reason).toBe("stop");
+    expect(payloads.at(-3)?.choices[0]?.delta?.content).toBeTruthy();
+    expect(payloads.filter((payload) => payload.choices[0]?.finish_reason === "stop")).toHaveLength(1);
+    expect(payloads.filter((payload) => payload.choices[0]?.delta && Object.keys(payload.choices[0].delta).length === 0)).toHaveLength(0);
     const usages = payloads.filter((payload) => payload.usage);
     expect(usages).toHaveLength(2);
     expect(usages[0]).toMatchObject({
       id: payloads[0].id, model: "alicn/qwen3.8-flash", created: expect.any(Number),
-      usage: { prompt_tokens: 3, completion_tokens: 12, total_tokens: 15, prompt_tokens_details: { text_tokens: 3 } },
+      usage: {
+        prompt_tokens: 3, completion_tokens: 14, total_tokens: 17, prompt_tokens_details: { text_tokens: 3 },
+        completion_tokens_details: { reasoning_tokens: 2, text_tokens: 12 },
+      },
     });
     expect(usages[0].usage).not.toHaveProperty("cost");
-    expect(usages[1]).toMatchObject({ choices: [], object: "chat.completion.chunk", usage: { cost: 0.00001, prompt_tokens: 3, completion_tokens: 12 } });
+    expect(usages[1]).toMatchObject({
+      choices: [], object: "chat.completion.chunk",
+      usage: { cost: 0.00001, prompt_tokens: 3, completion_tokens: 14, total_tokens: 17, completion_tokens_details: { reasoning_tokens: 2 } },
+    });
     for (const field of ["id", "model", "created"]) expect(usages[1]).not.toHaveProperty(field);
   });
 
@@ -120,24 +135,42 @@ describe("mock upstream: respuestas InferHub", () => {
     const upstream = await start({ askInputPer1M: 0.01755, askOutputPer1M: 0.05499 });
     const response = await chat(upstream, { messages: [{ content: "x".repeat(4000) }], x_mock: { chunks: 2 } });
     const body = await response.json() as Payload;
-    expect(body.usage).toMatchObject({ prompt_tokens: 1000, completion_tokens: 8, cost: 0.00001798992 });
+    expect(body.usage).toMatchObject({ prompt_tokens: 1000, completion_tokens: 10, cost: 0.0000180999 });
   });
 
   it("aplica los asks predeterminados también en streaming", async () => {
     const upstream = await start();
     const response = await chat(upstream, { stream: true, messages: [{ content: "x".repeat(8000) }], x_mock: { chunks: 2 } });
     const payloads = streamPayloads(await response.text());
-    expect(payloads.at(-1)?.usage).toMatchObject({ prompt_tokens: 2000, completion_tokens: 8, cost: 0.00002016 });
+    expect(payloads.at(-1)?.usage).toMatchObject({ prompt_tokens: 2000, completion_tokens: 10, cost: 0.0000202 });
   });
 
   it("admite asks en notación científica y cero chunks", async () => {
     const upstream = await start({ askInputPer1M: 1e-7, askOutputPer1M: 1e7 });
     const response = await chat(upstream, { messages: [], x_mock: { chunks: 1 } });
-    expect((await response.json() as Payload).usage?.cost).toBe(40);
+    expect((await response.json() as Payload).usage?.cost).toBe(60);
     const emptyResponse = await chat(upstream, { stream: true, x_mock: { chunks: 0 } });
     const payloads = streamPayloads(await emptyResponse.text());
     expect(payloads.filter((payload) => payload.choices[0]?.delta?.content)).toHaveLength(0);
-    expect(payloads.at(-1)?.usage?.completion_tokens).toBe(0);
+    expect(payloads.at(-3)?.choices[0]).toMatchObject({ delta: { reasoning_content: expect.any(String) }, finish_reason: "stop" });
+    for (const payload of payloads.filter((payload) => payload.usage)) {
+      expect(payload.usage).toMatchObject({ completion_tokens: 2, completion_tokens_details: { reasoning_tokens: 2 } });
+    }
+    expect(payloads.at(-2)?.usage?.completion_tokens_details?.text_tokens).toBe(0);
+  });
+
+  it.each([false, true])("cuenta code points del prompt en texto y partes (stream=%s)", async (stream) => {
+    const upstream = await start();
+    const response = await chat(upstream, {
+      stream,
+      messages: [
+        { role: "system", content: "🌎🌎" },
+        { role: "user", content: [{ type: "text", text: "😀abc" }, { type: "text", text: "xy" }] },
+      ],
+    });
+    const text = await response.text();
+    const payloads = stream ? streamPayloads(text).filter((payload) => payload.usage) : [JSON.parse(text) as Payload];
+    for (const payload of payloads) expect(payload.usage?.prompt_tokens).toBe(2);
   });
 
   it.each([NaN, Infinity, -0.01])("rechaza un ask inválido: %s", async (ask) => {
@@ -147,9 +180,10 @@ describe("mock upstream: respuestas InferHub", () => {
 });
 
 describe("mock upstream: errores y control de escenarios", () => {
-  it.each([400, 401, 402, 404, 429, 500, 503])("reproduce error-%i", async (status) => {
+  it.each([400, 401, 402, 403, 404, 422, 429, 499, 500, 502, 503, 504, 599]
+    .flatMap((status) => [false, true].map((stream) => ({ status, stream }))))("reproduce error-$status (stream=$stream)", async ({ status, stream }) => {
     const upstream = await start();
-    const response = await chat(upstream, { stream: true, model: `mock/error-${status}` });
+    const response = await chat(upstream, { stream, model: `mock/error-${status}` });
     expect(response.status).toBe(status);
     expect(response.headers.get("content-type")).toBe("application/json");
     const body = await response.json() as Payload;
@@ -220,7 +254,9 @@ describe("mock upstream: errores y control de escenarios", () => {
     const upstream = await start();
     const response = await chat(upstream, { stream: true, model: "mock/stream-error-200" });
     expect(response.status).toBe(200);
-    const payloads = streamPayloads(await response.text());
+    const text = await response.text();
+    expect(text.startsWith(": INFERHUB PROCESSING\n\n")).toBe(true);
+    const payloads = streamPayloads(text);
     expect(payloads).toHaveLength(1);
     expect(payloads[0]).toMatchObject({ error: { source: "inferhub" }, choices: [{ finish_reason: "error" }] });
     expect(payloads[0].usage).toBeFalsy();
@@ -233,6 +269,48 @@ describe("mock upstream: errores y control de escenarios", () => {
     expect(payloads.filter((payload) => payload.choices[0]?.delta?.content)).toHaveLength(2);
     expect(payloads.at(-1)).toMatchObject({ error: { source: "inferhub" }, choices: [{ finish_reason: "error" }] });
     expect(payloads.some((payload) => payload.usage)).toBe(false);
+    expect(payloads.some((payload) => payload.choices[0]?.finish_reason === "stop")).toBe(false);
+  });
+
+  it.each(["stream-error-200", "mid-stream-error"])("responde con error raíz sin stream en %s", async (scenario) => {
+    const upstream = await start();
+    const response = await chat(upstream, { model: `mock/${scenario}` });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    const body = await response.json() as Payload;
+    expect(body).toMatchObject({ error: { source: "inferhub" } });
+    expect(body).not.toHaveProperty("choices");
+    expect(body).not.toHaveProperty("usage");
+  });
+
+  it("corta el socket a mitad del body JSON sin stream", async () => {
+    const upstream = await start();
+    const response = await chat(upstream, { model: "mock/cut" });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/json");
+    const reader = response.body!.getReader();
+    const buffers: Uint8Array[] = [];
+    await expect((async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffers.push(value);
+      }
+    })()).rejects.toThrow();
+    const partial = Buffer.concat(buffers);
+    expect(partial.length).toBe(Math.floor(parseInt(response.headers.get("content-length")!, 10) / 2));
+    expect(partial.toString()).toMatch(/^\{"id":"chatcmpl-/);
+    expect(() => JSON.parse(partial.toString()) as unknown).toThrow();
+    expect(upstream.requests[0].clientAborted).toBe(false);
+  });
+
+  it.each([false, true])("reset destruye el socket antes de los headers (stream=%s)", async (stream) => {
+    const upstream = await start();
+    await expect(chat(upstream, { stream, model: "mock/reset" })).rejects.toThrow();
+    expect(upstream.requests[0]).toMatchObject({ body: { stream, model: "mock/reset" }, clientAborted: false });
+    const response = await chat(upstream);
+    expect(response.status).toBe(200);
+    await response.text();
   });
 
   it("corta la conexión después de contenido sin DONE ni usage", async () => {
@@ -269,6 +347,15 @@ describe("mock upstream: errores y control de escenarios", () => {
     const response = await chat(upstream, { stream: true, x_mock: { scenario: "empty-stream" } });
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("data: [DONE]\n\n");
+  });
+
+  it("empty-stream responde sin choices ni usage cuando no hay stream", async () => {
+    const upstream = await start();
+    const response = await chat(upstream, { model: "mock/empty-stream" });
+    expect(response.status).toBe(200);
+    const body = await response.json() as Payload;
+    expect(body).not.toHaveProperty("choices");
+    expect(body).not.toHaveProperty("usage");
   });
 });
 
@@ -324,7 +411,27 @@ describe("mock upstream: tiempos, registro y cierre", () => {
     if (stream) {
       expect(performance.now() - before).toBeGreaterThanOrEqual(110);
       expect(streamPayloads(text).filter((payload) => payload.choices[0]?.delta?.content)).toHaveLength(2);
-    } else expect((JSON.parse(text) as Payload).usage?.completion_tokens).toBe(8);
+    } else expect((JSON.parse(text) as Payload).usage?.completion_tokens).toBe(10);
+  });
+
+  it.each([false, true])("configura latencias independientes por modelo (stream=%s)", async (stream) => {
+    const upstream = await start();
+    const before = performance.now();
+    const slow = chat(upstream, { stream, model: "mock/slow-first-byte:150", x_mock: { latencyMs: 60_000 } })
+      .then((response) => ({ name: "slow", response }));
+    const fast = chat(upstream, { stream, model: "mock/slow-first-byte:0", x_mock: { latencyMs: 60_000 } })
+      .then((response) => ({ name: "fast", response }));
+    const first = await Promise.race([slow, fast]);
+    expect(first.name).toBe("fast");
+    expect(first.response.status).toBe(200);
+    await first.response.text();
+    const { response } = await slow;
+    expect(performance.now() - before).toBeGreaterThanOrEqual(140);
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(upstream.requests.map((request) => (request.body as { model: string }).model)).toEqual(expect.arrayContaining([
+      "mock/slow-first-byte:150", "mock/slow-first-byte:0",
+    ]));
   });
 
   it("slow-first-byte espera 2000 ms por defecto", async () => {
@@ -335,11 +442,11 @@ describe("mock upstream: tiempos, registro y cierre", () => {
     await response.text();
   });
 
-  it("hang acepta la petición sin enviar siquiera los headers hasta el aborto", async () => {
+  it.each([false, true])("hang acepta la petición sin enviar siquiera los headers hasta el aborto (stream=%s)", async (stream) => {
     const upstream = await start();
     const controller = new AbortController();
     let settled = false;
-    const response = chat(upstream, { model: "mock/hang" }, undefined, controller.signal);
+    const response = chat(upstream, { stream, model: "mock/hang" }, undefined, controller.signal);
     void response.then(() => { settled = true; }, () => { settled = true; });
     await expect.poll(() => upstream.requests[0]?.body).toMatchObject({ model: "mock/hang" });
     await new Promise((resolve) => setTimeout(resolve, 50));
