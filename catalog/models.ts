@@ -209,8 +209,8 @@ export const CATALOG: CatalogEntry[] = [
     name: "DeepSeek V4.1 Flash",
     author: "deepseek",
     description: {
-      en: "DeepSeek's fast model, with optional reasoning, vision and tool calling.",
-      es: "El modelo rápido de DeepSeek, con razonamiento opcional, visión y herramientas.",
+      en: "DeepSeek's fast model, with vision, tool calling and optional reasoning.",
+      es: "El modelo rápido de DeepSeek, con visión, herramientas y razonamiento opcional.",
     },
     contextLength: 1_000_000,
     officialInput: usd(0.15),
@@ -226,8 +226,8 @@ export const CATALOG: CatalogEntry[] = [
     name: "GLM-5.3 Flash",
     author: "z-ai",
     description: {
-      en: "Z.ai's fast, low-cost model, with optional reasoning and vision.",
-      es: "El modelo rápido y económico de Z.ai, con razonamiento opcional y visión.",
+      en: "Z.ai's fast, low-cost model, with vision and optional reasoning.",
+      es: "El modelo rápido y económico de Z.ai, con visión y razonamiento opcional.",
     },
     contextLength: 1_000_000,
     officialInput: usd(0.15),

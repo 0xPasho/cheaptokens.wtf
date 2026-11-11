@@ -75,6 +75,11 @@ export function validateCatalog({ models, upstreams, environment }: CatalogValid
     if (upstreamIds.has(upstream.id)) errors.push(`${where}: duplicate id`);
     upstreamIds.add(upstream.id);
 
+    // InferHub cobra según el vendedor que toque: sin tope de precio, el margen no se cumple por request (ADR-0028).
+    if (PREFIXED_MODEL_UPSTREAMS.has(upstream.id) && !upstream.sendsPriceCap) {
+      errors.push(`${where}: must send the price cap (sendsPriceCap: true)`);
+    }
+
     if (upstream.environments.includes("production")) {
       if (upstream.apiKeyEnv === null) errors.push(`${where}: available in production but has no apiKeyEnv`);
       if (upstream.id === MOCK_UPSTREAM_ID) errors.push(`${where}: the mock upstream must never be available in production`);

@@ -312,7 +312,7 @@ describe("validateCatalog", () => {
     it.each(["claude-haiku-4-5", "qwen3.8-flash", "/qwen3.8-flash", "alicn/", "alicn/qwen/flash"])(
       "en InferHub rechaza el upstreamModel %j: siempre prefijo/modelo, nunca un alias (ADR-0028)",
       (upstreamModel) => {
-        const inferhub = upstream({ id: "inferhub", models: [mapping({ upstreamModel })] });
+        const inferhub = upstream({ id: "inferhub", sendsPriceCap: true, models: [mapping({ upstreamModel })] });
         expect(validate({ upstreams: [inferhub] }).errors).toEqual([
           `upstream inferhub → acme/model: upstreamModel "${upstreamModel}" must be "prefix/model", never an alias`,
         ]);
@@ -320,7 +320,7 @@ describe("validateCatalog", () => {
     );
 
     it("acepta los IDs con prefijo en InferHub, y sin prefijo en otros upstreams", () => {
-      const inferhub = upstream({ id: "inferhub", models: [mapping({ upstreamModel: "alicn/qwen3.8-flash" })] });
+      const inferhub = upstream({ id: "inferhub", sendsPriceCap: true, models: [mapping({ upstreamModel: "alicn/qwen3.8-flash" })] });
       expect(validate({ upstreams: [inferhub] }).errors).toEqual([]);
       const other = upstream({ models: [mapping({ upstreamModel: "model-v1" })] });
       expect(validate({ upstreams: [other] }).errors).toEqual([]);
@@ -334,6 +334,13 @@ describe("validateCatalog", () => {
       }
       const devOnly = upstream({ apiKeyEnv: null, environments: ["development"] });
       expect(validate({ upstreams: [devOnly], environment: "development" }).errors).toEqual([]);
+    });
+
+    it("exige el tope de precio en InferHub (ADR-0028)", () => {
+      const inferhub = upstream({ id: "inferhub", sendsPriceCap: false });
+      expect(validate({ upstreams: [inferhub], environment: "development" }).errors).toContain(
+        "upstream inferhub: must send the price cap (sendsPriceCap: true)",
+      );
     });
 
     it("rechaza el mock marcado para producción, aunque tenga apiKeyEnv", () => {
