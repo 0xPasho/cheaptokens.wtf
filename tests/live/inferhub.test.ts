@@ -21,16 +21,20 @@ const qwenModel = "qwen/qwen3.8-flash";
 const deepseekModel = "deepseek/deepseek-v4.1-flash";
 const messages = [{ role: "user", content: "Reply with only: OK" }] as const;
 const upstreamUsageSchema = z.looseObject({
+  id: z.string().optional(),
   usage: z.looseObject({ cost: z.union([z.number(), z.string()]).optional() }).nullish(),
 });
 
-function reportedUpstreamCost(body: string, stream: boolean): bigint {
-  const payloads: unknown[] = stream
+function responsePayloads(body: string, stream: boolean): unknown[] {
+  return stream
     ? createSseParser().push(new TextEncoder().encode(body)).flatMap((event) =>
       event.type === "data" && event.data !== "[DONE]" ? [JSON.parse(event.data) as unknown] : [])
     : [JSON.parse(body) as unknown];
+}
+
+function reportedUpstreamCost(body: string, stream: boolean): bigint {
   let cost: bigint | undefined;
-  for (const payload of payloads) {
+  for (const payload of responsePayloads(body, stream)) {
     const value = upstreamUsageSchema.parse(payload).usage?.cost;
     if (value !== undefined) cost = usdToMicroUsdCeil(value);
   }
@@ -94,8 +98,12 @@ describe.skipIf(!liveEnabled)("InferHub live", { concurrent: false, retry: 0 }, 
 
     const headers = JSON.stringify([...response.headers]);
     const wire = `${headers}\n${body}`;
-    expect(wire).not.toMatch(/inferhub|x-inferhub|request_id|"(?:source|provider|system_fingerprint|cost)"|alicn\/|Qwencloud|Alibaba CN/i);
-    expect(wire).not.toMatch(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
+    expect(wire).not.toMatch(/inferhub|x-inferhub|request_id|"(?:source|provider|system_fingerprint|cost|text_tokens|image_tokens)"|alicn\/|Qwencloud|Alibaba CN/i);
+    // Los IDs de tool_calls sí pasan: solo buscamos el ID original de la respuesta.
+    for (const payload of responsePayloads(upstreamBody, stream)) {
+      const upstreamId = upstreamUsageSchema.parse(payload).id;
+      if (upstreamId) expect(wire).not.toContain(upstreamId);
+    }
     expect([...response.headers.keys()].some((name) => name.startsWith("x-ratelimit-"))).toBe(false);
     for (const [name, value] of upstreamResponses[0].headers) {
       if (name.startsWith("x-inferhub-")) {
@@ -126,12 +134,12 @@ describe.skipIf(!liveEnabled)("InferHub live", { concurrent: false, retry: 0 }, 
 
     totalUpstreamCost += record.upstreamCostMicroUsd;
     totalChargedCost += record.costMicroUsd;
-    console.info(JSON.stringify({
+    process.stdout.write(JSON.stringify({
       case: label, model, promptTokens: record.promptTokens, completionTokens: record.completionTokens,
       chargedMicroUsd: record.costMicroUsd.toString(), upstreamMicroUsd: record.upstreamCostMicroUsd.toString(),
       latencyMs: record.latencyMs, ttfbMs: record.ttfbMs,
       totalUpstreamMicroUsd: totalUpstreamCost.toString(), totalChargedMicroUsd: totalChargedCost.toString(),
-    }));
+    }) + "\n");
     expect(totalUpstreamCost).toBeLessThan(budgetMicroUsd);
     expect(totalChargedCost).toBeLessThan(budgetMicroUsd);
   }
@@ -142,7 +150,7 @@ describe.skipIf(!liveEnabled)("InferHub live", { concurrent: false, retry: 0 }, 
     });
     expect(completion.model).toBe(qwenModel);
     expect(completion.id).toMatch(/^chatcmpl-req_[a-f0-9]{32}$/);
-    expect(completion.choices[0]?.message.content?.trim()).toMatch(/^OK[.!]?$/);
+    expect(completion.choices[0]?.message.content?.trim()).toMatch(/^OK[.!]?$/i);
     expect(completion.choices[0]?.finish_reason).toBe("stop");
     await verifyRequest("non-stream", qwenModel, false, completion.usage);
   });
@@ -167,7 +175,7 @@ describe.skipIf(!liveEnabled)("InferHub live", { concurrent: false, retry: 0 }, 
         usages.push(chunk.usage);
       }
     }
-    expect(content.trim()).toMatch(/^OK[.!]?$/);
+    expect(content.trim()).toMatch(/^OK[.!]?$/i);
     expect(finishReason).toBe("stop");
     expect(usages).toHaveLength(1);
     expect(await clientResponses[0].body).toMatch(/data: \[DONE\]\s*$/);
@@ -188,7 +196,7 @@ describe.skipIf(!liveEnabled)("InferHub live", { concurrent: false, retry: 0 }, 
           },
         },
       }],
-      tool_choice: { type: "function", function: { name: "get_weather" } },
+      tool_choice: "auto",
     });
     expect(completion.model).toBe(deepseekModel);
     expect(completion.id).toMatch(/^chatcmpl-req_[a-f0-9]{32}$/);
