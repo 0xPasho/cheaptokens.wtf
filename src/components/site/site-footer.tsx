@@ -22,6 +22,13 @@ export function SiteFooter({ locale, dict }: { locale: Locale; dict: Dictionary 
               {dict.meta.siteName}
             </Link>
             <p className="text-sm text-muted-foreground">{dict.footer.tagline}</p>
+            {/* El header lo esconde en teléfonos: aquí se llega a Docs en cualquier ancho. */}
+            <Link
+              href={`/${locale}/docs`}
+              className="mt-2 w-fit rounded-sm text-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {dict.nav.docs}
+            </Link>
           </div>
           <LanguageSwitcher
             locale={locale}

@@ -133,7 +133,7 @@ Paso a paso:
 2. **Lookup.** `SHA-256(key)` se busca contra un índice único. Una sola query trae la key (revocada o no, límite y gastado) y su workspace (saldo, suspendido o no).
 3. **Rate limit** por workspace en Redis. Si se excede, `429` con `retry-after`.
 4. **Modelo.** Se busca en el catálogo, que vive cacheado en memoria por 60 s. Si no existe, `404 model_not_found`. Si está `retired`, `410 model_retired`.
-5. **Saldo y límites.** Sin saldo, `402 insufficient_credits`. Con la key en su límite, `403 key_limit_exceeded`. Con el workspace suspendido, `403 account_suspended`.
+5. **Saldo y límites,** en este orden: con el workspace suspendido, `403 account_suspended`; sin saldo, `402 insufficient_credits`; con la key en su límite, `403 key_limit_exceeded`.
 6. **Upstream.** Se elige el primero habilitado según prioridad ([07 · Upstreams](./07-upstreams.md#selección-y-fallback)). Se reemplaza `model` por el ID del upstream y, si es streaming, se fuerza `stream_options.include_usage = true`. Si el upstream acepta un tope de precio (InferHub sí), se manda con el costo del mapeo ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)).
 7. **Fallback.** Solo si el error ocurre **antes de enviar el primer chunk de datos** (hasta entonces no salen headers): error de red, timeout, `429`, `5xx`, o `401/402/403/404` del upstream (todos son problema nuestro, no del cliente). Un `400` del upstream se devuelve al cliente sanitizado.
 8. **Respuesta.** Se reescriben `id` y `model`, se dejan solo los campos del estándar de OpenAI y se descarta cualquier campo o header del upstream ([07 · Upstreams › Ocultar](./07-upstreams.md#ocultar-el-upstream)).
@@ -158,7 +158,7 @@ El cálculo de latencia: la key y el rate limit corren en paralelo y la base est
 - **Errores a mitad del stream:** algunos upstreams los mandan con HTTP 200, como un chunk con `error`. El gateway los traduce a nuestro chunk de error ([04 · API › Streaming](./04-api.md#streaming)). Un stream sin contenido ni `usage` cuenta como falla.
 - **Costo upstream:** si el `usage` del upstream trae `cost` (InferHub lo trae), ese es el costo que se guarda. Si no, se calcula con el costo del mapeo. En los dos casos, el campo se quita de la respuesta.
 - **Si el cliente se desconecta:** el gateway **sigue leyendo el stream del upstream hasta el final**, sin escribir al cliente, para obtener `usage` y cobrar lo que el upstream nos va a cobrar. La lectura queda registrada con `after()` y respeta `maxDuration`. Ver [ADR-0013](./adr/0013-medicion-con-usage-upstream.md).
-- **Duración.** El route handler exporta `maxDuration = 800` (máximo de Fluid compute en Vercel Pro). Un stream que dure más se corta, se registra como `upstream_timeout` y se cobra lo estimado.
+- **Duración.** El route handler exporta `maxDuration = 800` (máximo de Fluid compute en Vercel Pro). Un stream que dure más se corta y se registra como `upstream_timeout`. Se cobra el `usage` que el upstream haya reportado y, si no llegó, lo estimado ([ADR-0013](./adr/0013-medicion-con-usage-upstream.md)).
 
 ## Timeouts
 
