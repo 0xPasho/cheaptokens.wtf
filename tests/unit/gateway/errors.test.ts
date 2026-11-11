@@ -111,6 +111,9 @@ describe("upstream client messages", () => {
   it.each([
     "The input must be coherent.", "These parameters cannot be used altogether.",
     "Unable to get her input.", "The request is invalid.",
+    "'tools' and 'functions' cannot be used together.", "Error code: 400",
+    "Expected a value <= 1, but got 1.5 instead.", "temperature must be between 0.0 and 2.0",
+    "The request body exceeds 4.5 MB.",
   ])("preserves ordinary words and word boundaries in %j", (message) => {
     expect(sanitizeUpstreamClientMessage({ error: { message } })).toBe(message);
     expect(errorBody("invalid_request", message).error.message).toBe(message);
@@ -120,7 +123,13 @@ describe("upstream client messages", () => {
     "InferHub rejected the request.", "INFERHUB rejected the request.", "infer-hub rejected the request.",
     "OpenRouter", "Qwencloud/Alibaba CN", "Aliyun DashScope", "Anthropic", "OpenAI", "Google Vertex",
     "Bedrock", "Azure", "DeepSeek", "Zhipu", "Moonshot", "MiniMax", "Kiro", "Codex", "Groq",
-    "Cohere", "Together", "alicn", "LiteLLM",
+    "Cohere", "Together AI", "alicn", "LiteLLM",
+    "InferHubError: invalid model", "AnthropicException - …", "VertexAIException",
+    "BedrockException", "AzureException", "OpenAIError", "Invalid header x_inferhub_model",
+    "account azure_2 …", "routed to openai2", "Qwen3 does not support tools",
+    "qwen_max …", "openrouter_key invalid",
+    "fe80::1ff:fe23:4567:890a", "[2001:db8:85a3::8a2e:370:7334]:443", "dial tcp [::1]:8443",
+    "localhost:8443", "upstream-pool:443",
     "The model alicn/glm-5 does not support tools", "Unknown model cc/claude-sonnet-4-6",
     fixtures.model_not_found_404.error.message, "Unknown model custom-prefix/custom.model:v2",
     "node-acdc87131a", "f56bbe23", "req_011CSHoEeqs5C35K2UUqR7Fy", "gen-1736975553-Kq7uLzHTb3tFPDXKRQ3A",
@@ -136,6 +145,19 @@ describe("upstream client messages", () => {
     expect(errorBody("invalid_request", message)).toEqual(errorBody("invalid_request"));
   });
 
+  it.each(["‐", "‑", "‒", "–", "—", "―", "·", " ", "_", ".", "-"])("rejects brand names separated by %j", (separator) => {
+    for (const name of ["InFeRHuB".split("").join(separator), `Together${separator}AI`, `together${separator}computer`]) {
+      expect(sanitizeUpstreamClientMessage({ error: { message: `${name} failed` } })).toBe(generic);
+      expect(errorBody("invalid_request", `${name} failed`)).toEqual(errorBody("invalid_request"));
+    }
+  });
+
+  it.each(["image/webp", "application/json", "text/plain", "audio/mpeg", "video/mp4"])("preserves the MIME type %s", (mime) => {
+    const message = `Unsupported content type: ${mime}.`;
+    expect(sanitizeUpstreamClientMessage({ error: { message } })).toBe(message);
+    expect(errorBody("invalid_request", message).error.message).toBe(message);
+  });
+
   it("allows messages of exactly 300 characters", () => {
     expect(sanitizeUpstreamClientMessage({ error: { message: "x".repeat(300) } })).toBe("x".repeat(300));
   });
@@ -145,7 +167,13 @@ describe("upstream client messages", () => {
     expect(sanitizeUpstreamClientMessage({ error: { message: "InferHub internal error", param: "max_tokens" } })).toBe(`${generic} (param: max_tokens)`);
   });
 
-  it.each([null, 12, { provider: "inferhub" }, "InferHub", "https://api.example.dev", "request_id", "dca0748a-8885-909d-ad85-06b118210e33", "dbe38640c4a8082b", "safe\nInferHub", "x".repeat(301)])("does not append unsafe param %j", (param) => {
+  it.each(["tools[0].function.name", "messages.0.content"])("preserves the field path %s as a param", (param) => {
+    expect(sanitizeUpstreamClientMessage({ error: { message: "Invalid value.", param } })).toBe(`Invalid value. (param: ${param})`);
+  });
+
+  it.each([null, 12, { provider: "inferhub" }, "InferHub", "https://api.example.dev", "request_id", "dca0748a-8885-909d-ad85-06b118210e33", "dbe38640c4a8082b", "safe\nInferHub", "x".repeat(301),
+    "tools[]", "tools[-1]", "tools[0", "tools..name", "messages.0.content\n", "tools[0].InferHubError", "openrouter_key", "tools[0].node_acdc87131a",
+  ])("does not append unsafe param %j", (param) => {
     expect(sanitizeUpstreamClientMessage({ error: { message: "Invalid role.", param } })).toBe("Invalid role.");
   });
 

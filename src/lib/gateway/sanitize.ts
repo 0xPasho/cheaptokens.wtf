@@ -72,10 +72,18 @@ function sanitizeLogprobs(value: unknown): Record<string, unknown> | null {
 function sanitizeChoices(upstream: unknown, field: "message" | "delta"): Record<string, unknown>[] {
   if (!isObject(upstream) || !Array.isArray(upstream.choices)) return [];
   const choices: Record<string, unknown>[] = [];
+  const reservedIndices = new Set(upstream.choices.flatMap((value: unknown) => isObject(value) && isCount(value.index) ? [value.index] : []));
+  const usedIndices = new Set<number>();
   for (const [position, value] of upstream.choices.entries()) {
     if (!isObject(value)) continue;
-    // El SDK acumula por índice, incluso si el proveedor lo omitió.
-    const choice: Record<string, unknown> = { index: isCount(value.index) ? value.index : position };
+    // Reservar los explícitos evita mezclar choices que el SDK acumula por índice.
+    const explicitIndex = isCount(value.index) ? value.index : null;
+    let index = explicitIndex ?? position;
+    if (explicitIndex === null || usedIndices.has(index)) {
+      index = position;
+      while (reservedIndices.has(index) || usedIndices.has(index)) index++;
+    }
+    const choice: Record<string, unknown> = { index };
     if ("finish_reason" in value) choice.finish_reason = sanitizeFinishReason(value.finish_reason);
     const message = sanitizeMessage(value[field]);
     if (message !== null) choice[field] = message;
@@ -86,21 +94,27 @@ function sanitizeChoices(upstream: unknown, field: "message" | "delta"): Record<
       || typeof choice.finish_reason === "string"
       || (logprobs !== null && Object.keys(logprobs).length > 0)) {
       choices.push(choice);
+      usedIndices.add(index);
     }
   }
   return choices;
 }
 
 function sanitizeFinishReason(value: unknown): string | null {
-  switch (value) {
-    case null:
+  if (typeof value !== "string") return null;
+  const reason = value.toLowerCase();
+  switch (reason) {
     case "stop":
     case "length":
     case "tool_calls":
     case "content_filter":
     case "function_call":
-      return value;
+      return reason;
     case "max_tokens": return "length";
+    case "safety":
+    case "recitation":
+    case "blocklist":
+    case "prohibited_content": return "content_filter";
     case "tool_use": return "tool_calls";
     case "end_turn":
     case "stop_sequence":
@@ -139,6 +153,7 @@ export function sanitizeCompletion(upstream: unknown, ctx: ResponseContext): Rec
 }
 
 export function sanitizeChunk(upstream: unknown, ctx: ResponseContext): Record<string, unknown> | null {
+  // El handler detecta `error` en la raíz antes de llamar a sanitizeChunk.
   const choices = sanitizeChoices(upstream, "delta");
   if (choices.length === 0) return null;
   // El handler emite el uso consolidado; nunca se reenvía el de un chunk ajeno.

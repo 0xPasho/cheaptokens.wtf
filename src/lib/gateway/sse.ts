@@ -82,7 +82,7 @@ export async function* readSseEvents(body: ReadableStream<Uint8Array>): AsyncIte
   } finally {
     try {
       // Una iteración abandonada ya no tiene consumidor que pueda drenar el stream.
-      if (!completed) await reader.cancel();
+      if (!completed) await reader.cancel().catch(() => {});
     } finally {
       reader.releaseLock();
     }
