@@ -14,7 +14,7 @@ Ejemplo de forma (no es una key real): `wtf_4f8KzQ1mN0pX7rT2vB9cL6wE3yH5jA8sD1gF
 |---|---|---|
 | `wtf_` | Prefijo fijo | Reconocer una key de cheaptokens.wtf a simple vista, en logs y en escáneres de secretos |
 | 43 caracteres | 32 bytes de `crypto.randomBytes`, en base62 con largo fijo | 256 bits de entropía: imposible de adivinar |
-| 6 caracteres | CRC32 de la parte aleatoria, en base62 | Rechazar keys mal copiadas o inventadas sin consultar la base |
+| 6 caracteres | CRC32 (IEEE) de los 43 caracteres de la parte aleatoria como texto ASCII, en base62 con ceros a la izquierda | Rechazar keys mal copiadas o inventadas sin consultar la base. **Queda fijo con la primera key emitida:** cambiarlo invalida todas |
 
 Largo total: 53 caracteres. El alfabeto base62 (`0-9A-Za-z`) permite copiar la key con doble clic, sin guiones ni símbolos.
 

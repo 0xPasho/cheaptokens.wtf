@@ -31,7 +31,9 @@ export interface ServerEnv {
 export type EnvSource = Record<string, string | undefined>;
 
 export function readServerEnv(source: EnvSource = process.env): ServerEnv {
-  const parsed = schema.parse(source);
+  // Una variable vacía (`API_HOST=` en .env.local) cuenta como ausente, igual que en `readSecret`.
+  const present = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ""));
+  const parsed = schema.parse(present);
   const appEnv = parsed.VERCEL_ENV ?? parsed.APP_ENV ?? "development";
   const isProduction = appEnv === "production";
 

@@ -67,7 +67,7 @@ Es el dueño del saldo y de las keys. En el MVP hay uno por usuario de Clerk ([A
 | `official_input_price_micro_usd` | bigint | Por 1M |
 | `official_output_price_micro_usd` | bigint | Por 1M |
 | `official_price_source_url` | text | |
-| `official_price_verified_at` | date | |
+| `official_price_verified_at` | date, null | Null mientras el precio sea de ejemplo o no se haya verificado en la página del autor ([ADR-0029](./adr/0029-catalogo-de-pruebas-inferhub.md)) |
 | `discount_bps` | int, check 0–9999 | 9000 = 90% |
 | `input_price_micro_usd` | bigint | **Derivado** al sincronizar: oficial × (10000 − bps) / 10000 |
 | `output_price_micro_usd` | bigint | **Derivado** |
