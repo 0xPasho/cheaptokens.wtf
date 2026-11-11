@@ -1,6 +1,6 @@
 # 15 · Plan: gateway con InferHub
 
-> **Estado (2026-11-10): listo para ejecutar** cuando estén los [prerrequisitos](#1-prerrequisitos) P1 y P2. Las decisiones ya están en ADRs ([§2](#2-decisiones)). Está escrito para correrlo con un planificador, ejecutores en paralelo y revisores ([§3](#3-cómo-se-ejecuta), [ADR-0034](./adr/0034-construccion-por-olas.md)).
+> **Estado (2026-11-11): implementado.** Las olas 0 a 4 están integradas en `main`, con revisión de cada paquete y una verificación final. El gateway funciona de punta a punta contra el upstream simulado y contra InferHub de verdad. Lo que salió al construir está en [§8](#8-lo-que-salió-al-construir). Falta P2: la key de InferHub solo para cheaptokens.wtf.
 
 ## Objetivo
 
@@ -82,7 +82,7 @@ Las cifras del catálogo de pruebas (oficial, costo del mapeo y descuento máxim
 
 ### Tamaño
 
-16 paquetes: 1 + 6 + 4 + 1 + 4. Son 16 ejecuciones más sus revisiones, unas 32 corridas de agente. Las olas 1, 2 y 4 corren en paralelo.
+17 paquetes: 1 + 6 + 4 + 1 + 5. La ola 4 sumó R, la página `/docs` en inglés y español, a pedido del dueño. Las olas 1, 2 y 4 corren en paralelo.
 
 ## 4. Olas y paquetes
 
@@ -255,7 +255,7 @@ export interface GatewayDeps {
   - Están `maxDuration = 800`, runtime de Node, `413` para bodies de más de 4.5 MB y sin CORS.
   - `/v1/models` es pública, se cachea con `cacheTag('catalog')` y no muestra los modelos `hidden`.
 
-### Ola 4 · Pruebas de punta a punta (4 en paralelo)
+### Ola 4 · Pruebas de punta a punta y `/docs` (5 en paralelo)
 
 Corren contra `next start` con PGlite y el mock, o llaman a `handleChatCompletion` directamente. Cada paquete agrega sus archivos en `tests/gateway/` y un script `test:gateway` (el primero que llega lo crea; los demás solo agregan archivos).
 
@@ -265,6 +265,8 @@ Corren contra `next start` con PGlite y el mock, o llaman a `handleChatCompletio
 | **N · Dinero** | 50 requests en paralelo contra el mock, 20% cancelados a la mitad | `reconcile` da 0 diferencias, el saldo puede quedar levemente negativo y luego todo da `402`, y revocar una key la corta en el siguiente request |
 | **O · Fugas y logs** | Buscar el upstream en todo lo que recibe el cliente y en todo lo que se loguea | Ninguna respuesta, header ni error contiene `inferhub`, `x-inferhub`, `source`, `request_id` ni el UUID de un vendedor. Ningún log contiene la key, el prompt ni la respuesta |
 | **Q · En vivo** | `INFERHUB_LIVE=1 pnpm test:live` con `qwen/qwen3.8-flash` | Stream, sin stream y tools funcionan contra InferHub de verdad. `upstream_cost_micro_usd` = `ceil(usage.cost × 10⁶)`. Gasta menos de $0.05 |
+
+**R · `/[lang]/docs`** (agregado durante la ejecución): la página pública de docs/02 › Docs, en inglés y español, con el contenido de docs/04, el cobro mínimo de ADR-0030, la cancelación de ADR-0013 y `reasoning_content` de ADR-0031. Los ejemplos de SSE y la tabla de errores salen de las funciones del gateway, para que no se desfasen.
 
 ## 5. Checklist de revisión
 
@@ -300,3 +302,53 @@ El plan está terminado cuando se cumple todo esto:
 - **Pagos:** solo con la aprobación por escrito del MoR ([12 #2](./12-preguntas-abiertas.md#2-aprobación-por-escrito-de-un-mor)).
 - **Prueba de fidelidad de InferHub,** antes de considerarlo para producción ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md#consecuencias)).
 - **`/v1/messages`:** InferHub ya lo expone, así que la fase 2 (Claude Code) sería un adaptador más que un upstream nuevo.
+
+## 8. Lo que salió al construir
+
+### Quién hizo qué
+
+| Rol | Modelo | Trabajo |
+|---|---|---|
+| Planificador e integrador | Opus 5.5 | El plan, los contratos de la ola 0, las instrucciones de cada paquete, los merges, las decisiones de integración y las verificaciones puntuales |
+| Ejecutores | GPT 6.1 Sol con Codex | A, B, D, E, F, H, I, J, K, L, M, N, O y Q, y todas sus rondas de cambios |
+| Ejecutores | Opus 5.5 | C (catálogo, con textos en inglés y español) y R (`/docs` bilingüe) |
+| Revisores y verificación final | Opus 5.5 | Una revisión por paquete, sin ver el razonamiento del ejecutor, y la verificación final del sistema integrado |
+
+Codex pasó de 29% a 30% de su cuota semanal en todo el plan.
+
+### Lo que encontraron las revisiones
+
+- **Fugas en los mensajes de error (D, tres rondas).** El filtro dejaba pasar IDs del backend de InferHub, segmentos del UUID del vendedor, IPs, IPv6, `host:puerto` e IDs con prefijo (`alicn/glm-5`). Al corregirlo con límites de palabra se reabrieron nombres pegados (`InferHubError`, `openai2`). La regla final: el borde de un nombre solo excluye minúsculas, y los decimales, las rutas de `param` y los tipos MIME se conservan.
+- **`finish_reason` delata al proveedor** (`end_turn` es de Anthropic, `MAX_TOKENS` de Gemini). Ahora se normaliza a los valores de OpenAI.
+- **Salir de un stream antes del final lanzaba `AbortError`** (D y H). Abandonar la iteración nunca lanza.
+- **Sin stream, un 200 sin `choices` o con `error` contaba como éxito** (H). Ahora hace fallback.
+- **`credits:grant` creaba el workspace si no existía** (J): un typo acreditaba saldo a una cuenta nueva. Ahora solo `keys:create` crea workspaces.
+- **Con timeout se descartaba el `usage` reportado** (L). Decisión: se cobra lo reportado y solo se estima si no llegó (docs/03 actualizado).
+- **El chequeo de host usaba la URL que arma Next**, que fuera de Vercel es `localhost` (L). Ahora usa el header `Host`.
+
+### Lo que salió al integrar
+
+- **PGlite con protocolo de Postgres funciona con node-postgres:** no hizo falta el plan B con Neon ([ADR-0032](./adr/0032-postgres-node-postgres-y-pglite.md)).
+- **Con `cacheComponents`, Next 16 rechaza `export const runtime` y `dynamic`** en el build. Node ya es el default.
+- **El tope de precio y el mock:** el ask del mock ($0.01) era mayor que el costo del mock en el catálogo, así que el mock rechazaba todo con `no_provider_under_bid`. Hay una prueba de regresión.
+- **El escenario del mock no llegaba a través del gateway:** el catálogo mapeaba el mock a `mock/ok`, y el `model` tiene prioridad sobre `x_mock`. Los mapeos del mock ahora usan el mismo ID del modelo.
+- **Playwright tolera 1% de diferencia en píxeles:** un cambio de texto puede pasar con la captura vieja. Para cambios intencionales de texto, `--update-snapshots=all` sobre las páginas afectadas.
+
+### Prueba en vivo contra InferHub
+
+| Caso | Tokens (entrada / salida) | Cobrado | Costo upstream | Latencia |
+|---|---|---|---|---|
+| Qwen 3.8 Flash, sin stream | 30 / 1 | 10 µUSD | 10 µUSD | 1.0–2.6 s |
+| Qwen 3.8 Flash, con stream | 30 / 1 | 10 µUSD | 10 µUSD | 1.0 s |
+| DeepSeek V4.1 Flash, tools | 302 / 40 | 11 µUSD | 10 µUSD | 1.3 s |
+
+**En los requests mínimos el margen es 0:** el mínimo que cobramos (ADR-0030) es igual al de InferHub. El margen aparece cuando la fórmula por token supera los 10 µUSD.
+
+### Pendientes conocidos
+
+- **P2:** la key de InferHub solo para cheaptokens.wtf. Las pruebas en vivo usaron la de las herramientas del dueño, por variable de entorno y sin guardarla en ningún archivo.
+- **Rate limit en memoria:** es por instancia. Upstash llega con el plan de deploy.
+- **`CodeBlock`:** el botón de copiar tapa el final de la primera línea en bloques con líneas largas (los ejemplos SSE de `/docs`).
+- **Header en 360 px:** se desborda unos 40 px en las dos lenguas. Ya pasaba antes de este plan.
+- **`hreflang`:** apunta a `/en` y `/es`, no a la ruta actual. Ya pasaba antes de este plan.
+- **SDK de Python:** no está en las pruebas automáticas (sí el de JS).

@@ -4,13 +4,13 @@
 
 Objetivo: la base sobre la que todo lo demás se apoya.
 
-- [ ] Drizzle + Neon: esquema completo de [09 · Modelo de datos](./09-modelo-de-datos.md) y migraciones.
+- [x] Drizzle: esquema completo de [09 · Modelo de datos](./09-modelo-de-datos.md) y migraciones, con PGlite en local ([ADR-0032](./adr/0032-postgres-node-postgres-y-pglite.md)). Neon se conecta con el deploy.
 - [x] i18n: mover la app a `src/app/[lang]/`, diccionarios `en`/`es` y `proxy.ts` con redirección de idioma ([10 · i18n](./10-i18n.md)).
 - [ ] Clerk: login y registro localizados, `clerkMiddleware` en `proxy.ts`, verificación con `auth()` en las páginas privadas y creación perezosa del workspace.
-- [ ] Catálogo: `catalog/models.ts`, `catalog/upstreams.ts`, `pnpm catalog:sync` con validación de margen y tags calculados.
+- [x] Catálogo: `catalog/models.ts`, `catalog/upstreams.ts`, `pnpm catalog:sync` con validación de margen y tags calculados.
 - [x] Página pública `/[lang]/models` con filtros por tag ([14 · Plan](./14-plan-landing-y-catalogo.md)).
 - [ ] Key de InferHub solo para cheaptokens.wtf y catálogo de pruebas con 3–5 modelos ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)). El plan del gateway está en [15 · Plan](./15-plan-gateway.md).
-- [ ] Upstream simulado (`scripts/mock-upstream.ts`) para los tests automáticos y para probar el fallback ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)).
+- [x] Upstream simulado (`scripts/mock-upstream.ts`) para los tests automáticos y para probar el fallback ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)).
 - [ ] Registrar `cheaptokens.wtf` y configurar `cheaptokens.wtf` y `api.cheaptokens.wtf` en Vercel, con el header HSTS en la web ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)).
 
 ## Fase 1 · MVP (lanzamiento)
@@ -19,19 +19,19 @@ Objetivo: un desconocido se registra, recarga, crea una key y hace su primer req
 
 **Gateway**
 
-- [ ] `POST /v1/chat/completions` con y sin streaming, passthrough de parámetros, `include_usage` forzado, whitelist de campos y reescritura de `id`/`model`.
-- [ ] Autenticación por API key con validación local y lookup por hash.
-- [ ] Selección de upstream por prioridad y fallback antes del primer byte.
-- [ ] Cobro en `after()` en una transacción. Drenar el stream si el cliente se desconecta.
-- [ ] Rate limit por workspace (Upstash).
-- [ ] `GET /v1/models` público y cacheado.
-- [ ] Errores con formato OpenAI y `x-request-id`.
+- [x] `POST /v1/chat/completions` con y sin streaming, passthrough de parámetros, `include_usage` forzado, whitelist de campos y reescritura de `id`/`model`.
+- [x] Autenticación por API key con validación local y lookup por hash.
+- [x] Selección de upstream por prioridad y fallback antes del primer byte.
+- [x] Cobro en `after()` en una transacción. Drenar el stream si el cliente se desconecta.
+- [ ] Rate limit por workspace (Upstash). Hoy hay un rate limiter en memoria, por instancia: alcanza para desarrollo y pruebas.
+- [x] `GET /v1/models` público y cacheado.
+- [x] Errores con formato OpenAI y `x-request-id`.
 
 **Web**
 
 - [x] Landing (`/[lang]`), catálogo (`/[lang]/models`) y detalle de modelo (`/[lang]/models/[author]/[model]`), con datos de ejemplo. El detalle se adelantó de la fase 2 a pedido del dueño del producto ([14 · Plan](./14-plan-landing-y-catalogo.md)).
 - [ ] Dashboard: inicio con checklist, keys, créditos y uso.
-- [ ] `/docs` con quickstart.
+- [x] `/docs` con quickstart.
 - [ ] Términos (intermediario y uso aceptable trasladado) y aviso de privacidad, validados por un abogado mexicano ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
 
 **Pagos y operación**
