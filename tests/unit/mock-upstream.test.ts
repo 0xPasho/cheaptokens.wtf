@@ -140,9 +140,10 @@ describe("mock upstream: respuestas InferHub", () => {
 
   it("aplica los asks predeterminados también en streaming", async () => {
     const upstream = await start();
-    const response = await chat(upstream, { stream: true, messages: [{ content: "x".repeat(8000) }], x_mock: { chunks: 2 } });
+    // Con el ask default ($0.001 / $0.002 por 1M) hacen falta 20,000 tokens para pasar el mínimo de $0.00001.
+    const response = await chat(upstream, { stream: true, messages: [{ content: "x".repeat(80_000) }], x_mock: { chunks: 2 } });
     const payloads = streamPayloads(await response.text());
-    expect(payloads.at(-1)?.usage).toMatchObject({ prompt_tokens: 2000, completion_tokens: 10, cost: 0.0000202 });
+    expect(payloads.at(-1)?.usage).toMatchObject({ prompt_tokens: 20_000, completion_tokens: 10, cost: 0.00002002 });
   });
 
   it("admite asks en notación científica y cero chunks", async () => {
@@ -227,14 +228,14 @@ describe("mock upstream: errores y control de escenarios", () => {
   });
 
   it.each(["x-max-input-price", "x-max-output-price"])("rechaza un tope %s por debajo del ask", async (header) => {
-    const upstream = await start();
+    const upstream = await start({ askInputPer1M: 0.01, askOutputPer1M: 0.02 });
     const response = await chat(upstream, {}, { [header]: "0.009999999" });
     expect(response.status).toBe(402);
     expect(await response.json()).toMatchObject({ error: { code: "no_provider_under_bid", source: "inferhub", min_input_per_mtok: "0.01", min_output_per_mtok: "0.02" } });
   });
 
   it("acepta topes iguales o mayores y compara notación científica", async () => {
-    const upstream = await start();
+    const upstream = await start({ askInputPer1M: 0.01, askOutputPer1M: 0.02 });
     for (const headers of [
       { "x-max-input-price": "0.01", "x-max-output-price": "2e-2" },
       { "x-max-input-price": "0.02", "x-max-output-price": "0.03" },
@@ -504,5 +505,19 @@ describe("mock upstream: tiempos, registro y cierre", () => {
     await upstream.close();
     const replacement = await start({ port });
     expect(replacement.baseUrl).toBe(upstream.baseUrl);
+  });
+});
+
+describe("el mock y el catálogo", () => {
+  // Regresión: con el tope de precio, un costo de mapeo menor que el ask del mock lo rechaza todo (docs/15, ola 3).
+  it("todo costo de `mock` en catalog/upstreams.ts queda por encima del ask default del mock", async () => {
+    const { UPSTREAMS } = await import("@catalog/upstreams");
+    const { MOCK_DEFAULT_ASK_INPUT_PER_1M, MOCK_DEFAULT_ASK_OUTPUT_PER_1M } = await import("../helpers/mock-upstream");
+    const mock = UPSTREAMS.find((upstream) => upstream.id === "mock");
+    expect(mock).toBeDefined();
+    for (const mapping of mock!.models) {
+      expect(mapping.costInputPer1M).toBeGreaterThanOrEqual(MOCK_DEFAULT_ASK_INPUT_PER_1M * 1_000_000);
+      expect(mapping.costOutputPer1M).toBeGreaterThanOrEqual(MOCK_DEFAULT_ASK_OUTPUT_PER_1M * 1_000_000);
+    }
   });
 });

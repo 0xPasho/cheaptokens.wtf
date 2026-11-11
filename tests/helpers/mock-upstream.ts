@@ -12,6 +12,13 @@ export interface RecordedRequest {
   clientAborted: boolean;
 }
 
+/**
+ * Ask default del mock, en USD por 1M. Va por debajo de todo costo de `mock` en catalog/upstreams.ts:
+ * con el tope de precio (ADR-0028), un ask mayor haría que el mock rechazara todo con `no_provider_under_bid`.
+ */
+export const MOCK_DEFAULT_ASK_INPUT_PER_1M = 0.001;
+export const MOCK_DEFAULT_ASK_OUTPUT_PER_1M = 0.002;
+
 interface MockUpstreamOptions {
   port?: number;
   askInputPer1M?: number;
@@ -121,8 +128,8 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
   requests: RecordedRequest[];
   close(): Promise<void>;
 }> {
-  const askInput = options.askInputPer1M ?? 0.01;
-  const askOutput = options.askOutputPer1M ?? 0.02;
+  const askInput = options.askInputPer1M ?? MOCK_DEFAULT_ASK_INPUT_PER_1M;
+  const askOutput = options.askOutputPer1M ?? MOCK_DEFAULT_ASK_OUTPUT_PER_1M;
   const input = parsePrice(askInput.toString());
   const output = parsePrice(askOutput.toString());
   if (!input || !output || input.units < BigInt(0) || output.units < BigInt(0)) {
