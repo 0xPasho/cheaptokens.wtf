@@ -4,6 +4,14 @@ import { generateKey } from "@/lib/api-keys";
 import { apiKeys, workspaces } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 
+export async function findDevWorkspace(db: Db, name: string): Promise<{ id: string }> {
+  if (!name.trim()) throw new Error("Workspace name is required");
+  const [workspace] = await db.select({ id: workspaces.id }).from(workspaces)
+    .where(eq(workspaces.clerkUserId, `dev:${name}`));
+  if (!workspace) throw new Error(`Workspace "${name}" not found. Create it with pnpm keys:create.`);
+  return workspace;
+}
+
 export async function ensureDevWorkspace(db: Db, name: string): Promise<{ id: string }> {
   if (!name.trim()) throw new Error("Workspace name is required");
   const clerkUserId = `dev:${name}`;

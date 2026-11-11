@@ -1,6 +1,6 @@
 import "./_env";
 
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
@@ -29,9 +29,12 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   void main().catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : "Failed to create API key");
+    if (error instanceof Error && error.cause instanceof Error) {
+      console.error(error.cause.message);
+    }
     process.exitCode = 1;
   });
 }

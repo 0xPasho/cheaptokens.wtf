@@ -1,4 +1,9 @@
 // @vitest-environment node
+import { execFile } from "node:child_process";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { count, eq, sql } from "drizzle-orm";
@@ -10,7 +15,7 @@ import { hashKey, validateKeyFormat } from "@/lib/api-keys";
 import { chargeRequest, grantCredits, usdToMicroUsdExact } from "@/lib/billing/ledger";
 import { reconcile } from "@/lib/billing/reconcile";
 import type { RequestRecord } from "@/lib/billing/types";
-import { createApiKey, ensureDevWorkspace } from "@/lib/billing/workspaces";
+import { createApiKey, ensureDevWorkspace, findDevWorkspace } from "@/lib/billing/workspaces";
 import * as dbClient from "@/lib/db/client";
 import { migrateNodePostgres } from "@/lib/db/migrate";
 import * as schema from "@/lib/db/schema";
@@ -97,6 +102,32 @@ describe("billing ledger, workspaces and reconciliation", () => {
     const [key] = await db.select().from(apiKeys);
     expect(key.spentMicroUsd).toBe(BigInt(37));
     expect(key.lastUsedAt).toBeInstanceOf(Date);
+  });
+
+  it.each(["costMicroUsd", "upstreamCostMicroUsd", "officialCostMicroUsd"] as const)(
+    "rejects negative %s before opening a transaction",
+    async (field) => {
+      const transaction = vi.spyOn(testDb.db, "transaction");
+      await expect(chargeRequest(testDb.db, record(fixture, { [field]: BigInt(-1) })))
+        .rejects.toThrow(`${field} must not be negative`);
+      expect(transaction).not.toHaveBeenCalled();
+      expect(await testDb.db.select().from(requests)).toEqual([]);
+      expect(await testDb.db.select({ balance: workspaces.balanceMicroUsd }).from(workspaces))
+        .toEqual([{ balance: BigInt(0) }]);
+      expect(await testDb.db.select({ spent: apiKeys.spentMicroUsd, lastUsed: apiKeys.lastUsedAt }).from(apiKeys))
+        .toEqual([{ spent: BigInt(0), lastUsed: null }]);
+    },
+  );
+
+  it("rejects a zero adjustment before opening a transaction", async () => {
+    const transaction = vi.spyOn(testDb.db, "transaction");
+    await expect(grantCredits(testDb.db, {
+      workspaceId: fixture.workspace.id, amountMicroUsd: BigInt(0), note: "Zero",
+    })).rejects.toThrow("Credit adjustment amount must not be zero");
+    expect(transaction).not.toHaveBeenCalled();
+    expect(await testDb.db.select().from(creditTransactions)).toEqual([]);
+    expect(await testDb.db.select({ balance: workspaces.balanceMicroUsd }).from(workspaces))
+      .toEqual([{ balance: BigInt(0) }]);
   });
 
   it("records failed requests with zero cost and updates last use", async () => {
@@ -242,6 +273,31 @@ describe("billing ledger, workspaces and reconciliation", () => {
     await expect(ensureDevWorkspace(db, "  ")).rejects.toThrow("Workspace name is required");
   });
 
+  it("finds dev workspaces by exact Clerk ID without creating missing ones", async () => {
+    const { db } = testDb;
+    await db.insert(workspaces).values({ clerkUserId: "billing" });
+    const before = await db.select().from(workspaces);
+    expect(await findDevWorkspace(db, "billing")).toEqual(fixture.workspace);
+    await expect(findDevWorkspace(db, "bill")).rejects.toThrow(
+      'Workspace "bill" not found. Create it with pnpm keys:create.',
+    );
+    await expect(findDevWorkspace(db, "  ")).rejects.toThrow("Workspace name is required");
+    expect(await db.select().from(workspaces)).toEqual(before);
+  });
+
+  it("does not create or credit a workspace when the CLI name is mistyped", async () => {
+    const { db } = testDb;
+    vi.spyOn(dbClient, "getDb").mockReturnValue(db);
+    const close = vi.spyOn(dbClient, "closeDb").mockResolvedValue();
+    const before = await db.select().from(workspaces);
+    const { main } = await import("../../scripts/credits-grant");
+    await expect(main(["--workspace", "bill", "--usd", "100", "--note", "Typo"]))
+      .rejects.toThrow('Workspace "bill" not found. Create it with pnpm keys:create.');
+    expect(await db.select().from(workspaces)).toEqual(before);
+    expect(await db.select().from(creditTransactions)).toEqual([]);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it("returns a valid key once and stores only its matching hash, hint and limit", async () => {
     const { db } = testDb;
     const created = await createApiKey(db, { workspaceId: fixture.workspace.id, name: "Limited", spendLimitMicroUsd: BigInt(1234567) });
@@ -382,3 +438,75 @@ it("uses only tx inside billing transactions over the PGlite socket with a singl
     await client.close();
   }
 }, 15_000);
+
+
+// Los procesos reales comprueban la guardia principal y el código que observa un cron.
+it("runs all three CLIs through symlinks and reports failures with their causes", async () => {
+  const client = await PGlite.create();
+  const server = new PGLiteSocketServer({ db: client, host: "127.0.0.1", port: 0, maxConnections: 5 });
+  const directory = await mkdtemp(join(tmpdir(), "billing-cli-"));
+  let pool: Pool | undefined;
+  try {
+    await server.start();
+    const databaseUrl = `postgres://postgres:postgres@${server.getServerConn()}/postgres`;
+    pool = new Pool({ connectionString: databaseUrl });
+    const db = drizzle(pool, { schema });
+    await migrateNodePostgres(db);
+    for (const script of ["keys-create", "credits-grant", "reconcile"]) {
+      await symlink(resolve(`scripts/${script}.ts`), join(directory, `${script}.ts`));
+    }
+    const run = (script: string, args: string[] = []) => new Promise<{
+      code: number; stdout: string; stderr: string;
+    }>((resolveResult, reject) => {
+      execFile(process.execPath, ["--import", "tsx", join(directory, `${script}.ts`), ...args], {
+        env: { ...process.env, DATABASE_URL: databaseUrl, APP_ENV: "development", VERCEL_ENV: "development" },
+        timeout: 10_000,
+      }, (error, stdout, stderr) => {
+        const code = error ? error.code : 0;
+        if (typeof code !== "number") return reject(error);
+        resolveResult({ code, stdout, stderr });
+      });
+    });
+
+    const missing = await run("credits-grant", ["--workspace", "reb", "--usd", "100", "--note", "Typo"]);
+    expect(missing.code).toBe(1);
+    expect(missing.stderr).toContain('Workspace "reb" not found. Create it with pnpm keys:create.');
+    expect(await db.select().from(workspaces)).toEqual([]);
+    expect(await db.select().from(creditTransactions)).toEqual([]);
+
+    const created = await run("keys-create", ["--workspace", "cli"]);
+    expect(created.code).toBe(0);
+    expect(created.stdout.match(/wtf_[0-9A-Za-z]{49}/g)).toHaveLength(1);
+    const granted = await run("credits-grant", ["--workspace", "cli", "--usd", "1", "--note", "Test"]);
+    expect(granted.code).toBe(0);
+    expect(granted.stdout).toContain("Granted 1000000 micro USD");
+    const clean = await run("reconcile");
+    expect(clean.code).toBe(0);
+    expect(clean.stdout).toContain("Balance invariant: 0 mismatches");
+    await db.update(workspaces).set({ balanceMicroUsd: BigInt(0) });
+    const mismatched = await run("reconcile");
+    expect(mismatched.code).toBe(1);
+    expect(mismatched.stdout).toContain("Balance invariant: 1 mismatches");
+    expect(mismatched.stdout).toContain("expected 1000000, actual 0");
+
+    for (const [script, args] of [
+      ["keys-create", ["--workspace", "cli", "--limit-usd", "9223372036854.775808"]],
+      ["credits-grant", ["--workspace", "cli", "--usd", "9223372036854.775808", "--note", "Overflow"]],
+    ] as const) {
+      const failed = await run(script, [...args]);
+      expect(failed.code).toBe(1);
+      expect(failed.stderr).toContain("Failed query:");
+      expect(failed.stderr).toContain("out of range");
+    }
+    await db.execute(sql`alter table requests rename to unavailable_requests`);
+    const failed = await run("reconcile");
+    expect(failed.code).toBe(1);
+    expect(failed.stderr).toContain("Failed query:");
+    expect(failed.stderr).toContain('relation "requests" does not exist');
+  } finally {
+    await pool?.end();
+    await server.stop();
+    await client.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 30_000);

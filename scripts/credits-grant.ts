@@ -1,11 +1,11 @@
 import "./_env";
 
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { grantCredits, usdToMicroUsdExact } from "../src/lib/billing/ledger";
-import { ensureDevWorkspace } from "../src/lib/billing/workspaces";
+import { findDevWorkspace } from "../src/lib/billing/workspaces";
 import { closeDb, getDb } from "../src/lib/db/client";
 
 export async function main(args: string[] = process.argv.slice(2)): Promise<void> {
@@ -27,7 +27,7 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
   const amountMicroUsd = usdToMicroUsdExact(values.usd);
   try {
     const db = getDb();
-    const workspace = await ensureDevWorkspace(db, values.workspace);
+    const workspace = await findDevWorkspace(db, values.workspace);
     await grantCredits(db, { workspaceId: workspace.id, amountMicroUsd, note: values.note });
     console.log(`Granted ${amountMicroUsd} micro USD to workspace ${workspace.id}.`);
   } finally {
@@ -35,9 +35,12 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   void main().catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : "Failed to grant credits");
+    if (error instanceof Error && error.cause instanceof Error) {
+      console.error(error.cause.message);
+    }
     process.exitCode = 1;
   });
 }

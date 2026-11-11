@@ -5,6 +5,9 @@ import { apiKeys, creditTransactions, requests, workspaces } from "@/lib/db/sche
 import type { ChargeRequest, GrantCredits } from "./types";
 
 export const chargeRequest: ChargeRequest = async (db, record) => {
+  for (const field of ["costMicroUsd", "upstreamCostMicroUsd", "officialCostMicroUsd"] as const) {
+    if (record[field] < BigInt(0)) throw new Error(`${field} must not be negative`);
+  }
   await db.transaction(async (tx) => {
     await tx.insert(requests).values(record);
     const [workspace] = await tx.update(workspaces).set({
@@ -21,6 +24,7 @@ export const chargeRequest: ChargeRequest = async (db, record) => {
 };
 
 export const grantCredits: GrantCredits = async (db, input) => {
+  if (input.amountMicroUsd === BigInt(0)) throw new Error("Credit adjustment amount must not be zero");
   if (!input.note.trim()) throw new Error("Credit adjustment note is required");
   await db.transaction(async (tx) => {
     await tx.insert(creditTransactions).values({
