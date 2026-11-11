@@ -158,7 +158,7 @@ El cálculo de latencia: la key y el rate limit corren en paralelo y la base est
 - **Errores a mitad del stream:** algunos upstreams los mandan con HTTP 200, como un chunk con `error`. El gateway los traduce a nuestro chunk de error ([04 · API › Streaming](./04-api.md#streaming)). Un stream sin contenido ni `usage` cuenta como falla.
 - **Costo upstream:** si el `usage` del upstream trae `cost` (InferHub lo trae), ese es el costo que se guarda. Si no, se calcula con el costo del mapeo. En los dos casos, el campo se quita de la respuesta.
 - **Si el cliente se desconecta:** el gateway **sigue leyendo el stream del upstream hasta el final**, sin escribir al cliente, para obtener `usage` y cobrar lo que el upstream nos va a cobrar. La lectura queda registrada con `after()` y respeta `maxDuration`. Ver [ADR-0013](./adr/0013-medicion-con-usage-upstream.md).
-- **Duración.** El route handler exporta `maxDuration = 800` (máximo de Fluid compute en Vercel Pro). Un stream que dure más se corta, se registra como `upstream_timeout` y se cobra lo estimado.
+- **Duración.** El route handler exporta `maxDuration = 800` (máximo de Fluid compute en Vercel Pro). Un stream que dure más se corta y se registra como `upstream_timeout`. Se cobra el `usage` que el upstream haya reportado y, si no llegó, lo estimado ([ADR-0013](./adr/0013-medicion-con-usage-upstream.md)).
 
 ## Timeouts
 
