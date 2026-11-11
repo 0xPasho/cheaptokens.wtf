@@ -178,7 +178,7 @@ export const es: Dictionary = {
         upstream_timeout: "El modelo tardó demasiado en empezar a responder",
       },
       requestId:
-        "Toda respuesta trae el header `x-request-id`. Si necesitas ayuda con un request, mándanos ese ID.",
+        "Toda respuesta de `/v1/chat/completions`, incluidos los errores, trae el header `x-request-id`. Si necesitas ayuda con un request, mándanos ese ID.",
     },
     rateLimit: {
       title: "Rate limit",

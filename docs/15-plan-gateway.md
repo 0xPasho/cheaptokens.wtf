@@ -292,7 +292,7 @@ El plan está terminado cuando se cumple todo esto:
 - [ ] Revocar una key hace fallar el request siguiente.
 - [ ] Poner `ops_disabled_at` en el mapeo de InferHub mueve el tráfico al mock en 60 s o menos.
 - [ ] Hay una prueba automática que demuestra que ninguna respuesta revela al upstream.
-- [ ] `pnpm check` y `pnpm test:e2e` pasan. Las únicas capturas que cambiaron son las del descuento de Haiku.
+- [ ] `pnpm check` y `pnpm test:e2e` pasan. Las únicas capturas que cambiaron son las del descuento de Haiku, las nuevas de `/docs` y las del link a Docs en el header y el footer (paquete R).
 - [ ] El roadmap ([11](./11-roadmap.md)) marca lo que se cerró.
 
 ## 7. Después de este plan

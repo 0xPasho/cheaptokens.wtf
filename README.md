@@ -26,12 +26,14 @@ cp .env.example .env.local     # los valores de ejemplo ya funcionan en local
 pnpm db:dev                    # terminal 1: Postgres local (PGlite) en 127.0.0.1:5433, datos en .pglite/
 pnpm mock:upstream             # terminal 2: upstream simulado en 127.0.0.1:4010
 
-pnpm db:migrate                # crea las tablas
-pnpm catalog:sync              # carga catalog/ en la base
+pnpm catalog:sync              # carga catalog/ en la base (db:dev ya aplicó las migraciones)
 pnpm keys:create -- --workspace demo            # imprime la key wtf_ una sola vez
+export CHEAPTOKENS_API_KEY=wtf_...              # la key que imprimió el paso anterior
 pnpm credits:grant -- --workspace demo --usd 5 --note "prueba local"
 pnpm dev                       # terminal 3
 ```
+
+`catalog:sync` avisa que no revalidó el catálogo si `INTERNAL_REVALIDATE_SECRET` está vacío. En local es normal. Contra una base que no levantó `db:dev` (Neon), corre antes `pnpm db:migrate`.
 
 ```bash
 curl http://localhost:3000/v1/chat/completions \

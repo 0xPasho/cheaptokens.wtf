@@ -178,7 +178,7 @@ export const en = {
         upstream_timeout: "The model took too long to start responding",
       },
       requestId:
-        "Every response has an `x-request-id` header. If you need help with a request, send us that ID.",
+        "Every response from `/v1/chat/completions`, errors included, has an `x-request-id` header. If you need help with a request, send us that ID.",
     },
     rateLimit: {
       title: "Rate limit",
