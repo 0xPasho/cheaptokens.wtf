@@ -10,7 +10,9 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 
 async function main(): Promise<void> {
   const db = await PGlite.create(resolve(".pglite"));
-  const server = new PGLiteSocketServer({ db, host: "127.0.0.1", port: 5433, maxConnections: 1 });
+  // Varias conexiones para que los scripts (reconcile, keys:create…) corran mientras `next dev` está arriba.
+  // Lo que evita los errores del multiplexor es que cada proceso use un pool de una conexión (src/lib/db/client.ts).
+  const server = new PGLiteSocketServer({ db, host: "127.0.0.1", port: 5433, maxConnections: 8 });
   let closing: Promise<void> | undefined;
 
   function close(): Promise<void> {
