@@ -10,7 +10,7 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 
 async function main(): Promise<void> {
   const db = await PGlite.create(resolve(".pglite"));
-  const server = new PGLiteSocketServer({ db, host: "127.0.0.1", port: 5433, maxConnections: 10 });
+  const server = new PGLiteSocketServer({ db, host: "127.0.0.1", port: 5433, maxConnections: 1 });
   let closing: Promise<void> | undefined;
 
   function close(): Promise<void> {
