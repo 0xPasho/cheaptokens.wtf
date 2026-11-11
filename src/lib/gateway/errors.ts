@@ -22,17 +22,28 @@ const PROVIDER_NAMES = [
   "moonshot", "minimax", "kiro", "codex", "cohere", "mistral", "groq", "together",
   "fireworks", "replicate", "perplexity", "huggingface", "siliconflow", "chutes",
   "cerebras", "nvidia", "baidu", "tencent", "volcengine", "bytedance", "sambanova",
+  "alicn", "litellm",
 ];
+const COMMON_WORD_PROVIDER_NAMES = new Set(["cohere", "together", "replicate", "perplexity", "vertex", "bedrock", "fireworks", "chutes"]);
+// No une palabras normales para buscar marcas que también son palabras comunes.
+const PROVIDER_PATTERN = new RegExp(`\\b(?:${PROVIDER_NAMES.map((name) => COMMON_WORD_PROVIDER_NAMES.has(name)
+  ? name
+  : name.split("").join("[\\s_.-]*")).join("|")})\\b`, "i");
+const GATEWAY_MESSAGES = new Set(Object.values(DEFAULT_MESSAGES));
 const GENERIC_PARAMETER_MESSAGE = "The model rejected the request parameters.";
 
 function isSafeMessage(message: string): boolean {
   if (message.trim() === "" || message.length > 300 || /[\p{Cc}\p{Cf}]/u.test(message)) return false;
-  const normalized = message.normalize("NFKC").toLowerCase().replace(/[\s_.-]/g, "");
-  if (PROVIDER_NAMES.some((name) => normalized.includes(name))) return false;
-  if (/(?:[a-z][a-z\d+.-]*:\/\/|www\.|\/\/[a-z\d]|(?:[a-z\d-]+\.)+(?:com|net|org|dev|io|ai|cloud|app|co|cn|wtf)\b)/i.test(message)) return false;
-  if (/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}/i.test(message)) return false;
-  if (/(?:0x)?[\da-f]{16,}/i.test(message)) return false;
-  return !/request[_ -]?id/i.test(message);
+  const normalized = message.normalize("NFKC");
+  if (PROVIDER_PATTERN.test(normalized)) return false;
+  if (/(?:[a-z][a-z\d+.-]*:\/\/|www\.|\/\/[a-z\d]|\b[a-z\d-]+(?:\.[a-z\d-]+)+\b)/i.test(normalized)) return false;
+  if (/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/.test(normalized)) return false;
+  if (/\b[\w.-]+\/[\w.:-]+/.test(normalized)) return false;
+  if (/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}/i.test(normalized)) return false;
+  if (/(?:0x)?[\da-f]{16,}/i.test(normalized)) return false;
+  const tokens = normalized.match(/[a-z\d_-]{8,}/gi) ?? [];
+  if (tokens.some((token) => /[a-z]/i.test(token) && /\d/.test(token))) return false;
+  return !/request[_ -]?id/i.test(normalized);
 }
 
 function upstreamError(body: unknown): Record<string, unknown> | null {
@@ -46,7 +57,8 @@ function upstreamError(body: unknown): Record<string, unknown> | null {
 export function errorBody(code: GatewayErrorCode, message?: string): GatewayErrorBody {
   return {
     error: {
-      message: message !== undefined && isSafeMessage(message) ? message : DEFAULT_MESSAGES[code],
+      // Los mensajes propios ya son públicos; uno incluye la URL para recargar saldo.
+      message: message !== undefined && (GATEWAY_MESSAGES.has(message) || isSafeMessage(message)) ? message : DEFAULT_MESSAGES[code],
       type: code,
       code,
     },
@@ -59,7 +71,10 @@ export function errorResponse(
 ): Response {
   const headers = new Headers({ "content-type": "application/json; charset=utf-8" });
   if (options.requestId !== undefined) headers.set("x-request-id", options.requestId);
-  if (options.retryAfterSeconds !== undefined) headers.set("retry-after", String(options.retryAfterSeconds));
+  if (options.retryAfterSeconds !== undefined) {
+    const seconds = Number.isFinite(options.retryAfterSeconds) ? Math.max(1, Math.ceil(options.retryAfterSeconds)) : 1;
+    headers.set("retry-after", String(seconds));
+  }
   return new Response(JSON.stringify(errorBody(code, options.message)), {
     status: GATEWAY_ERROR_STATUS[code],
     headers,
@@ -80,6 +95,7 @@ export function streamErrorChunk(ctx: ResponseContext): Record<string, unknown> 
 export function upstreamErrorCode(body: unknown): string | null {
   const error = upstreamError(body);
   if (typeof error?.code === "string" && error.code !== "") return error.code;
+  if (typeof error?.code === "number" && Number.isFinite(error.code)) return String(error.code);
   return typeof error?.type === "string" && error.type !== "" ? error.type : null;
 }
 

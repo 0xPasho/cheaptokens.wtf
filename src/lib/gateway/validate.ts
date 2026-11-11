@@ -17,12 +17,12 @@ export function validateChatRequest(body: unknown): ChatRequestValidation {
   if (body.messages.some((message) => !isObject(message) || typeof message.role !== "string")) {
     return { ok: false, message: "Each message must be an object with a string 'role'." };
   }
-  if ("stream" in body && typeof body.stream !== "boolean") {
+  if ("stream" in body && body.stream !== null && typeof body.stream !== "boolean") {
     return { ok: false, message: "The 'stream' field must be a boolean." };
   }
 
   let includeUsage = false;
-  if ("stream_options" in body) {
+  if ("stream_options" in body && body.stream_options !== null) {
     if (!isObject(body.stream_options)) {
       return { ok: false, message: "The 'stream_options' field must be an object." };
     }

@@ -18,7 +18,8 @@ function copyStrings(source: Record<string, unknown>, keys: readonly string[]): 
 
 function sanitizeToolCall(value: unknown): Record<string, unknown> | null {
   if (!isObject(value)) return null;
-  const result = copyStrings(value, ["id", "type"]);
+  const result = copyStrings(value, ["id"]);
+  if ("type" in value) result.type = "function";
   if (isCount(value.index)) result.index = value.index;
   if (isObject(value.function)) {
     const fn = copyStrings(value.function, ["name", "arguments"]);
@@ -29,7 +30,10 @@ function sanitizeToolCall(value: unknown): Record<string, unknown> | null {
 
 function sanitizeMessage(value: unknown): Record<string, unknown> | null {
   if (!isObject(value)) return null;
-  const result = copyStrings(value, ["role", "reasoning_content"]);
+  const result = copyStrings(value, ["reasoning_content"]);
+  if ("role" in value) {
+    result.role = value.role === "tool" || value.role === "function" ? value.role : "assistant";
+  }
   for (const key of ["content", "refusal"]) {
     if (typeof value[key] === "string" || value[key] === null) result[key] = value[key];
   }
@@ -68,13 +72,11 @@ function sanitizeLogprobs(value: unknown): Record<string, unknown> | null {
 function sanitizeChoices(upstream: unknown, field: "message" | "delta"): Record<string, unknown>[] {
   if (!isObject(upstream) || !Array.isArray(upstream.choices)) return [];
   const choices: Record<string, unknown>[] = [];
-  for (const value of upstream.choices) {
+  for (const [position, value] of upstream.choices.entries()) {
     if (!isObject(value)) continue;
-    const choice: Record<string, unknown> = {};
-    if (isCount(value.index)) choice.index = value.index;
-    if (typeof value.finish_reason === "string" || value.finish_reason === null) {
-      choice.finish_reason = value.finish_reason;
-    }
+    // El SDK acumula por índice, incluso si el proveedor lo omitió.
+    const choice: Record<string, unknown> = { index: isCount(value.index) ? value.index : position };
+    if ("finish_reason" in value) choice.finish_reason = sanitizeFinishReason(value.finish_reason);
     const message = sanitizeMessage(value[field]);
     if (message !== null) choice[field] = message;
     const logprobs = sanitizeLogprobs(value.logprobs);
@@ -87,6 +89,23 @@ function sanitizeChoices(upstream: unknown, field: "message" | "delta"): Record<
     }
   }
   return choices;
+}
+
+function sanitizeFinishReason(value: unknown): string | null {
+  switch (value) {
+    case null:
+    case "stop":
+    case "length":
+    case "tool_calls":
+    case "content_filter":
+    case "function_call":
+      return value;
+    case "max_tokens": return "length";
+    case "tool_use": return "tool_calls";
+    case "end_turn":
+    case "stop_sequence":
+    default: return "stop";
+  }
 }
 
 function responseFields(ctx: ResponseContext, object: string): Record<string, unknown> {

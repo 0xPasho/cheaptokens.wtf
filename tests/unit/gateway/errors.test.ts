@@ -9,6 +9,10 @@ import type { GatewayErrorCode } from "@/lib/gateway/types";
 const fixtures = JSON.parse(readFileSync(new URL("../../fixtures/inferhub/errors.json", import.meta.url), "utf8"));
 const codes = Object.keys(GATEWAY_ERROR_STATUS) as GatewayErrorCode[];
 const generic = "The model rejected the request parameters.";
+const headers = Object.fromEntries(readFileSync(new URL("../../fixtures/inferhub/response-headers.txt", import.meta.url), "utf8").trim().split("\n").map((line) => {
+  const colon = line.indexOf(":");
+  return [line.slice(0, colon), line.slice(colon + 1).trim()];
+}));
 
 describe("gateway errors", () => {
   it.each(codes)("returns an OpenAI error and the correct status for %s", async (code) => {
@@ -27,10 +31,22 @@ describe("gateway errors", () => {
     expect(errorBody("insufficient_credits").error.message).toBe("Insufficient credits. Top up at https://cheaptokens.wtf/dashboard/credits");
   });
 
-  it("includes supplied request and retry headers, including zero", async () => {
+  it.each(codes)("preserves the gateway default for %s when passed explicitly", (code) => {
+    const message = errorBody(code).error.message;
+    for (const outputCode of codes) expect(errorBody(outputCode, message).error.message).toBe(message);
+  });
+
+  it("includes supplied request and retry headers", async () => {
     const response = errorResponse("rate_limit_exceeded", { message: "Please try again later.", requestId: "req_public", retryAfterSeconds: 0 });
-    expect(Object.fromEntries(response.headers)).toEqual({ "content-type": "application/json; charset=utf-8", "x-request-id": "req_public", "retry-after": "0" });
+    expect(Object.fromEntries(response.headers)).toEqual({ "content-type": "application/json; charset=utf-8", "x-request-id": "req_public", "retry-after": "1" });
     expect(await response.json()).toEqual(errorBody("rate_limit_exceeded", "Please try again later."));
+  });
+
+  it.each([
+    [0, "1"], [-3, "1"], [0.2, "1"], [1.2, "2"], [10, "10"],
+    [NaN, "1"], [Infinity, "1"], [-Infinity, "1"],
+  ])("normalizes retry-after %s to %s", (retryAfterSeconds, expected) => {
+    expect(errorResponse("rate_limit_exceeded", { retryAfterSeconds }).headers.get("retry-after")).toBe(expected);
   });
 
   it("builds the documented stream error with public metadata", () => {
@@ -48,11 +64,14 @@ describe("upstream error code", () => {
     expect(upstreamErrorCode(fixtures.publisher_400)).toBe("invalid_parameter_error");
     expect(upstreamErrorCode(fixtures.model_not_found_404)).toBe("model_not_found");
     expect(upstreamErrorCode({ error: { code: "preferred", type: "ignored" } })).toBe("preferred");
-    expect(upstreamErrorCode({ error: { code: 123, type: "fallback" } })).toBe("fallback");
+    expect(upstreamErrorCode({ error: { code: 402, type: "fallback" } })).toBe("402");
+    expect(upstreamErrorCode({ error: { code: 0 } })).toBe("0");
+    expect(upstreamErrorCode({ error: { code: NaN, type: "fallback" } })).toBe("fallback");
+    expect(upstreamErrorCode({ error: { code: Infinity, type: "fallback" } })).toBe("fallback");
     expect(upstreamErrorCode({ error: { code: "", type: "fallback" } })).toBe("fallback");
   });
 
-  it.each([null, undefined, "error", [], {}, { error: null }, { error: [] }, { error: "error" }, { error: {} }, { error: { code: 1, type: false } }])("handles malformed body %j", (body) => {
+  it.each([null, undefined, "error", [], {}, { error: null }, { error: [] }, { error: "error" }, { error: {} }, { error: { code: false, type: false } }])("handles malformed body %j", (body) => {
     expect(upstreamErrorCode(body)).toBeNull();
     expect(sanitizeUpstreamClientMessage(body)).toBe(generic);
   });
@@ -71,8 +90,6 @@ describe("upstream client messages", () => {
   });
 
   it("does not copy response headers through any public error output", async () => {
-    const lines = readFileSync(new URL("../../fixtures/inferhub/response-headers.txt", import.meta.url), "utf8").trim().split("\n");
-    const headers = Object.fromEntries(lines.map((line) => { const colon = line.indexOf(":"); return [line.slice(0, colon), line.slice(colon + 1).trim()]; }));
     const body = { ...headers, error: { ...headers, message: "Invalid temperature.", source: "InferHub" } };
     const message = sanitizeUpstreamClientMessage(body);
     const response = errorResponse("invalid_request", { message });
@@ -82,10 +99,33 @@ describe("upstream client messages", () => {
     for (const key of Object.keys(headers)) expect(output).not.toContain(key);
   });
 
+  it.each(["x-inferhub-model", "x-inferhub-publisher", "x-inferhub-request-id", "x-inferhub-backend"])("rejects the identifier value of fixture header %s", (header) => {
+    const identifier = headers[header];
+    expect(identifier).toBeTruthy();
+    const message = `Request failed on ${identifier}`;
+    expect(sanitizeUpstreamClientMessage({ error: { message } })).toBe(generic);
+    expect(errorBody("invalid_request", message)).toEqual(errorBody("invalid_request"));
+    expect(sanitizeUpstreamClientMessage({ error: { message: "Invalid role.", param: identifier } })).toBe("Invalid role.");
+  });
+
+  it.each([
+    "The input must be coherent.", "These parameters cannot be used altogether.",
+    "Unable to get her input.", "The request is invalid.",
+  ])("preserves ordinary words and word boundaries in %j", (message) => {
+    expect(sanitizeUpstreamClientMessage({ error: { message } })).toBe(message);
+    expect(errorBody("invalid_request", message).error.message).toBe(message);
+  });
+
   it.each([
     "InferHub rejected the request.", "INFERHUB rejected the request.", "infer-hub rejected the request.",
     "OpenRouter", "Qwencloud/Alibaba CN", "Aliyun DashScope", "Anthropic", "OpenAI", "Google Vertex",
     "Bedrock", "Azure", "DeepSeek", "Zhipu", "Moonshot", "MiniMax", "Kiro", "Codex", "Groq",
+    "Cohere", "Together", "alicn", "LiteLLM",
+    "The model alicn/glm-5 does not support tools", "Unknown model cc/claude-sonnet-4-6",
+    fixtures.model_not_found_404.error.message, "Unknown model custom-prefix/custom.model:v2",
+    "node-acdc87131a", "f56bbe23", "req_011CSHoEeqs5C35K2UUqR7Fy", "gen-1736975553-Kq7uLzHTb3tFPDXKRQ3A",
+    "10.2.3.4:8443", "10.2.3.4", "backend-3.svc.cluster.local", "backend.internal", "host.customtld",
+    "a1b2c3d4", "1234567x", "x1234567", "ab_cd-12",
     "See https://internal.example/path", "See http://internal.example", "See www.example.com", "See api.example.dev/docs",
     "See ftp://internal/path", "See //internal/path",
     "Internal dca0748a-8885-909d-ad85-06b118210e33", "Internal dbe38640c4a8082b", "Internal 0xabcdef0123456789",

@@ -17,6 +17,24 @@ describe("validateChatRequest", () => {
     expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage });
   });
 
+  it.each([
+    { stream: null }, { stream_options: null }, { stream: null, stream_options: null },
+    { stream: false, stream_options: null },
+  ])("treats nullable streaming fields as absent: %j", (fields) => {
+    const body = { ...valid, ...fields };
+    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: false, includeUsage: false });
+  });
+
+  it("accepts null stream_options while streaming", () => {
+    const body = { ...valid, stream: true, stream_options: null };
+    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage: false });
+  });
+
+  it("accepts include_usage with null stream", () => {
+    expect(validateChatRequest({ ...valid, stream: null, stream_options: { include_usage: true } }))
+      .toMatchObject({ ok: true, stream: false, includeUsage: true });
+  });
+
   it.each([null, undefined, [], "body", 42, true])("rejects non-object body %j", (body) => {
     expect(validateChatRequest(body)).toEqual({ ok: false, message: "The request body must be a JSON object." });
   });
@@ -29,11 +47,11 @@ describe("validateChatRequest", () => {
     expect(validateChatRequest({ ...valid, messages }).ok).toBe(false);
   });
 
-  it.each([null, undefined, "true", 1, {}, []])("rejects non-boolean stream %j", (stream) => {
+  it.each([undefined, "true", 1, {}, []])("rejects non-boolean stream %j", (stream) => {
     expect(validateChatRequest({ ...valid, stream })).toEqual({ ok: false, message: "The 'stream' field must be a boolean." });
   });
 
-  it.each([null, undefined, true, [], "options", { include_usage: null }, { include_usage: undefined }, { include_usage: "true" }, { include_usage: 1 }])("rejects invalid stream options %j", (stream_options) => {
+  it.each([undefined, true, [], "options", { include_usage: null }, { include_usage: undefined }, { include_usage: "true" }, { include_usage: 1 }])("rejects invalid stream options %j", (stream_options) => {
     expect(validateChatRequest({ ...valid, stream_options }).ok).toBe(false);
   });
 

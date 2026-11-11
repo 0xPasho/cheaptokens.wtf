@@ -93,6 +93,12 @@ describe("SSE protocol", () => {
     }
   });
 
+  it.each(["data: partial", "data: partial\n", "data: partial\r\n"])("discards the final event without an empty line when reading %j", async (tail) => {
+    const body = streamOf(encoder.encode(`data: complete\n\n${tail}`), 1);
+    expect(await Array.fromAsync(readSseEvents(body))).toEqual([{ type: "data", data: "complete" }]);
+    expect(body.locked).toBe(false);
+  });
+
   it("emits complete events without waiting for the stream to finish", async () => {
     const body = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(encoder.encode("data: first\n\n")); } });
     const iterator = readSseEvents(body)[Symbol.asyncIterator]();
@@ -108,7 +114,7 @@ describe("SSE protocol", () => {
     expect(body.locked).toBe(false);
   });
 
-  it("releases without cancelling when the consumer stops early", async () => {
+  it("cancels and releases the reader when the consumer stops early", async () => {
     const cancel = vi.fn();
     const body = new ReadableStream<Uint8Array>({
       start(controller) { controller.enqueue(encoder.encode("data: first\n\n")); },
@@ -119,7 +125,33 @@ describe("SSE protocol", () => {
       break;
     }
     expect(body.locked).toBe(false);
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(undefined);
+  });
+
+  it("releases the reader even when cancellation fails", async () => {
+    const failure = new Error("cancel failed");
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(encoder.encode("data: first\n\n")); },
+      cancel() { throw failure; },
+    });
+    const iterator = readSseEvents(body)[Symbol.asyncIterator]();
+    await iterator.next();
+    await expect(iterator.return?.()).rejects.toThrow(failure);
+    expect(body.locked).toBe(false);
+  });
+
+  it("does not cancel a stream that was read to completion", async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode("data: complete\n\n"));
+        controller.close();
+      },
+      cancel,
+    });
+    expect(await Array.fromAsync(readSseEvents(body))).toEqual([{ type: "data", data: "complete" }]);
     expect(cancel).not.toHaveBeenCalled();
+    expect(body.locked).toBe(false);
   });
 
   it("encodes JSON and exposes safe framing constants", () => {

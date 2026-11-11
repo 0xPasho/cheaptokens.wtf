@@ -81,6 +81,49 @@ describe("response whitelist", () => {
   }));
   const extras = { ...headers, provider: "InFeRhUb", request_id: "internal", system_fingerprint: "secret", service_tier: "private", reasoning: "private", thinking: "private" };
 
+  it.each(["message", "delta"] as const)("restricts roles and tool types in %s to OpenAI values", (field) => {
+    for (const role of ["assistant", "tool", "function", "inferhub-assistant", "user", "system", "developer", "", null, 7]) {
+      for (const type of ["function", "inferhub-tool", "custom", null, 7]) {
+        const payload = { choices: [{ [field]: { role, tool_calls: [{ type, function: { name: "weather", arguments: "{}" } }] } }] };
+        const result = field === "message" ? sanitizeCompletion(payload, ctx) : sanitizeChunk(payload, ctx);
+        expect(result).toHaveProperty(`choices.0.${field}`, {
+          role: role === "tool" || role === "function" ? role : "assistant",
+          tool_calls: [{ type: "function", function: { name: "weather", arguments: "{}" } }],
+        });
+      }
+    }
+  });
+
+  it.each(["message", "delta"] as const)("normalizes finish_reason in %s without exposing upstream values", (field) => {
+    const reasons: [unknown, string | null][] = [
+      ["stop", "stop"], ["length", "length"], ["tool_calls", "tool_calls"],
+      ["content_filter", "content_filter"], ["function_call", "function_call"], [null, null],
+      ["end_turn", "stop"], ["stop_sequence", "stop"], ["max_tokens", "length"], ["tool_use", "tool_calls"],
+      ["inferhub-finish", "stop"], ["", "stop"], [42, "stop"], [{ source: "inferhub" }, "stop"],
+    ];
+    for (const [finish_reason, expected] of reasons) {
+      const payload = { choices: [{ [field]: { content: "Hola" }, finish_reason }] };
+      const result = field === "message" ? sanitizeCompletion(payload, ctx) : sanitizeChunk(payload, ctx);
+      expect(result).toHaveProperty("choices.0.finish_reason", expected);
+    }
+  });
+
+  it.each(["message", "delta"] as const)("assigns missing choice indices by their original array position in %s", (field) => {
+    const payload = { choices: [
+      { [field]: { content: "First" } }, null,
+      { index: 7, [field]: { content: "Explicit" } },
+      { [field]: { content: "Last" } },
+      { index: -1, [field]: { content: "Invalid index" } },
+    ] };
+    const result = field === "message" ? sanitizeCompletion(payload, ctx) : sanitizeChunk(payload, ctx);
+    expect(result).toHaveProperty("choices", [
+      { index: 0, [field]: { content: "First" } },
+      { index: 7, [field]: { content: "Explicit" } },
+      { index: 3, [field]: { content: "Last" } },
+      { index: 4, [field]: { content: "Invalid index" } },
+    ]);
+  });
+
   it.each(["message", "delta"] as const)("sanitizes nested %s, tools and logprobs", (field) => {
     const upstream = {
       ...extras, id: "chatcmpl-upstream", model: "internal/model", object: "private", created: 999,

@@ -68,15 +68,23 @@ export function createSseParser(): SseParser {
 export async function* readSseEvents(body: ReadableStream<Uint8Array>): AsyncIterable<SseEvent> {
   const parser = createSseParser();
   const reader = body.getReader();
+  let completed = false;
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        completed = true;
+        break;
+      }
       yield* parser.push(value);
     }
     yield* parser.flush();
   } finally {
-    // No se cancela: el consumidor puede necesitar drenar para medir el uso.
-    reader.releaseLock();
+    try {
+      // Una iteración abandonada ya no tiene consumidor que pueda drenar el stream.
+      if (!completed) await reader.cancel();
+    } finally {
+      reader.releaseLock();
+    }
   }
 }
