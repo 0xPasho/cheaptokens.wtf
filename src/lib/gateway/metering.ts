@@ -13,9 +13,17 @@ type TokenPrices = { input: bigint; output: bigint };
 
 /** Convierte el decimal reportado por el upstream antes de hacer cualquier redondeo. */
 export function usdToMicroUsdCeil(value: number | string): bigint {
+  if (typeof value === "string" && value.length > 64) {
+    throw new RangeError("USD amount must not exceed 64 characters");
+  }
   const decimal = String(value).trim();
   const match = /^([+-]?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/.exec(decimal);
   if (!match) throw new RangeError("USD amount must be a finite, non-negative decimal");
+
+  const exponent = BigInt(match[5] ?? "0");
+  if (exponent < BigInt(-30) || exponent > BigInt(30)) {
+    throw new RangeError("USD exponent must be between -30 and 30");
+  }
 
   const fraction = match[3] ?? match[4] ?? "";
   const digits = `${match[2] ?? ""}${fraction}`.replace(/^0+/, "");
@@ -23,10 +31,10 @@ export function usdToMicroUsdCeil(value: number | string): bigint {
   if (match[1] === "-") throw new RangeError("USD amount must not be negative");
 
   const coefficient = BigInt(digits);
-  const scale = BigInt(match[5] ?? "0") - BigInt(fraction.length) + BigInt(6);
+  const scale = exponent - BigInt(fraction.length) + BigInt(6);
   if (scale >= ZERO) return coefficient * TEN ** scale;
 
-  // Un decimal positivo menor a un µUSD siempre redondea a uno, aun con exponentes extremos.
+  // Un decimal positivo menor a un µUSD siempre redondea a uno.
   if (-scale >= BigInt(digits.length)) return ONE;
   const divisor = TEN ** -scale;
   return (coefficient + divisor - ONE) / divisor;
@@ -60,6 +68,9 @@ export function chargeForTokens(
 }
 
 export function estimateTokens(chars: number): number {
+  if (!Number.isFinite(chars) || chars < 0) {
+    throw new RangeError("Character count must be finite and non-negative");
+  }
   return Math.ceil(chars / 4);
 }
 
@@ -67,8 +78,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function createUsageAccumulator(): UsageAccumulator {
+export function createUsageAccumulator(): UsageAccumulator & { upstreamCost(): bigint | null } {
   let usage: Usage | null = null;
+  let hasTokens = false;
 
   return {
     observe(payload) {
@@ -88,8 +100,14 @@ export function createUsageAccumulator(): UsageAccumulator {
 
         const promptTokens = incoming.prompt_tokens;
         const completionTokens = incoming.completion_tokens;
-        if (isTokenCount(promptTokens)) usage.promptTokens = promptTokens;
-        if (isTokenCount(completionTokens)) usage.completionTokens = completionTokens;
+        if (isTokenCount(promptTokens)) {
+          usage.promptTokens = promptTokens;
+          hasTokens = true;
+        }
+        if (isTokenCount(completionTokens)) {
+          usage.completionTokens = completionTokens;
+          hasTokens = true;
+        }
 
         const promptDetails = incoming.prompt_tokens_details;
         const completionDetails = incoming.completion_tokens_details;
@@ -107,7 +125,11 @@ export function createUsageAccumulator(): UsageAccumulator {
       }
     },
     result() {
-      return usage === null ? null : { ...usage };
+      return usage === null || !hasTokens ? null : { ...usage };
+    },
+    upstreamCost() {
+      // El handler necesita conservar este costo aunque deba estimar los tokens.
+      return usage?.upstreamCostMicroUsd ?? null;
     },
   };
 }

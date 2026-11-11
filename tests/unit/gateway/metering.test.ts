@@ -24,15 +24,18 @@ describe("usdToMicroUsdCeil", () => {
     [0, "0"],
     [-0, "0"],
     [1e-7, "1"],
-    [5e-324, "1"],
+    [1e-30, "1"],
     [1e21, "1000000000000000000000000000"],
     ["0.00061484904", "615"],
     ["0.00001000000000000000000000001", "11"],
     ["0.00000999999999999999999999999", "10"],
     ["1e-5", "10"],
     ["6.1484904E-4", "615"],
-    ["1e-1000000", "1"],
-    ["0e999999999999999999999", "0"],
+    ["1e+30", `1${"0".repeat(36)}`],
+    ["1e-30", "1"],
+    ["0e30", "0"],
+    ["0e-30", "0"],
+    ["1".padStart(64, "0"), "1000000"],
     ["9007199254740993.0000001", "9007199254740993000001"],
     ["1.234567e+2", "123456700"],
     ["  +.00001  ", "10"],
@@ -45,6 +48,14 @@ describe("usdToMicroUsdCeil", () => {
     -1, -1e-7, NaN, Infinity, -Infinity,
     "-0.000001", "-1e-1000000", "NaN", "Infinity", "", " ", "1e", "0x10", "1,2", "1.2.3", "--1",
   ])("rechaza el monto inválido %s", (value) => {
+    expect(() => usdToMicroUsdCeil(value)).toThrow(RangeError);
+  });
+
+  it.each([
+    "1".repeat(65), "1".padStart(65, " "),
+    "1e31", "1e-31", "0e31", "0e-31", "1e100000000", "1e-100000000",
+    "0e999999999999999999999", 1e31, 5e-324,
+  ])("rechaza entradas fuera de los límites: %s", (value) => {
     expect(() => usdToMicroUsdCeil(value)).toThrow(RangeError);
   });
 });
@@ -116,6 +127,10 @@ describe("estimateTokens", () => {
       expect(estimateTokens(chars)).toBe(tokens);
     },
   );
+
+  it.each([NaN, Infinity, -Infinity, -1, -0.5])("rechaza caracteres inválidos: %s", (chars) => {
+    expect(() => estimateTokens(chars)).toThrow(RangeError);
+  });
 });
 
 describe("createUsageAccumulator", () => {
@@ -156,18 +171,55 @@ describe("createUsageAccumulator", () => {
   it("devuelve null si no llegó ningún objeto usage", () => {
     const accumulator = createUsageAccumulator();
     expect(accumulator.result()).toBeNull();
+    expect(accumulator.upstreamCost()).toBeNull();
     for (const payload of [undefined, null, true, 12, "garbage", [], {}, { usage: null }, { usage: [] }, { usage: "bad" }]) {
       expect(() => accumulator.observe(payload)).not.toThrow();
     }
     expect(accumulator.result()).toBeNull();
   });
 
-  it("inicializa un usage parcial y conserva ausentes como cero o null", () => {
+  it("conserva el costo sin tokens para usarlo cuando el handler estima", () => {
     const accumulator = createUsageAccumulator();
     accumulator.observe({ usage: { cost: "1e-5" } });
+    expect(accumulator.result()).toBeNull();
+    expect(accumulator.upstreamCost()).toBe(BigInt(10));
+    accumulator.observe({ usage: {} });
+    accumulator.observe({ usage: { cost: "1e100000000" } });
+    expect(accumulator.result()).toBeNull();
+    expect(accumulator.upstreamCost()).toBe(BigInt(10));
+    accumulator.observe({ usage: { cost: "0" } });
+    expect(accumulator.result()).toBeNull();
+    expect(accumulator.upstreamCost()).toBe(BigInt(0));
+    accumulator.observe({ usage: { prompt_tokens: 4 } });
     expect(accumulator.result()).toEqual({
-      promptTokens: 0, completionTokens: 0, cachedTokens: null, reasoningTokens: null,
-      upstreamCostMicroUsd: BigInt(10), estimated: false,
+      promptTokens: 4, completionTokens: 0, cachedTokens: null, reasoningTokens: null,
+      upstreamCostMicroUsd: BigInt(0), estimated: false,
+    });
+  });
+
+  it.each([
+    {}, { prompt_tokens: -1, completion_tokens: "2" },
+    { prompt_tokens: NaN, completion_tokens: Infinity },
+    { prompt_tokens: 0.5, completion_tokens: Number.MAX_SAFE_INTEGER + 1 },
+    { prompt_tokens_details: { cached_tokens: 2 }, completion_tokens_details: { reasoning_tokens: 3 } },
+  ])("devuelve null si usage no trae tokens válidos: %j", (incoming) => {
+    const accumulator = createUsageAccumulator();
+    accumulator.observe({ usage: incoming });
+    expect(accumulator.result()).toBeNull();
+    expect(accumulator.upstreamCost()).toBeNull();
+  });
+
+  it.each([
+    [{ prompt_tokens: 4 }, 4, 0],
+    [{ completion_tokens: 2 }, 0, 2],
+    [{ prompt_tokens: 0 }, 0, 0],
+    [{ completion_tokens: 0 }, 0, 0],
+  ])("acepta un solo contador válido y usa cero para el ausente: %j", (incoming, promptTokens, completionTokens) => {
+    const accumulator = createUsageAccumulator();
+    accumulator.observe({ usage: incoming });
+    expect(accumulator.result()).toEqual({
+      promptTokens, completionTokens, cachedTokens: null, reasoningTokens: null,
+      upstreamCostMicroUsd: null, estimated: false,
     });
   });
 
