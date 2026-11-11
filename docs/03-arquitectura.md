@@ -133,7 +133,7 @@ Paso a paso:
 2. **Lookup.** `SHA-256(key)` se busca contra un índice único. Una sola query trae la key (revocada o no, límite y gastado) y su workspace (saldo, suspendido o no).
 3. **Rate limit** por workspace en Redis. Si se excede, `429` con `retry-after`.
 4. **Modelo.** Se busca en el catálogo, que vive cacheado en memoria por 60 s. Si no existe, `404 model_not_found`. Si está `retired`, `410 model_retired`.
-5. **Saldo y límites.** Sin saldo, `402 insufficient_credits`. Con la key en su límite, `403 key_limit_exceeded`. Con el workspace suspendido, `403 account_suspended`.
+5. **Saldo y límites,** en este orden: con el workspace suspendido, `403 account_suspended`; sin saldo, `402 insufficient_credits`; con la key en su límite, `403 key_limit_exceeded`.
 6. **Upstream.** Se elige el primero habilitado según prioridad ([07 · Upstreams](./07-upstreams.md#selección-y-fallback)). Se reemplaza `model` por el ID del upstream y, si es streaming, se fuerza `stream_options.include_usage = true`. Si el upstream acepta un tope de precio (InferHub sí), se manda con el costo del mapeo ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)).
 7. **Fallback.** Solo si el error ocurre **antes de enviar el primer chunk de datos** (hasta entonces no salen headers): error de red, timeout, `429`, `5xx`, o `401/402/403/404` del upstream (todos son problema nuestro, no del cliente). Un `400` del upstream se devuelve al cliente sanitizado.
 8. **Respuesta.** Se reescriben `id` y `model`, se dejan solo los campos del estándar de OpenAI y se descarta cualquier campo o header del upstream ([07 · Upstreams › Ocultar](./07-upstreams.md#ocultar-el-upstream)).
