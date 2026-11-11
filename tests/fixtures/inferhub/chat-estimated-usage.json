@@ -1,0 +1,22 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Hola",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794368837,
+  "id": "chatcmpl-73e5af59-e593-4d64-9504-9bab66954f05",
+  "model": "kiro/claude-haiku-4.5",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 1,
+    "cost": 1e-05,
+    "prompt_tokens": 5,
+    "total_tokens": 6
+  }
+}

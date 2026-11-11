@@ -1,0 +1,12 @@
+content-type: application/json
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-inferhub-model: alicn/deepseek-v4.1-flash
+x-inferhub-publisher: f56bbe23-d1f7-432c-85f5-999b55ccfa65
+x-inferhub-request-id: dbe38640c4a8082b
+x-ratelimit-limit: 1000
+x-ratelimit-remaining: 996
+x-ratelimit-reset: 1794368549
+x-xss-protection: 1; mode=block
+x-inferhub-attempt: 1
+x-inferhub-backend: node-acdc87131a

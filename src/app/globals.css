@@ -1,0 +1,353 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-overlay: var(--overlay);
+  --color-glass-surface: var(--glass-surface);
+  --color-glass-bezel: var(--glass-bezel);
+  --color-glass-control: var(--glass-control);
+  --color-glass-control-hover: var(--glass-control-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  /* Más oscuro que el default de shadcn (0.556): pasa AA también sobre muted (Avatar, Kbd). Ver docs/13 */
+  --muted-foreground: oklch(0.54 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  /* Más oscuro que el default de shadcn (0.577 0.245): así pasa AA también sobre su tinte /20. Ver docs/13 */
+  --destructive: oklch(0.5 0.204 27.325);
+  /* Dinero a favor del usuario: descuento, ahorro, recarga acreditada. Ver docs/13 */
+  --success: oklch(0.51 0.13 152);
+  --success-foreground: oklch(0.985 0 0);
+  /* Saldo bajo, modelos deprecated: atención sin error */
+  --warning: oklch(0.53 0.12 62);
+  --warning-foreground: oklch(0.985 0 0);
+  /* Fondo detrás de diálogos. En oscuro va más denso para separar el diálogo de la página */
+  --overlay: oklch(0 0 0 / 10%);
+  /* Liquid glass (docs/13 › Material). Opacidades calculadas para AA con el peor fondo detrás. */
+  --glass-surface: oklch(1 0 0 / 97%);
+  /* Marco de diálogos: no lleva texto, así que puede ser vidrio de verdad (refs 5, 10, 11). */
+  --glass-bezel: oklch(1 0 0 / 55%);
+  --glass-control: oklch(0 0 0 / 2%);
+  --glass-control-hover: oklch(0 0 0 / 5%);
+  --glass-border: oklch(0 0 0 / 10%);
+  --glass-edge-top: oklch(0 0 0 / 14%);
+  --glass-edge-bottom: oklch(0 0 0 / 6%);
+  --glass-highlight: oklch(1 0 0 / 80%);
+  --glass-shadow-color: oklch(0 0 0 / 12%);
+  --glass-blur: blur(24px) saturate(180%);
+  --prominent-top: oklch(0.34 0 0);
+  --prominent-bottom: oklch(0.18 0 0);
+  --prominent-highlight: oklch(1 0 0 / 22%);
+  --raised-top: oklch(1 0 0);
+  --raised-bottom: oklch(0.97 0 0);
+  --ambient-glow: oklch(0 0 0 / 3%);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  /* Más claro que el default de shadcn (0.704 0.191, fuera de sRGB): pasa AA en hover (/30) y en el pie de una card. Ver docs/13 */
+  --destructive: oklch(0.74 0.158 22.216);
+  --success: oklch(0.79 0.15 152);
+  --success-foreground: oklch(0.205 0 0);
+  --warning: oklch(0.83 0.14 75);
+  --warning-foreground: oklch(0.205 0 0);
+  --overlay: oklch(0 0 0 / 40%);
+  --glass-surface: oklch(0.18 0 0 / 90%);
+  --glass-bezel: oklch(1 0 0 / 10%);
+  --glass-control: oklch(1 0 0 / 6%);
+  --glass-control-hover: oklch(1 0 0 / 10%);
+  --glass-border: oklch(1 0 0 / 12%);
+  --glass-edge-top: oklch(1 0 0 / 22%);
+  --glass-edge-bottom: oklch(1 0 0 / 6%);
+  --glass-highlight: oklch(1 0 0 / 12%);
+  --glass-shadow-color: oklch(0 0 0 / 50%);
+  --prominent-top: oklch(1 0 0);
+  --prominent-bottom: oklch(0.88 0 0);
+  --prominent-highlight: oklch(1 0 0 / 90%);
+  --raised-top: oklch(1 0 0 / 16%);
+  --raised-bottom: oklch(1 0 0 / 6%);
+  --ambient-glow: oklch(1 0 0 / 7%);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Resplandor ambiental arriba (refs 1 y 3): le da al vidrio algo que refractar. */
+    background-image: radial-gradient(
+      ellipse 70% 45% at 50% -8%,
+      var(--ambient-glow),
+      transparent 70%
+    );
+    background-attachment: fixed;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* better-ui §14: el trazo del ícono acompaña el peso del texto (400–500). Un solo grosor en todo el sitio. */
+  svg.lucide {
+    stroke-width: 1.75;
+  }
+  /* Movimiento reducido: sin transiciones ni animaciones (también las de entrada de tw-animate). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-delay: 0s !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+/* ─────────────────────────────────────────────────────────────────────────
+ * Liquid glass · docs/13-sistema-de-diseno.md › Material
+ * Capa de controles y navegación (Apple HIG). El contenido no va en vidrio.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Superficie flotante: popovers, menús, tooltips, marco de diálogos. */
+@utility glass-surface {
+  background-color: var(--glass-surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-border),
+    0 16px 48px var(--glass-shadow-color),
+    0 2px 6px var(--glass-shadow-color);
+}
+
+/* Marco de un diálogo (refs 5, 10, 11). Sin texto encima: el contenido va en un panel opaco adentro. */
+@utility glass-bezel {
+  background-color: var(--glass-bezel);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-border),
+    0 24px 64px var(--glass-shadow-color),
+    0 2px 6px var(--glass-shadow-color);
+}
+
+/* Control translúcido: botón outline, inputs, pista de un segmentado. Solo sobre superficies propias. */
+@utility glass-control {
+  background-color: var(--glass-control);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-border);
+}
+
+/* Acción principal: píldora con brillo (refs 3, 5 y 10). */
+@utility glass-prominent {
+  background-color: var(--prominent-bottom);
+  background-image: linear-gradient(to bottom, var(--prominent-top), var(--prominent-bottom));
+  color: var(--primary-foreground);
+  box-shadow:
+    inset 0 1px 0 var(--prominent-highlight),
+    0 1px 2px var(--glass-shadow-color),
+    0 6px 20px var(--glass-shadow-color);
+}
+
+/* Selección activa dentro de un segmentado (refs 3, 4, 6, 7). */
+@utility glass-raised {
+  background-color: var(--raised-bottom);
+  background-image: linear-gradient(to bottom, var(--raised-top), var(--raised-bottom));
+  color: var(--foreground);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-border),
+    0 1px 3px var(--glass-shadow-color);
+}
+
+/* Pista hundida de switches, sliders y barras de progreso (refs 1 y 6, "Unlimited"). */
+@utility glass-track {
+  background-color: var(--input);
+  box-shadow:
+    inset 0 1px 2px var(--glass-shadow-color),
+    inset 0 0 0 1px var(--glass-border);
+}
+
+/* Perilla de vidrio de switches y sliders: sombra y brillo, el color lo pone el componente. */
+@utility glass-knob {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 0 0 0.5px var(--glass-border),
+    0 1px 3px var(--glass-shadow-color);
+}
+
+/*
+ * Entrada escalonada (better-ui §5): solo para momentos poco frecuentes, como el hero.
+ * El retraso va en --enter-delay (pasos de ~100 ms). Con movimiento reducido es instantánea.
+ */
+@keyframes enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    filter: blur(4px);
+  }
+}
+
+@utility enter {
+  animation: enter 600ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Borde luminoso para contenido opaco: cards, avisos, bloques de código (refs 7 y 12). */
+@utility glass-edge {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--edge-fill, var(--card)), var(--edge-fill, var(--card))) padding-box,
+    linear-gradient(to bottom, var(--glass-edge-top), var(--glass-edge-bottom)) border-box;
+}
+
+/* Resplandor centrado para estados vacíos (ref 2, "Create Your First Project"). */
+@utility glass-glow {
+  background-image: radial-gradient(circle at 50% 45%, var(--ambient-glow), transparent 65%);
+}
+
+/* Sin soporte de backdrop-filter, la translucidez solo resta legibilidad: superficies opacas. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-surface: var(--popover);
+    --glass-bezel: var(--muted);
+  }
+}
+
+/* Transparencia reducida (Chrome/Edge 118+): opaco y sin desenfoque. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-surface: var(--popover);
+    --glass-bezel: var(--muted);
+    --glass-blur: none;
+    --ambient-glow: transparent;
+  }
+}
+
+/* Más contraste: superficies opacas, bordes marcados y sin brillos. */
+@media (prefers-contrast: more) {
+  :root {
+    --glass-surface: var(--popover);
+    --glass-bezel: var(--muted);
+    --glass-blur: none;
+    --glass-highlight: transparent;
+    --glass-border: oklch(0 0 0 / 55%);
+    --glass-edge-top: oklch(0 0 0 / 55%);
+    --glass-edge-bottom: oklch(0 0 0 / 55%);
+  }
+  :root.dark {
+    --glass-border: oklch(1 0 0 / 55%);
+    --glass-edge-top: oklch(1 0 0 / 55%);
+    --glass-edge-bottom: oklch(1 0 0 / 55%);
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "message": {
+        "content": "",
+        "reasoning_content": "We need answer only \"hola\"? User says \"Responde solo: hola\" means respond",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1794368490,
+  "id": "chatcmpl-cca7af1e-dc88-9dd7-a6fa-9e1c1e00d0df",
+  "model": "alicn/deepseek-v4.1-flash",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 20,
+    "completion_tokens_details": {
+      "reasoning_tokens": 20,
+      "text_tokens": 0
+    },
+    "cost": 1e-05,
+    "prompt_tokens": 36,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "image_tokens": 0,
+      "text_tokens": 36
+    },
+    "total_tokens": 56
+  }
+}

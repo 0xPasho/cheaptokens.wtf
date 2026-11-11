@@ -1,0 +1,37 @@
+{
+  "model_not_found_404": {
+    "error": {
+      "message": "unknown model: nope/nada (use a model id from GET /v1/models: an alias such as glm-5, prefix/model-id such as cc/claude-sonnet-4-6, or combo/your-combo-slug)",
+      "type": "model_not_found",
+      "source": "inferhub"
+    }
+  },
+  "invalid_api_key_401": {
+    "error": {
+      "message": "invalid api key",
+      "type": "invalid_request_error",
+      "source": "inferhub"
+    }
+  },
+  "publisher_400": {
+    "error": {
+      "code": "invalid_parameter_error",
+      "message": "Role must be in [\"user\", \"assistant\", \"system\", \"function\", \"plugin\", \"tool\"] and the role in last message must be in [\"user\", \"function\", \"tool\"]",
+      "param": null,
+      "source": "Qwencloud/Alibaba CN",
+      "type": "invalid_request_error"
+    },
+    "id": "chatcmpl-dca0748a-8885-909d-ad85-06b118210e33",
+    "request_id": "dca0748a-8885-909d-ad85-06b118210e33"
+  },
+  "no_provider_under_bid_402": {
+    "error": {
+      "code": "no_provider_under_bid",
+      "message": "no provider's ask matches your max-per-mtok bid",
+      "min_input_per_mtok": "0.00015",
+      "min_output_per_mtok": "0.00047",
+      "providers_available": 16,
+      "source": "inferhub"
+    }
+  }
+}
