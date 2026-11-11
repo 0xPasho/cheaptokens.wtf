@@ -189,7 +189,8 @@ describe("contrato del gateway con el SDK oficial de OpenAI", () => {
       status: "client_cancelled", stream: true, usageEstimated: false,
       promptTokens: 1, completionTokens: 26,
     });
-    expect(record.costMicroUsd).toBeGreaterThan(BigInt(0));
+    // ceil((1 × 220000 + 26 × 1100000) / 1000000) = 29 µUSD, por encima del mínimo.
+    expect(record.costMicroUsd).toBe(BigInt(29));
     expect(record.upstreamCostMicroUsd).toBe(BigInt(10));
     const [workspaceAfter] = await harness.db.select().from(workspaces).where(eq(workspaces.id, harness.workspaceId));
     const [keyAfter] = await harness.db.select().from(apiKeys).where(eq(apiKeys.id, harness.apiKeyId));
