@@ -521,3 +521,47 @@ describe("el mock y el catálogo", () => {
     }
   });
 });
+
+describe("mock upstream: tool-call", () => {
+  it.each([false, true])("envía tool_calls en formato OpenAI (stream=%s)", async (stream) => {
+    const upstream = await start();
+    const response = await chat(upstream, { model: "mock/tool-call", stream });
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    const payloads = (stream ? streamPayloads(text) : [JSON.parse(text) as unknown]) as {
+      choices: {
+        index: number;
+        finish_reason: string | null;
+        message?: { role: string; content: null; tool_calls: unknown[] };
+        delta?: { tool_calls?: { index: number; id?: string; type?: string; function: { name?: string; arguments: string } }[] };
+      }[];
+      usage?: { cost?: number } | null;
+    }[];
+    const expected = {
+      id: "call_mock_weather", type: "function",
+      function: { name: "get_weather", arguments: '{"location":"Ciudad de México","unit":"celsius"}' },
+    };
+    if (stream) {
+      expect(response.headers.get("content-type")).toBe("text/event-stream");
+      expect(text.startsWith(": INFERHUB PROCESSING\n\n")).toBe(true);
+      expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
+      const calls = payloads.flatMap((payload) => payload.choices[0]?.delta?.tool_calls ?? []);
+      expect(calls).toHaveLength(4);
+      expect(calls[0]).toEqual({ ...expected, index: 0, function: { name: expected.function.name, arguments: "" } });
+      expect(calls.every((call) => call.index === 0)).toBe(true);
+      expect(calls.slice(1).every((call) => call.id === undefined && call.function.name === undefined)).toBe(true);
+      expect(calls.map((call) => call.function.arguments).join("")).toBe(expected.function.arguments);
+      expect(payloads.filter((payload) => payload.choices[0]?.finish_reason === "tool_calls")).toHaveLength(1);
+      expect(payloads.at(-3)?.choices[0]).toMatchObject({ index: 0, delta: {}, finish_reason: "tool_calls" });
+      expect(payloads.filter((payload) => payload.usage)).toHaveLength(2);
+      expect(payloads.at(-1)?.usage?.cost).toBe(0.00001);
+    } else {
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(payloads[0].choices).toEqual([{
+        index: 0, finish_reason: "tool_calls",
+        message: { role: "assistant", content: null, tool_calls: [expected] },
+      }]);
+      expect(payloads[0].usage?.cost).toBe(0.00001);
+    }
+  });
+});

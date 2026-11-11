@@ -34,6 +34,7 @@ interface DecimalMicroUsd {
 const tokensPerChunk = 4;
 const contentChunk = "Hola 🌎. ";
 const reasoning = ["We", " need answer in Spanish."];
+const toolArgumentChunks = ['{"location":"Ciudad de ', 'México","unit":', '"celsius"}'];
 
 function powerOfTen(exponent: number): bigint {
   return BigInt(10) ** BigInt(exponent);
@@ -249,7 +250,19 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       };
       const cost = usageCost(prompt, completion, input, output);
       const error = { message: "InferHub provider failed", type: "server_error", source: "inferhub" };
+      const toolCall = {
+        id: "call_mock_weather", type: "function",
+        function: { name: "get_weather", arguments: toolArgumentChunks.join("") },
+      };
       if (body.stream !== true) {
+        if (scenario === "tool-call") {
+          json(response, 200, {
+            id, model, created, object: "chat.completion", request_id: requestId, provider: "inferhub",
+            choices: [{ index: 0, message: { role: "assistant", content: null, tool_calls: [toolCall] }, finish_reason: "tool_calls" }],
+            usage: { ...vendorUsage, cost },
+          });
+          return;
+        }
         if (scenario === "stream-error-200" || scenario === "mid-stream-error") {
           json(response, 200, { error });
           return;
@@ -283,6 +296,29 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
         return;
       }
       const chunkBase = { id, model, created, object: "chat.completion.chunk" };
+      if (scenario === "tool-call") {
+        const toolDelta = (value: Record<string, unknown>, finishReason: string | null = null) => ({
+          ...chunkBase,
+          choices: [{ index: 0, delta: value, finish_reason: finishReason, logprobs: null }],
+          usage: null,
+        });
+        response.write(": INFERHUB PROCESSING\n\n");
+        event(response, toolDelta({ role: "assistant", content: null }));
+        event(response, toolDelta({ tool_calls: [{ ...toolCall, index: 0, function: { name: toolCall.function.name, arguments: "" } }] }));
+        // Fragmentar los argumentos obliga al cliente a acumular por índice.
+        for (const argumentsChunk of toolArgumentChunks) {
+          event(response, toolDelta({ tool_calls: [{ index: 0, function: { arguments: argumentsChunk } }] }));
+          if (!await pause(response, chunkDelayMs)) return;
+        }
+        event(response, toolDelta({}, "tool_calls"));
+        event(response, { ...chunkBase, choices: [], usage: vendorUsage });
+        event(response, {
+          choices: [], object: "chat.completion.chunk",
+          usage: { ...tokens, completion_tokens_details: { reasoning_tokens: reasoning.length }, cost },
+        });
+        if (!response.destroyed) response.end("data: [DONE]\n\n");
+        return;
+      }
       const delta = (value: Record<string, string>, finishReason: string | null = null) => ({
         ...chunkBase,
         choices: [{ index: 0, delta: value, finish_reason: finishReason, logprobs: null }],
