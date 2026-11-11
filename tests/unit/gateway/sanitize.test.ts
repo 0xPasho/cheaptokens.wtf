@@ -99,13 +99,23 @@ describe("response whitelist", () => {
       ["stop", "stop"], ["length", "length"], ["tool_calls", "tool_calls"],
       ["content_filter", "content_filter"], ["function_call", "function_call"], [null, null],
       ["end_turn", "stop"], ["stop_sequence", "stop"], ["max_tokens", "length"], ["tool_use", "tool_calls"],
-      ["inferhub-finish", "stop"], ["", "stop"], [42, "stop"], [{ source: "inferhub" }, "stop"],
+      ["SAFETY", "content_filter"], ["RECITATION", "content_filter"], ["BLOCKLIST", "content_filter"],
+      ["PROHIBITED_CONTENT", "content_filter"], ["MAX_TOKENS", "length"], ["ToOl_UsE", "tool_calls"],
+      ["inferhub-finish", "stop"], ["", "stop"], [42, null], [{ source: "inferhub" }, null],
+      [{}, null], [0, null], [false, null], [undefined, null],
     ];
-    for (const [finish_reason, expected] of reasons) {
+    const variants = reasons.flatMap(([reason, expected]) => typeof reason === "string"
+      ? [[reason, expected], [reason.toLowerCase(), expected], [reason.toUpperCase(), expected]]
+      : [[reason, expected]]);
+    for (const [finish_reason, expected] of variants) {
       const payload = { choices: [{ [field]: { content: "Hola" }, finish_reason }] };
       const result = field === "message" ? sanitizeCompletion(payload, ctx) : sanitizeChunk(payload, ctx);
       expect(result).toHaveProperty("choices.0.finish_reason", expected);
     }
+  });
+
+  it.each([{}, 0, false])("does not emit a finish-only chunk for malformed finish_reason %j", (finish_reason) => {
+    expect(sanitizeChunk({ choices: [{ delta: {}, finish_reason }] }, ctx)).toBeNull();
   });
 
   it.each(["message", "delta"] as const)("assigns missing choice indices by their original array position in %s", (field) => {
@@ -122,6 +132,20 @@ describe("response whitelist", () => {
       { index: 3, [field]: { content: "Last" } },
       { index: 4, [field]: { content: "Invalid index" } },
     ]);
+  });
+
+  it.each(["message", "delta"] as const)("assigns free indices around explicit choices in %s", (field) => {
+    for (const [indices, expected] of [
+      [[1, undefined], [1, 2]],
+      [[undefined, 0], [1, 0]],
+      [[2, undefined, undefined], [2, 1, 3]],
+      [[undefined, undefined, 0, 1], [2, 3, 0, 1]],
+      [[1, 1, undefined], [1, 2, 3]],
+    ]) {
+      const payload = { choices: indices.map((index) => ({ index, [field]: { content: "Hola" } })) };
+      const result = field === "message" ? sanitizeCompletion(payload, ctx) : sanitizeChunk(payload, ctx);
+      expect(result).toHaveProperty("choices", expected.map((index) => ({ index, [field]: { content: "Hola" } })));
+    }
   });
 
   it.each(["message", "delta"] as const)("sanitizes nested %s, tools and logprobs", (field) => {
