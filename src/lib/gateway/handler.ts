@@ -35,15 +35,25 @@ function promptLength(messages: unknown): number {
   return count;
 }
 
-function outputLength(payload: unknown, field: "message" | "delta"): number {
-  if (!isObject(payload) || !Array.isArray(payload.choices)) return 0;
+function measureOutput(payload: unknown, field: "message" | "delta"): { characters: number; hasContent: boolean } {
+  if (!isObject(payload) || !Array.isArray(payload.choices)) return { characters: 0, hasContent: false };
   let count = 0;
+  let hasTools = false;
   for (const choice of payload.choices) {
     if (!isObject(choice)) continue;
     const message = choice[field];
-    if (isObject(message)) count += textLength(message.content) + textLength(message.reasoning_content);
+    if (!isObject(message)) continue;
+    count += textLength(message.content) + textLength(message.reasoning_content);
+    if (Array.isArray(message.tool_calls)) {
+      hasTools ||= message.tool_calls.length > 0;
+      for (const call of message.tool_calls) {
+        if (isObject(call) && isObject(call.function)) {
+          count += textLength(call.function.name) + textLength(call.function.arguments);
+        }
+      }
+    }
   }
-  return count;
+  return { characters: count, hasContent: count > 0 || hasTools };
 }
 
 async function readBody(request: Request): Promise<string | null> {
@@ -102,7 +112,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   const startedAt = deps.now();
   const reject = (code: GatewayErrorCode, message?: string) => errorResponse(code, { requestId, message });
 
-  if (deps.env.apiHost !== null && new URL(request.url).host !== deps.env.apiHost) {
+  if (deps.env.apiHost !== null && request.headers.get("host")?.toLowerCase() !== deps.env.apiHost.toLowerCase()) {
     const response = reject("invalid_request", "Not found.");
     return new Response(response.body, { status: 404, headers: response.headers });
   }
@@ -146,7 +156,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
       model, body: validated.body, stream: validated.stream, now: deps.now, log: deps.log, signal: abort.signal,
       fetch: (input, init) => {
         attempts++;
-        attemptedTarget = model.upstreams.find((target) => `${target.baseUrl}/chat/completions` === String(input)) ?? null;
+        attemptedTarget = model.upstreams[attempts - 1] ?? null;
         return deps.fetch(input, init);
       },
     });
@@ -177,19 +187,23 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   const accumulator = createUsageAccumulator();
   const promptChars = promptLength(validated.body.messages);
   let outputChars = 0;
-  const usage = (forceEstimate = false): Usage => (!forceEstimate && accumulator.result()) || {
+  const usage = (): Usage => accumulator.result() ?? {
     promptTokens: estimateTokens(promptChars), completionTokens: estimateTokens(outputChars),
     cachedTokens: null, reasoningTokens: null, upstreamCostMicroUsd: accumulator.upstreamCost(), estimated: true,
   };
   const target = result.target;
   const ttfbMs = deps.now() - startedAt;
-  const makeChargeTask = (status: RequestStatus, measured: Usage): (() => Promise<void>) => {
+  let finishedAt = deps.now();
+  const makeChargeTask = (
+    status: RequestStatus, measured: Usage,
+    errorCode: GatewayErrorCode | null = status === "upstream_error" || status === "upstream_timeout" ? status : null,
+    httpStatus = 200,
+  ): (() => Promise<void>) => {
     const record = {
-      ...baseRecord, status, httpStatus: 200,
-      errorCode: status === "upstream_error" || status === "upstream_timeout" ? status : null,
+      ...baseRecord, status, httpStatus, errorCode,
       promptTokens: measured.promptTokens, completionTokens: measured.completionTokens,
       cachedTokens: measured.cachedTokens, usageEstimated: measured.estimated,
-      ttfbMs, latencyMs: deps.now() - startedAt,
+      ttfbMs, latencyMs: finishedAt - startedAt,
     };
     return async () => {
       try {
@@ -200,11 +214,21 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
     };
   };
   if (!result.stream) {
-    clearTimeout(timer);
-    accumulator.observe(result.body);
-    outputChars = outputLength(result.body, "message");
-    deps.after(makeChargeTask("success", usage()));
-    return Response.json(sanitizeCompletion(result.body, responseContext), { headers: { "x-request-id": requestId } });
+    let response: Response;
+    let status: RequestStatus = "success";
+    try {
+      accumulator.observe(result.body);
+      outputChars = measureOutput(result.body, "message").characters;
+      response = Response.json(sanitizeCompletion(result.body, responseContext), { headers: { "x-request-id": requestId } });
+    } catch {
+      status = "upstream_error";
+      response = reject("upstream_error");
+    } finally {
+      clearTimeout(timer);
+      finishedAt = deps.now();
+    }
+    deps.after(makeChargeTask(status, usage(), status === "success" ? null : "upstream_error", response.status));
+    return response;
   }
 
   let cancelled = request.signal.aborted;
@@ -218,10 +242,11 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   const encoder = new TextEncoder();
   const send = (text: string) => { if (!cancelled) controller.enqueue(encoder.encode(text)); };
   const events = result.events;
+  let status: RequestStatus = "success";
   // El bombeo no depende de pull: cancelar al cliente nunca cancela al upstream.
   const pumping = (async () => {
-    let status: RequestStatus = "success";
     let done = false;
+    let hasContent = false;
     try {
       for await (const event of events) {
         if (event.type === "comment") { send(SSE_KEEP_ALIVE); continue; }
@@ -229,32 +254,38 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
         const payload: unknown = JSON.parse(event.data);
         if (!isObject(payload)) throw new Error("Invalid stream payload");
         accumulator.observe(payload);
-        outputChars += outputLength(payload, "delta");
+        const output = measureOutput(payload, "delta");
+        outputChars += output.characters;
+        hasContent ||= output.hasContent;
         if ("error" in payload) { status = "upstream_error"; break; }
         const chunk = sanitizeChunk(payload, responseContext);
         if (chunk !== null) send(encodeSseData(chunk));
       }
-      if (!done) status = "upstream_error";
+      if (!done || (!hasContent && accumulator.result() === null)) status = "upstream_error";
+    } catch {
+      status = abort.signal.aborted ? "upstream_timeout" : "upstream_error";
+    }
+    try {
+      if (abort.signal.aborted) status = "upstream_timeout";
+      if (validated.includeUsage) send(encodeSseData(buildUsageChunk(usage(), responseContext)));
+      if (status !== "success") send(encodeSseData(streamErrorChunk(responseContext)));
+      send(SSE_DONE);
     } catch {
       status = abort.signal.aborted ? "upstream_timeout" : "upstream_error";
     } finally {
       clearTimeout(timer);
+      finishedAt = deps.now();
       request.signal.removeEventListener("abort", disconnect);
+      if (!cancelled) controller.close();
     }
-    if (abort.signal.aborted) status = "upstream_timeout";
-    const measured = usage(status === "upstream_timeout");
-    if (status !== "success") send(encodeSseData(streamErrorChunk(responseContext)));
-    if (validated.includeUsage) send(encodeSseData(buildUsageChunk(measured, responseContext)));
-    send(SSE_DONE);
-    if (!cancelled) controller.close();
-    if (cancelled && status !== "upstream_timeout") status = "client_cancelled";
-    return makeChargeTask(status, measured);
   })();
   deps.after(async () => {
     try {
-      await (await pumping)();
-    } catch {
-      deps.log.error("charge_failed", { requestId });
+      await pumping;
+    } finally {
+      // La cancelación cambia el estado, pero conserva el diagnóstico del upstream.
+      const errorCode = status === "upstream_error" || status === "upstream_timeout" ? status : null;
+      await makeChargeTask(cancelled && status !== "upstream_timeout" ? "client_cancelled" : status, usage(), errorCode)();
     }
   });
   return new Response(stream, { headers: {
