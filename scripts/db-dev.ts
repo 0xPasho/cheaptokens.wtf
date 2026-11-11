@@ -1,6 +1,7 @@
 import "./_env";
 
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
@@ -32,7 +33,9 @@ async function main(): Promise<void> {
   process.once("SIGINT", onSignal);
   process.once("SIGTERM", onSignal);
   try {
-    await migrate(drizzle(db), { migrationsFolder: resolve("drizzle") });
+    await migrate(drizzle(db), {
+      migrationsFolder: fileURLToPath(new URL("../drizzle/", import.meta.url)),
+    });
     if (closing) return;
     await server.start();
     console.log("DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres");

@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
@@ -12,7 +12,9 @@ let template: Promise<PGlite> | undefined;
 async function createTemplate(): Promise<PGlite> {
   const client = await PGlite.create();
   try {
-    await migrate(drizzle(client, { schema }), { migrationsFolder: resolve("drizzle") });
+    await migrate(drizzle(client, { schema }), {
+      migrationsFolder: fileURLToPath(new URL("../../drizzle/", import.meta.url)),
+    });
     return client;
   } catch (error) {
     await client.close();

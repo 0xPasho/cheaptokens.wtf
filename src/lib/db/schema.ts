@@ -17,6 +17,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import type { CatalogEntry } from "@/lib/catalog/types";
+
 import { uuidv7 } from "./uuid";
 
 export const modelStatus = pgEnum("model_status", ["active", "hidden", "deprecated", "retired"]);
@@ -37,7 +39,7 @@ export const workspaces = pgTable("workspaces", {
   suspendedAt: timestamp("suspended_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 export const apiKeys = pgTable("api_keys", {
@@ -60,7 +62,7 @@ export const models = pgTable("models", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   author: text("author").notNull(),
-  description: jsonb("description").$type<{ en: string; es: string }>().notNull(),
+  description: jsonb("description").$type<CatalogEntry["description"]>().notNull(),
   contextLength: integer("context_length").notNull(),
   maxOutputTokens: integer("max_output_tokens"),
   officialInputPriceMicroUsd: bigint("official_input_price_micro_usd", { mode: "bigint" }).notNull(),
@@ -76,7 +78,7 @@ export const models = pgTable("models", {
   deprecatedAt: date("deprecated_at"),
   retiresAt: date("retires_at"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (table) => [
   check("models_discount_bps_check", sql`${table.discountBps} between 0 and 9999`),
 ]);

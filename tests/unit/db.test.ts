@@ -72,20 +72,54 @@ describe("Postgres schema and migrations", () => {
   let testDb: Awaited<ReturnType<typeof createTestDb>>;
 
   beforeEach(async () => {
-    testDb = await createTestDb();
+    const cwd = vi.spyOn(process, "cwd").mockReturnValue("/tmp");
+    try {
+      testDb = await createTestDb();
+    } finally {
+      cwd.mockRestore();
+    }
   });
 
   afterEach(async () => {
     await testDb?.close();
   });
 
-  it("applies the migration with all seven tables and records it", async () => {
+  it("applies the migration independently of cwd with all seven tables and records it", async () => {
     const { db } = testDb;
     for (const table of [workspaces, apiKeys, models, upstreams, modelUpstreams, requests, creditTransactions]) {
       expect(await db.select().from(table)).toEqual([]);
     }
     expect(await db.execute(sql`select count(*)::int as count from drizzle.__drizzle_migrations`))
       .toMatchObject({ rows: [{ count: 1 }] });
+  });
+
+  it("stores a catalog description without a Spanish translation", async () => {
+    const description = { en: "English only" };
+    const [saved] = await testDb.db.insert(models).values({ ...model, description }).returning();
+    expect(saved.description).toEqual(description);
+  });
+
+  it("refreshes workspace and model updatedAt while preserving createdAt", async () => {
+    const { db } = testDb;
+    const originalTime = new Date("2020-01-01T00:00:00.000Z");
+    const [workspace] = await db.insert(workspaces).values({
+      clerkUserId: "timestamp-user", createdAt: originalTime, updatedAt: originalTime,
+    }).returning();
+    const [savedModel] = await db.insert(models).values({
+      ...model, createdAt: originalTime, updatedAt: originalTime,
+    }).returning();
+    const beforeUpdate = Date.now();
+    const [updatedWorkspace] = await db.update(workspaces).set({ balanceMicroUsd: BigInt(1) })
+      .where(eq(workspaces.id, workspace.id)).returning();
+    const [updatedModel] = await db.update(models).set({ name: "Updated model" })
+      .where(eq(models.id, savedModel.id)).returning();
+    const afterUpdate = Date.now();
+
+    for (const row of [updatedWorkspace, updatedModel]) {
+      expect(row.createdAt).toEqual(originalTime);
+      expect(row.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate);
+      expect(row.updatedAt.getTime()).toBeLessThanOrEqual(afterUpdate);
+    }
   });
 
   it("inserts a workspace, key, catalog mapping and request with UUID v7 defaults", async () => {
@@ -260,8 +294,13 @@ describe("node-postgres client and socket", () => {
       vi.stubEnv("DATABASE_URL", `postgres://postgres:postgres@${server.getServerConn()}/postgres`);
       const db = getDb();
       expect(getDb()).toBe(db);
-      await migrateNodePostgres(db);
-      await migrateNodePostgres(db);
+      const cwd = vi.spyOn(process, "cwd").mockReturnValue("/tmp");
+      try {
+        await migrateNodePostgres(db);
+        await migrateNodePostgres(db);
+      } finally {
+        cwd.mockRestore();
+      }
       const { workspace } = await insertWorkspaceAndKey(db);
       const amount = BigInt("9000000000000000");
       await db.transaction(async (tx) => {
