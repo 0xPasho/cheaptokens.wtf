@@ -284,16 +284,16 @@ Común a todos los paquetes. El revisor marca cada punto o explica por qué no a
 
 ## 6. Terminado
 
-El plan está terminado cuando se cumple todo esto:
+Verificado el 2026-11-11 sobre el `main` integrado (verificación final con Opus 5.5 y repetición del planificador):
 
-- [ ] Los paquetes de la ola 4 pasan.
-- [ ] El SDK de OpenAI funciona cambiando solo `base_url` y `api_key`, con y sin streaming, incluyendo tools.
-- [ ] La conciliación da 0 de diferencia después de la carga concurrente con cancelaciones.
-- [ ] Revocar una key hace fallar el request siguiente.
-- [ ] Poner `ops_disabled_at` en el mapeo de InferHub mueve el tráfico al mock en 60 s o menos.
-- [ ] Hay una prueba automática que demuestra que ninguna respuesta revela al upstream.
-- [ ] `pnpm check` y `pnpm test:e2e` pasan. Las únicas capturas que cambiaron son las del descuento de Haiku, las nuevas de `/docs` y las del link a Docs en el header y el footer (paquete R).
-- [ ] El roadmap ([11](./11-roadmap.md)) marca lo que se cerró.
+- [x] **Los paquetes de la ola 4 pasan.** `pnpm test:gateway`: 459 pruebas. La prueba en vivo (Q) pasa contra InferHub: sin stream, con stream y tools.
+- [x] **El SDK de OpenAI funciona cambiando solo `base_url` y `api_key`**, con y sin streaming, incluyendo tools. Probado con el SDK de JS (15/15 casos en `next dev` y `next start`). El de Python no se probó.
+- [x] **La conciliación da 0 de diferencia** después de 50 streams en paralelo con 20% cancelados, contra `next start` con PGlite. Antes del arreglo del pool había 401 y 502 falsos; ahora son 50 de 50.
+- [x] **Revocar una key hace fallar el request siguiente** (`401`, también con stream).
+- [x] **`ops_disabled_at` mueve el tráfico al mock en 45 s**, y `catalog:sync` no lo revierte. Probado con un InferHub simulado.
+- [x] **Hay una prueba automática de fugas:** `tests/gateway/leaks.test.ts` recorre todos los escenarios del mock, con y sin stream. El revisor comprobó que falla al dejar pasar un header, un campo, un ID o un comentario SSE del upstream.
+- [x] **`pnpm check` y `pnpm test:e2e` pasan** (1,111 unitarias, 459 del gateway, build y 70 e2e). Las capturas que cambiaron son las del descuento de Haiku, las nuevas de `/docs` y las del link a Docs en el header y el footer (paquete R).
+- [x] **El roadmap ([11](./11-roadmap.md)) marca lo que se cerró.**
 
 ## 7. Después de este plan
 
