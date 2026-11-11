@@ -13,6 +13,7 @@ export const es: Dictionary = {
     label: "Principal",
     home: "Inicio de cheaptokens.wtf",
     models: "Modelos",
+    docs: "Docs",
     howItWorks: "Cómo funciona",
     getKey: "Obtén tu API key",
   },
@@ -106,6 +107,100 @@ export const es: Dictionary = {
     similar: "Modelos parecidos",
     notFoundTitle: "No tenemos ese modelo",
     notFoundBody: "Puede que se haya retirado o que el ID esté mal.",
+  },
+  docs: {
+    title: "Documentación",
+    description:
+      "La API habla OpenAI Chat Completions. Cambia la base URL y la key, y deja el resto de tu código igual.",
+    metaDescription:
+      "Conéctate a cheaptokens.wtf en un minuto: base URL, autenticación, streaming, modelos, cobro, errores y rate limit.",
+    auth: {
+      title: "Base URL y autenticación",
+      baseUrl: "Todos los requests van a esta base URL:",
+      header: "Manda tu API key como bearer token en el header `Authorization`:",
+      serverTitle: "Llámala desde tu servidor",
+      serverBody:
+        "La API no acepta llamadas desde el navegador: no hay CORS. Una key en tu frontend es una key filtrada.",
+    },
+    quickstart: {
+      title: "Tu primer request",
+      body: "Los ejemplos de Python y JavaScript usan el SDK oficial de OpenAI, y el de JavaScript también sirve en TypeScript. Solo cambian la base URL y la key.",
+    },
+    streaming: {
+      title: "Streaming",
+      body: "Manda `stream: true` y la respuesta llega como Server-Sent Events, igual que con OpenAI. Para recibir el uso de tokens en el último chunk, pon `stream_options.include_usage` en `true`.",
+      wireTitle: "Qué llega",
+      wireBody:
+        "Cada evento es una línea `data:` con un `chat.completion.chunk`. Con `include_usage`, el último trae `choices` vacío y el `usage`. El stream termina con `data: [DONE]`.",
+      keepAlive:
+        "En pausas largas, por ejemplo mientras un modelo razona, llegan líneas de comentario `: keep-alive`. El estándar SSE dice que se ignoran, y los SDKs ya lo hacen.",
+      errorTitle: "Errores a mitad del stream",
+      errorBody:
+        "Si el modelo falla a mitad del stream, el status `200` ya salió. El error llega como un último chunk, con un objeto `error` y `finish_reason: \"error\"`, y después `[DONE]`. Los SDKs de OpenAI lo lanzan como `APIError`.",
+      reasoningTitle: "Razonamiento",
+      reasoningBody:
+        "Los modelos de razonamiento mandan lo que piensan en `reasoning_content`: en `delta` con streaming y en `message` sin streaming. Los SDKs de OpenAI no lo tipan, pero tampoco lo descartan: léelo como un campo extra.",
+    },
+    models: {
+      title: "Cómo elegir modelo",
+      body: "Cada modelo tiene un ID con la forma `autor/modelo`, como `{model}`. Eso es lo que va en `model`.",
+      list: "El catálogo muestra cada modelo con su precio y su descuento. Desde código, llama a `GET /v1/models`: es público y no necesita key.",
+      browse: "Ver modelos",
+    },
+    billing: {
+      title: "Cómo se cobra",
+      body: "Pagas por token con tus créditos prepagados, al precio cheaptokens.wtf de cada modelo.",
+      tokens:
+        "Contamos los tokens que reporta el modelo en `usage`: `prompt_tokens` al precio de input y `completion_tokens` al de output. Los precios son por 1M de tokens.",
+      reasoning: "Los tokens de razonamiento son tokens de output: vienen incluidos en `completion_tokens`.",
+      minimum: "Cada request con respuesta cuesta al menos {amount}.",
+      cancel:
+        "Si cancelas un stream, pagas todo lo que el modelo generó hasta terminar, no solo lo que te llegó. Para acotarlo, usa `max_tokens`.",
+      cached: "El input cacheado se cobra como input normal, por ahora.",
+    },
+    errors: {
+      title: "Errores",
+      body: "Los errores usan el formato de OpenAI, así que los SDKs los leen como siempre. Los mensajes van siempre en inglés: los lee un programa, y así los puedes buscar.",
+      tableLabel: "Códigos de error",
+      when: "Cuándo",
+      codes: {
+        invalid_request: "JSON inválido, falta `model` o `messages`, o el modelo rechazó un parámetro",
+        invalid_api_key: "La key falta, está mal formada, no existe o se revocó",
+        insufficient_credits: "Tu workspace se quedó sin saldo",
+        key_limit_exceeded: "La key llegó a su límite de gasto",
+        account_suspended: "El workspace está suspendido, por ejemplo por un contracargo",
+        model_not_found: "El modelo no existe o no está disponible para ti",
+        model_retired: "El modelo se retiró",
+        request_too_large: "El body pesa más de {size} MB",
+        rate_limit_exceeded: "Te pasaste del rate limit del workspace (mira `retry-after`)",
+        upstream_error: "El modelo falló con un error",
+        no_upstream_available: "El modelo no está disponible por ahora",
+        upstream_timeout: "El modelo tardó demasiado en empezar a responder",
+      },
+      requestId:
+        "Toda respuesta trae el header `x-request-id`. Si necesitas ayuda con un request, mándanos ese ID.",
+    },
+    rateLimit: {
+      title: "Rate limit",
+      body: "Por defecto, cada workspace puede hacer {count} requests por minuto, entre todas sus keys. Si te pasas, recibes un `429` con el header `retry-after`: los segundos que hay que esperar antes de reintentar. Los SDKs de OpenAI ya reintentan solos y lo respetan.",
+    },
+    tools: {
+      title: "Herramientas compatibles",
+      body: "Todo lo que te deje cambiar la base URL de OpenAI debería funcionar.",
+      tableLabel: "Herramientas compatibles",
+      tool: "Herramienta",
+      status: "Estado",
+      rows: {
+        openaiSdk: { name: "SDK de OpenAI (Python, JS/TS)", status: "Funciona. Es el cliente de referencia." },
+        langchain: { name: "LangChain (`ChatOpenAI` con `base_url`)", status: "Funciona." },
+        vercelAiSdk: { name: "Vercel AI SDK (proveedor compatible con OpenAI)", status: "Funciona." },
+        editors: {
+          name: "Editores que aceptan una base URL de OpenAI",
+          status: "Deberían funcionar. Todavía no los probamos uno por uno.",
+        },
+        claudeCode: { name: "Claude Code", status: "Todavía no: necesita `/v1/messages`, que llega más adelante." },
+      },
+    },
   },
   tags: {
     fast: "Rápido",

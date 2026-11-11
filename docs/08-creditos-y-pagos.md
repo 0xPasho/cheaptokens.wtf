@@ -62,9 +62,11 @@ sequenceDiagram
 
 **Antes del request** (en el hot path, sin escrituras):
 
+En este orden (la suspensión va primero: un workspace suspendido no debe enterarse de su saldo):
+
+- Si el workspace está suspendido: `403 account_suspended`.
 - Si `balance ≤ 0`: `402 insufficient_credits`.
 - Si la key tiene límite y `spent ≥ limit`: `403 key_limit_exceeded`.
-- Si el workspace está suspendido: `403 account_suspended`.
 
 **Después del request** (en `after()`, una sola transacción):
 

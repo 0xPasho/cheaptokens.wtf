@@ -160,7 +160,9 @@ describe("catalog/upstreams.ts", () => {
     expect(mock.models.map((m) => m.model)).toEqual(TEST_MODELS);
     mock.models.forEach((mapping, index) => {
       const real = inferhub.models[index];
-      expect(mapping.upstreamModel).toBe("mock/ok");
+      // Sin `mock/`: el escenario lo decide `x_mock` en el body de cada prueba.
+      expect(mapping.upstreamModel).toBe(mapping.model);
+      expect(mapping.upstreamModel.startsWith("mock/")).toBe(false);
       expect(mapping.priority).toBe(2);
       expect(mapping.costInputPer1M).toBeLessThan(real.costInputPer1M);
       expect(mapping.costOutputPer1M).toBeLessThan(real.costOutputPer1M);
