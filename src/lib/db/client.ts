@@ -10,10 +10,16 @@ let connection: { pool: Pool; db: Db } | undefined;
 
 export function getDb(): Db {
   if (connection) return connection.db;
-  const { databaseUrl } = readServerEnv();
+  const { databaseUrl, databasePoolMax } = readServerEnv();
   if (!databaseUrl) throw new Error("DATABASE_URL is required to connect to the database");
 
-  const pool = new Pool({ connectionString: databaseUrl });
+  const hostname = new URL(databaseUrl).hostname.toLowerCase();
+  // PGlite por socket no aísla bien varias conexiones; el pool serializa las operaciones locales.
+  const max = databasePoolMax ?? (hostname === "127.0.0.1" || hostname === "localhost" ? 1 : 10);
+  const pool = new Pool({ connectionString: databaseUrl, max });
+  pool.on("error", (error: Error) => {
+    console.error("Unexpected error on idle database connection", error.message);
+  });
   const db = drizzle(pool, { schema });
   connection = { pool, db };
   return db;

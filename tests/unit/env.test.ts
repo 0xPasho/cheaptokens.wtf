@@ -26,6 +26,17 @@ describe("readServerEnv", () => {
     expect(readServerEnv({}).rateLimitRpm).toBe(60);
     expect(readServerEnv({ GATEWAY_RATE_LIMIT_RPM: "120" }).rateLimitRpm).toBe(120);
   });
+
+  it("el tamaño del pool es opcional y acepta un entero positivo", () => {
+    expect(readServerEnv({}).databasePoolMax).toBeNull();
+    expect(readServerEnv({ DATABASE_POOL_MAX: "" }).databasePoolMax).toBeNull();
+    expect(readServerEnv({ DATABASE_POOL_MAX: "1" }).databasePoolMax).toBe(1);
+    expect(readServerEnv({ DATABASE_POOL_MAX: "20" }).databasePoolMax).toBe(20);
+  });
+
+  it.each(["0", "-1", "1.5", "invalid", "Infinity", "NaN", " "])("rechaza DATABASE_POOL_MAX=%s", (value) => {
+    expect(() => readServerEnv({ DATABASE_POOL_MAX: value })).toThrow();
+  });
 });
 
 describe("secretos y overrides", () => {

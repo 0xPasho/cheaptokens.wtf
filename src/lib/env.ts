@@ -8,6 +8,7 @@ const appEnvSchema = z.enum(["development", "preview", "production"]);
 
 const schema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_POOL_MAX: z.coerce.number().int().positive().optional(),
   /** Lo pone Vercel. Fuera de Vercel, `APP_ENV`. `NODE_ENV` no sirve: `next start` lo pone en production. */
   VERCEL_ENV: appEnvSchema.optional(),
   APP_ENV: appEnvSchema.optional(),
@@ -23,6 +24,7 @@ export interface ServerEnv {
   appEnv: AppEnv;
   isProduction: boolean;
   databaseUrl: string | null;
+  databasePoolMax: number | null;
   internalRevalidateSecret: string | null;
   apiHost: string | null;
   rateLimitRpm: number;
@@ -48,6 +50,7 @@ export function readServerEnv(source: EnvSource = process.env): ServerEnv {
     appEnv,
     isProduction,
     databaseUrl: parsed.DATABASE_URL ?? null,
+    databasePoolMax: parsed.DATABASE_POOL_MAX ?? null,
     internalRevalidateSecret: parsed.INTERNAL_REVALIDATE_SECRET ?? null,
     apiHost: parsed.API_HOST ?? null,
     rateLimitRpm: parsed.GATEWAY_RATE_LIMIT_RPM,
