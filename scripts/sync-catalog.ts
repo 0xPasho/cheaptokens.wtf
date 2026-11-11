@@ -23,6 +23,8 @@ async function main(): Promise<void> {
       method: "POST",
       headers: { authorization: `Bearer ${secret}` },
       redirect: "error",
+    }).catch((error: unknown) => {
+      throw new Error("Catalog was synchronized, but cache revalidation failed: the server could not be reached.", { cause: error });
     });
     if (!response.ok) throw new Error(`Catalog cache revalidation failed (HTTP ${response.status}).`);
     console.log("Catalog cache revalidated.");

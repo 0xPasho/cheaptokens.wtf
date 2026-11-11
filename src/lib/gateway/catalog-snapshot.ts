@@ -60,7 +60,11 @@ export async function loadCatalogSnapshot(
 
 export function createCatalogSource(
   load: () => Promise<CatalogSnapshot>,
-  { ttlMs = 60_000, now = Date.now }: { ttlMs?: number; now?: () => number } = {},
+  { ttlMs = 60_000, now = Date.now, onError }: {
+    ttlMs?: number;
+    now?: () => number;
+    onError?: (error: unknown) => void;
+  } = {},
 ): CatalogSource {
   let snapshot: CatalogSnapshot | undefined;
   let expiresAt = 0;
@@ -77,7 +81,10 @@ export function createCatalogSource(
       expiresAt = startedAt + ttlMs;
       return loaded;
     }).catch((error: unknown) => {
-      if (snapshot) return snapshot;
+      if (snapshot) {
+        onError?.(error);
+        return snapshot;
+      }
       throw error;
     }).finally(() => {
       // Un fallo no renueva el TTL: la próxima llamada vuelve a intentar.

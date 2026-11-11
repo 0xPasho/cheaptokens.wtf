@@ -279,6 +279,14 @@ describe("POST /api/internal/revalidate-catalog", () => {
     expect(await response.text()).toBe("");
     expect(revalidateTag).not.toHaveBeenCalled();
   });
+
+  it.each(["a", "a".repeat(15), "a".repeat(16)])("requires at least 16 characters in the configured secret (%s)", async (secret) => {
+    vi.stubEnv("INTERNAL_REVALIDATE_SECRET", secret);
+    const response = await POST(request(`Bearer ${secret}`));
+    expect(response.status).toBe(secret.length < 16 ? 401 : 204);
+    expect(await response.text()).toBe("");
+    expect(revalidateTag).toHaveBeenCalledTimes(secret.length < 16 ? 0 : 1);
+  });
 });
 
 describe("catalog:sync script", () => {
@@ -358,6 +366,18 @@ describe("catalog:sync script", () => {
     await vi.waitFor(() => expect(process.exitCode).toBe(1));
     expect(console.error).toHaveBeenCalledWith(expect.objectContaining({
       message: "Catalog cache revalidation failed (HTTP 401).",
+    }));
+  });
+
+  it("reports that sync succeeded when the revalidation server cannot be reached", async () => {
+    const error = new TypeError("fetch failed");
+    fetchMock.mockRejectedValue(error);
+    await runScript();
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(sync).toHaveBeenCalledTimes(1);
+    expect(console.error).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Catalog was synchronized, but cache revalidation failed: the server could not be reached.",
+      cause: error,
     }));
   });
 });

@@ -8,6 +8,8 @@ import type { CatalogSnapshot } from "@/lib/gateway/types";
 
 import { createTestDb } from "../../helpers/db";
 
+afterEach(() => vi.useRealTimers());
+
 const hugePrice = BigInt("9007199254740993");
 const model: typeof models.$inferInsert = {
   id: "test/model", name: "Test model", author: "test", description: { en: "Test" },
@@ -159,17 +161,22 @@ describe("createCatalogSource", () => {
   it("serves the previous snapshot on a failed reload and retries on the next call", async () => {
     const initial = snapshot(0);
     const refreshed = snapshot(60_000);
+    const error = new Error("Database unavailable");
+    const onError = vi.fn();
     const load = vi.fn<() => Promise<CatalogSnapshot>>()
       .mockResolvedValueOnce(initial)
-      .mockRejectedValueOnce(new Error("Database unavailable"))
+      .mockRejectedValueOnce(error)
       .mockResolvedValueOnce(refreshed);
-    const source = createCatalogSource(load, { now: Date.now });
+    const source = createCatalogSource(load, { now: Date.now, onError });
     expect(await source()).toBe(initial);
+    expect(onError).not.toHaveBeenCalled();
     vi.setSystemTime(60_000);
     expect(await Promise.all([source(), source()])).toEqual([initial, initial]);
     expect(load).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenCalledExactlyOnceWith(error);
     expect(await source()).toBe(refreshed);
     expect(load).toHaveBeenCalledTimes(3);
+    expect(onError).toHaveBeenCalledTimes(1);
     expect(await source()).toBe(refreshed);
     expect(load).toHaveBeenCalledTimes(3);
   });
