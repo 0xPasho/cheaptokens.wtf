@@ -12,6 +12,7 @@ import { uuidv7 } from "@/lib/db/uuid";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { handleChatCompletion } from "@/lib/gateway/handler";
 import { createJsonLogger } from "@/lib/gateway/logger";
+import * as sanitizers from "@/lib/gateway/sanitize";
 import { createSseParser } from "@/lib/gateway/sse";
 import type { GatewayDeps, GatewayErrorCode } from "@/lib/gateway/types";
 import { createMemoryRateLimiter } from "@/lib/rate-limit/memory";
@@ -37,6 +38,7 @@ async function start(options?: GatewayHarnessOptions) {
 
 afterEach(async () => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   await Promise.all(harnesses.splice(0).map((harness) => harness.close()));
 });
 
@@ -131,7 +133,8 @@ describe("gateway handler", () => {
     if (includeUsage) expect(usages[0].usage).toMatchObject({ prompt_tokens: 1, completion_tokens: 14, total_tokens: 15 });
     await harness.flushAfter();
     expect(await harness.db.select().from(requests)).toMatchObject([{ status: "success", stream: true, completionTokens: 14, costMicroUsd: BigInt(10), upstreamCostMicroUsd: BigInt(10) }]);
-    expect(harness.mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true }, model: "mock/ok" });
+    // El catálogo mapea el mock con el mismo ID del modelo (catalog/upstreams.ts), así `x_mock` elige el escenario.
+    expect(harness.mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true }, model: "qwen/qwen3.8-flash" });
   });
 
   it.each([false, true])("estimates missing usage including content and reasoning; stream=%s", async (stream) => {
@@ -153,6 +156,19 @@ describe("gateway handler", () => {
     expect((await handleChatCompletion(declared, directDeps(harness, { env: { apiHost: "other", rateLimitRpm: 60, isProduction: false } }))).status).toBe(404);
     expect(harness.mock.requests).toHaveLength(0);
     expect(await harness.db.select().from(requests)).toHaveLength(0);
+  });
+
+  it.each(["api.cheaptokens.wtf", "API.CHEAPTOKENS.WTF", "web.cheaptokens.wtf"])("uses the Host header when Next builds a localhost URL: %s", async (host) => {
+    const harness = await start();
+    const request = new Request("http://localhost:3000/v1/chat/completions", {
+      method: "POST", headers: { host, authorization: `Bearer ${harness.apiKey}` }, body: JSON.stringify(basicBody),
+    });
+    const response = await handleChatCompletion(request, directDeps(harness, {
+      env: { apiHost: "API.CheapTokens.wtf", rateLimitRpm: 60, isProduction: false },
+    }));
+    expect(response.status).toBe(host === "web.cheaptokens.wtf" ? 404 : 200);
+    await response.text();
+    expect(harness.mock.requests).toHaveLength(host === "web.cheaptokens.wtf" ? 0 : 1);
   });
 
   it("rejects oversized declared and streamed bodies before authentication", async () => {
@@ -252,14 +268,26 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toMatchObject([{ upstreamId: null, attempts: 0, costMicroUsd: BigInt(0) }]);
   });
 
-  it.each(["mid-stream-error", "cut"])("finishes a broken stream with a public error and bills estimated usage: %s", async (scenario) => {
+  it.each([
+    ["mid-stream-error", false], ["mid-stream-error", true], ["cut", false], ["cut", true],
+  ] as const)("finishes a broken stream with usage before the public error: %s, include_usage=%s", async (scenario, includeUsage) => {
     const harness = await start({ upstreams: scenarioUpstreams(scenario) });
-    const response = await post(harness, { ...basicBody, stream: true, x_mock: { scenario, chunkDelayMs: 5 } });
+    const response = await post(harness, { ...basicBody, stream: true, stream_options: { include_usage: includeUsage }, x_mock: { scenario, chunkDelayMs: 5 } });
     expect(response.status).toBe(200);
     const text = await response.text();
     expect(text).not.toMatch(/inferhub|provider|source/i);
     const payloads = chunks(text);
     expect(payloads.at(-1)).toMatchObject({ error: { type: "upstream_error", code: "upstream_error" }, choices: [{ index: 0, delta: {}, finish_reason: "error" }] });
+    const order = createSseParser().push(new TextEncoder().encode(text)).flatMap((event) => {
+      if (event.type !== "data") return [];
+      if (event.data === "[DONE]") return ["done"];
+      const payload = JSON.parse(event.data) as Record<string, unknown>;
+      return ["error" in payload ? "error" : "usage" in payload ? "usage" : "content"];
+    });
+    expect(order).toEqual([
+      ...Array.from({ length: payloads.length - (includeUsage ? 2 : 1) }, () => "content"),
+      ...(includeUsage ? ["usage"] : []), "error", "done",
+    ]);
     expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
     await harness.flushAfter();
     expect(await harness.db.select().from(requests)).toMatchObject([{ status: "upstream_error", usageEstimated: true, completionTokens: 13, costMicroUsd: BigInt(10) }]);
@@ -279,6 +307,42 @@ describe("gateway handler", () => {
     expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
   });
 
+  it.each(["flushAfter", "close"] as const)("%s waits for a handler cancelled before it registers after()", async (method) => {
+    const harness = await start();
+    const abort = new AbortController();
+    const pending = fetch(`${harness.baseUrl}/chat/completions`, {
+      method: "POST", headers: { authorization: `Bearer ${harness.apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ ...basicBody, stream: true, x_mock: { latencyMs: 300 } }), signal: abort.signal,
+    });
+    const timer = setTimeout(() => abort.abort(), 100);
+    try {
+      await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    } finally {
+      clearTimeout(timer);
+    }
+    expect(harness.mock.requests).toHaveLength(1);
+    await harness[method]();
+    if (method === "flushAfter") {
+      expect(await harness.db.select().from(requests)).toMatchObject([{
+        status: "client_cancelled", completionTokens: 14, usageEstimated: false,
+      }]);
+    }
+    expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
+    expect(harness.logs.some((line) => line.includes('"charge_failed"'))).toBe(false);
+  });
+
+  it("keeps the upstream error code after a client cancels a failing stream", async () => {
+    const harness = await start({ upstreams: scenarioUpstreams("mid-stream-error") });
+    const response = await post(harness, { ...basicBody, stream: true, x_mock: { scenario: "mid-stream-error", chunks: 12, chunkDelayMs: 15 } });
+    const reader = response.body!.getReader();
+    await reader.read();
+    await reader.cancel();
+    await harness.flushAfter();
+    expect(await harness.db.select().from(requests)).toMatchObject([{
+      status: "client_cancelled", errorCode: "upstream_error", usageEstimated: true,
+    }]);
+  });
+
   it("sanitizes comments received after the first data event", async () => {
     const harness = await start();
     const deps = directDeps(harness, { fetch: async () => new Response('data: {"choices":[{"delta":{"content":"ok"}}]}\n\n: INFERHUB\n\ndata: [DONE]\n\n') });
@@ -288,7 +352,7 @@ describe("gateway handler", () => {
     expect(text).not.toContain("INFERHUB");
   });
 
-  it.each([false, true])("honors the total deadline; streaming=%s", async (stream) => {
+  it.each([[false, false], [true, true], [true, false]])("honors the total deadline; streaming=%s, reported usage=%s", async (stream, reportedUsage) => {
     const harness = await start();
     const tasks: (() => Promise<void>)[] = [];
     const originalTimeout = globalThis.setTimeout;
@@ -304,7 +368,11 @@ describe("gateway handler", () => {
         });
         return new Response(new ReadableStream<Uint8Array>({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"abcdefgh"}}],"usage":{"prompt_tokens":100,"completion_tokens":100}}\n\n'));
+            const payload = {
+              choices: [{ delta: { content: "abcdefgh" } }],
+              ...(reportedUsage ? { usage: { prompt_tokens: 100, completion_tokens: 100 } } : {}),
+            };
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(payload)}\n\n`));
             signal?.addEventListener("abort", () => controller.error(new Error("Timeout")), { once: true });
           },
         }));
@@ -321,8 +389,8 @@ describe("gateway handler", () => {
     timer.mockRestore();
     expect(await harness.db.select().from(requests)).toMatchObject([{
       status: "upstream_timeout", httpStatus: stream ? 200 : 504,
-      completionTokens: stream ? 2 : 0, promptTokens: stream ? 1 : 0,
-      usageEstimated: stream, costMicroUsd: BigInt(stream ? 10 : 0),
+      completionTokens: stream ? reportedUsage ? 100 : 2 : 0, promptTokens: stream ? reportedUsage ? 100 : 1 : 0,
+      usageEstimated: stream && !reportedUsage, costMicroUsd: BigInt(stream ? 10 : 0),
     }]);
   });
 
@@ -340,6 +408,121 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toMatchObject([{
       status: "upstream_error", promptTokens: 40, completionTokens: 80, usageEstimated: false, upstreamCostMicroUsd: BigInt(20),
     }]);
+  });
+
+  it.each([false, true])("estimates tool names and arguments, including fragmented calls; stream=%s", async (stream) => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    const tool = (name: string, args: string, index = 0) => ({ index, type: "function", function: { name, arguments: args } });
+    const payloads = [
+      { choices: [{ delta: { tool_calls: [tool("abcd", "123456")] } }] },
+      { choices: [{ delta: { tool_calls: [tool("efgh", "789012"), tool("tool", "args", 1)] } }] },
+    ];
+    const deps = directDeps(harness, {
+      after: (task) => tasks.push(task),
+      fetch: async () => stream
+        ? new Response(payloads.map((payload) => `data: ${JSON.stringify(payload)}\n\n`).join("") + "data: [DONE]\n\n")
+        : Response.json({ choices: [{ message: { tool_calls: [tool("abcdefgh", "123456789012"), tool("tool", "args", 1)] } }] }),
+    });
+    const response = await handleChatCompletion(directRequest(harness, JSON.stringify({ ...basicBody, stream })), deps);
+    const text = await response.text();
+    expect(text).toContain("tool_calls");
+    expect(text).not.toContain('"error"');
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{
+      status: "success", usageEstimated: true, promptTokens: 1, completionTokens: 7, costMicroUsd: BigInt(10),
+    }]);
+  });
+
+  it.each([
+    { label: "role only", payload: { choices: [{ delta: { role: "assistant", content: "", reasoning_content: "", tool_calls: [] } }] }, status: "upstream_error" },
+    { label: "finish only", payload: { choices: [{ delta: {}, finish_reason: "stop" }] }, status: "upstream_error" },
+    { label: "usage only", payload: { choices: [], usage: { prompt_tokens: 1, completion_tokens: 0 } }, status: "success" },
+    { label: "reasoning only", payload: { choices: [{ delta: { reasoning_content: "ok" } }] }, status: "success" },
+    { label: "tool start only", payload: { choices: [{ delta: { tool_calls: [{ index: 0, id: "call_one", type: "function" }] } }] }, status: "success" },
+  ])("classifies streams without text correctly: $label", async ({ payload, status }) => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    const response = await handleChatCompletion(directRequest(harness, JSON.stringify({ ...basicBody, stream: true })), directDeps(harness, {
+      after: (task) => tasks.push(task),
+      fetch: async () => new Response(`data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`),
+    }));
+    const text = await response.text();
+    expect(chunks(text).some((chunk) => "error" in chunk)).toBe(status === "upstream_error");
+    expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{ status }]);
+  });
+
+  it("records the attempted upstream by index when targets share a URL", async () => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    const deps = directDeps(harness, { after: (task) => tasks.push(task), now: () => 1_800_000_000_000 });
+    const snapshot = await deps.catalog();
+    const entry = snapshot.getModel(model)!;
+    const target = entry.upstreams[0];
+    deps.catalog = async () => ({
+      loadedAt: snapshot.loadedAt,
+      getModel: () => ({ ...entry, upstreams: [{ ...target, upstreamId: "inferhub" }, target] }),
+    });
+    const originalTimeout = globalThis.setTimeout;
+    vi.spyOn(globalThis, "setTimeout").mockImplementation((callback, delay, ...args) =>
+      originalTimeout(callback, delay === 790_000 ? 25 : delay, ...args));
+    let attempts = 0;
+    deps.fetch = async (_input, init) => {
+      if (++attempts === 1) return new Response(null, { status: 502 });
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("Timeout")), { once: true });
+      });
+    };
+    await failure(await handleChatCompletion(directRequest(harness), deps), 504, "upstream_timeout");
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{
+      status: "upstream_timeout", attempts: 2, upstreamId: "mock", costMicroUsd: BigInt(0),
+    }]);
+  });
+
+  it("closes and charges the stream when building the final usage chunk throws", async () => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    vi.spyOn(sanitizers, "buildUsageChunk").mockImplementationOnce(() => { throw new Error("secret upstream content"); });
+    const response = await handleChatCompletion(directRequest(harness, JSON.stringify({
+      ...basicBody, stream: true, stream_options: { include_usage: true },
+    })), directDeps(harness, { after: (task) => tasks.push(task) }));
+    expect(await response.text()).toContain('"content"');
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{
+      status: "upstream_error", errorCode: "upstream_error", completionTokens: 14, usageEstimated: false, costMicroUsd: BigInt(10),
+    }]);
+    expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
+    expect(harness.logs.join("\n")).not.toContain("secret");
+  });
+
+  it("measures stream latency at completion even when after() runs later", async () => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    let now = 1_800_000_000_000;
+    const response = await handleChatCompletion(directRequest(harness, JSON.stringify({ ...basicBody, stream: true })), directDeps(harness, {
+      now: () => now, after: (task) => tasks.push(task),
+    }));
+    await response.text();
+    now += 5_000;
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{ latencyMs: 0 }]);
+  });
+
+  it("returns 502 and records upstream_error when sanitizing a completion throws", async () => {
+    const harness = await start();
+    const tasks: (() => Promise<void>)[] = [];
+    vi.spyOn(sanitizers, "sanitizeCompletion").mockImplementationOnce(() => { throw new Error("secret upstream content"); });
+    const response = await handleChatCompletion(directRequest(harness), directDeps(harness, { after: (task) => tasks.push(task) }));
+    await failure(response, 502, "upstream_error");
+    await tasks[0]();
+    expect(await harness.db.select().from(requests)).toMatchObject([{
+      status: "upstream_error", httpStatus: 502, errorCode: "upstream_error", completionTokens: 14, usageEstimated: false,
+    }]);
+    expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
+    expect(harness.logs.join("\n")).not.toContain("secret");
   });
 
   it("writes one valid JSON line for each logger level", () => {

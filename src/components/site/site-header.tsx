@@ -28,6 +28,13 @@ export function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary 
           >
             {dict.nav.models}
           </Link>
+          {/* En un teléfono no cabe junto a Modelos y la acción principal: ahí está en el footer. */}
+          <Link
+            href={`/${locale}/docs`}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "max-sm:hidden")}
+          >
+            {dict.nav.docs}
+          </Link>
           <Link
             href={`/${locale}#how-it-works`}
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "max-sm:hidden")}

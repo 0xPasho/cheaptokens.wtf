@@ -27,7 +27,7 @@ export interface GatewayHarnessOptions {
   env?: EnvSource;
 }
 
-async function serve(request: IncomingMessage, response: ServerResponse, deps: GatewayDeps): Promise<void> {
+async function serve(request: IncomingMessage, response: ServerResponse, handle: (request: Request) => Promise<Response>): Promise<void> {
   const abort = new AbortController();
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   const disconnect = () => {
@@ -49,7 +49,7 @@ async function serve(request: IncomingMessage, response: ServerResponse, deps: G
     if (request.method !== "GET" && request.method !== "HEAD") {
       init.body = Readable.toWeb(request) as ReadableStream<Uint8Array>;
     }
-    const result = await handleChatCompletion(new Request(`http://${headers.get("host")}${request.url}`, init), deps);
+    const result = await handle(new Request(`http://${headers.get("host")}${request.url}`, init));
     if (response.destroyed) {
       await result.body?.cancel();
       return;
@@ -94,8 +94,12 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
   const { db } = database;
   const logs: string[] = [];
   const tasks: Promise<void>[] = [];
+  const handlers = new Set<Promise<Response>>();
   const flushAfter = async () => {
-    while (tasks.length > 0) await Promise.all(tasks.splice(0));
+    // Un handler en vuelo puede registrar after() después de la desconexión.
+    while (handlers.size > 0 || tasks.length > 0) {
+      await Promise.allSettled([...handlers, ...tasks.splice(0)]);
+    }
   };
   try {
     await syncCatalog(db, { models: options.models ?? CATALOG, upstreams: options.upstreams ?? UPSTREAMS, environment: "development" });
@@ -111,7 +115,14 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
       log: createJsonLogger((line) => logs.push(line)), env: readServerEnv(env),
       after(task) { tasks.push(Promise.resolve().then(task)); },
     };
-    const server = createServer((request, response) => { void serve(request, response, deps); });
+    const handle = (request: Request) => {
+      const pending = handleChatCompletion(request, deps);
+      handlers.add(pending);
+      const settled = () => { handlers.delete(pending); };
+      void pending.then(settled, settled);
+      return pending;
+    };
+    const server = createServer((request, response) => { void serve(request, response, handle); });
     server.listen(0, "127.0.0.1");
     await once(server, "listening");
     const address = server.address();
