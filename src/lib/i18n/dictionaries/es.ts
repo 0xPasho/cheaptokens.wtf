@@ -136,15 +136,15 @@ export const es: Dictionary = {
         "En pausas largas, por ejemplo mientras un modelo razona, llegan líneas de comentario `: keep-alive`. El estándar SSE dice que se ignoran, y los SDKs ya lo hacen.",
       errorTitle: "Errores a mitad del stream",
       errorBody:
-        "Si el modelo falla con el stream ya empezado, el status HTTP ya es `200`. El error llega como un último chunk, con un objeto `error` y `finish_reason: \"error\"`, y después `[DONE]`. Los SDKs de OpenAI lo lanzan como `APIError`.",
+        "Si el modelo falla a mitad del stream, el status `200` ya salió. El error llega como un último chunk, con un objeto `error` y `finish_reason: \"error\"`, y después `[DONE]`. Los SDKs de OpenAI lo lanzan como `APIError`.",
       reasoningTitle: "Razonamiento",
       reasoningBody:
-        "Los modelos de razonamiento mandan su razonamiento en `reasoning_content`: en `delta` con streaming y en `message` sin streaming. Los SDKs de OpenAI no lo tipan, pero tampoco lo descartan: léelo como un campo extra.",
+        "Los modelos de razonamiento mandan lo que piensan en `reasoning_content`: en `delta` con streaming y en `message` sin streaming. Los SDKs de OpenAI no lo tipan, pero tampoco lo descartan: léelo como un campo extra.",
     },
     models: {
       title: "Cómo elegir modelo",
       body: "Cada modelo tiene un ID con la forma `autor/modelo`, como `{model}`. Eso es lo que va en `model`.",
-      list: "El catálogo muestra cada modelo con su precio y su descuento. Desde código, llama a `GET /v1/models`: es pública y no necesita key.",
+      list: "El catálogo muestra cada modelo con su precio y su descuento. Desde código, llama a `GET /v1/models`: es público y no necesita key.",
       browse: "Ver modelos",
     },
     billing: {
@@ -172,7 +172,7 @@ export const es: Dictionary = {
         model_not_found: "El modelo no existe o no está disponible para ti",
         model_retired: "El modelo se retiró",
         request_too_large: "El body pesa más de {size} MB",
-        rate_limit_exceeded: "Llegaste al rate limit del workspace (mira `retry-after`)",
+        rate_limit_exceeded: "Te pasaste del rate limit del workspace (mira `retry-after`)",
         upstream_error: "El modelo falló con un error",
         no_upstream_available: "El modelo no está disponible por ahora",
         upstream_timeout: "El modelo tardó demasiado en empezar a responder",
@@ -182,7 +182,7 @@ export const es: Dictionary = {
     },
     rateLimit: {
       title: "Rate limit",
-      body: "Cada workspace puede hacer {count} requests por minuto, entre todas sus keys. Si te pasas, recibes un `429` con el header `retry-after`: los segundos que hay que esperar antes de reintentar. Los SDKs de OpenAI ya reintentan solos y lo respetan.",
+      body: "Por defecto, cada workspace puede hacer {count} requests por minuto, entre todas sus keys. Si te pasas, recibes un `429` con el header `retry-after`: los segundos que hay que esperar antes de reintentar. Los SDKs de OpenAI ya reintentan solos y lo respetan.",
     },
     tools: {
       title: "Herramientas compatibles",

@@ -129,14 +129,14 @@ export const en = {
     streaming: {
       title: "Streaming",
       body: "Pass `stream: true` and the response arrives as Server-Sent Events, just like with OpenAI. To get token usage in the last chunk, set `stream_options.include_usage` to `true`.",
-      wireTitle: "What arrives",
+      wireTitle: "What you get",
       wireBody:
         "Each event is a `data:` line with a `chat.completion.chunk`. With `include_usage`, the last one has empty `choices` and the `usage`. The stream ends with `data: [DONE]`.",
       keepAlive:
         "During long pauses, for example while a model reasons, you'll get `: keep-alive` comment lines. The SSE standard says to ignore them, and the SDKs already do.",
       errorTitle: "Errors mid-stream",
       errorBody:
-        "If the model fails after the stream started, the HTTP status is already `200`. The error arrives as one last chunk, with an `error` object and `finish_reason: \"error\"`, followed by `[DONE]`. The OpenAI SDKs raise it as an `APIError`.",
+        "If the model fails after the stream has started, the HTTP status is already `200`. The error arrives as one last chunk, with an `error` object and `finish_reason: \"error\"`, followed by `[DONE]`. The OpenAI SDKs raise it as an `APIError`.",
       reasoningTitle: "Reasoning",
       reasoningBody:
         "Reasoning models send their reasoning in `reasoning_content`: in `delta` when streaming, in `message` when not. The OpenAI SDKs don't type it, but they don't drop it either: read it as an extra field.",
@@ -182,7 +182,7 @@ export const en = {
     },
     rateLimit: {
       title: "Rate limit",
-      body: "Each workspace can make {count} requests per minute, across all its keys. Go over it and you get a `429` with a `retry-after` header: the seconds to wait before trying again. The OpenAI SDKs already retry and respect it.",
+      body: "By default, each workspace can make {count} requests per minute, across all its keys. Go over it and you get a `429` with a `retry-after` header: the seconds to wait before trying again. The OpenAI SDKs already retry and respect it.",
     },
     tools: {
       title: "Compatible tools",
