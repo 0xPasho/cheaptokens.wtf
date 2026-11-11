@@ -33,7 +33,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [{
 }];
 const toolChoice = { type: "function", function: { name: "get_weather" } } as const;
 const expectedToolCalls = [{
-  id: "call_mock_weather", type: "function",
+  id: "call_7f3a9c2b1d4e6a80", type: "function",
   function: { name: "get_weather", arguments: '{"location":"Ciudad de México","unit":"celsius"}' },
 }];
 

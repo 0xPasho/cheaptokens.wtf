@@ -251,7 +251,7 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       const cost = usageCost(prompt, completion, input, output);
       const error = { message: "InferHub provider failed", type: "server_error", source: "inferhub" };
       const toolCall = {
-        id: "call_mock_weather", type: "function",
+        id: "call_7f3a9c2b1d4e6a80", type: "function",
         function: { name: "get_weather", arguments: toolArgumentChunks.join("") },
       };
       if (body.stream !== true) {

@@ -538,7 +538,7 @@ describe("mock upstream: tool-call", () => {
       usage?: { cost?: number } | null;
     }[];
     const expected = {
-      id: "call_mock_weather", type: "function",
+      id: "call_7f3a9c2b1d4e6a80", type: "function",
       function: { name: "get_weather", arguments: '{"location":"Ciudad de México","unit":"celsius"}' },
     };
     if (stream) {
