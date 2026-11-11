@@ -45,13 +45,13 @@ Objetivo: un desconocido se registra, recarga, crea una key y hace su primer req
 
 ### Criterios de lanzamiento
 
-- [ ] El SDK oficial de OpenAI (Python y JS) funciona cambiando solo `base_url` y `api_key`, con y sin streaming, incluyendo tools.
-- [ ] La reconciliación da 0 de diferencia después de una prueba de carga con requests concurrentes y cancelaciones.
-- [ ] Revocar una key hace fallar el request siguiente.
-- [ ] Apagar un upstream con `ops_disabled_at` mueve el tráfico al siguiente en ≤ 60 s.
-- [ ] Ninguna respuesta, header ni error revela el upstream. Hay un test automatizado que busca su nombre y dominio en las respuestas.
-- [ ] Ningún log contiene keys, prompts ni respuestas.
-- [ ] Las páginas web funcionan en `en` y `es`, y `pnpm check` pasa.
+- [ ] El SDK oficial de OpenAI (Python y JS) funciona cambiando solo `base_url` y `api_key`, con y sin streaming, incluyendo tools. JS verificado ([15 · Plan › Terminado](./15-plan-gateway.md#6-terminado)); falta probar Python.
+- [x] La reconciliación da 0 de diferencia después de una prueba de carga con requests concurrentes y cancelaciones.
+- [x] Revocar una key hace fallar el request siguiente.
+- [x] Apagar un upstream con `ops_disabled_at` mueve el tráfico al siguiente en ≤ 60 s.
+- [x] Ninguna respuesta, header ni error revela el upstream. Hay un test automatizado que busca su nombre y dominio en las respuestas.
+- [x] Ningún log contiene keys, prompts ni respuestas.
+- [x] Las páginas web funcionan en `en` y `es`, y `pnpm check` pasa.
 - [ ] Las [preguntas abiertas](./12-preguntas-abiertas.md) bloqueantes están resueltas: upstreams, aprobación del MoR, validación legal y fiscal, y el registro del dominio.
 
 ## Fase 2 · Crecer el uso
