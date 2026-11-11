@@ -4,7 +4,7 @@ import type { CallUpstream, LogFields, UpstreamFailure, UpstreamTarget } from ".
 export const callUpstream: CallUpstream = async (options) => {
   options.signal?.throwIfAborted();
   const startedAt = options.now();
-  const targets = options.model.upstreams.slice(0, options.maxAttempts ?? 3);
+  const targets = options.model.upstreams.slice(0, Math.max(1, options.maxAttempts ?? 3));
   let lastTarget: UpstreamTarget | null = null;
   let lastFailure: UpstreamFailure | null = null;
   let allTimedOut = true;
@@ -24,12 +24,13 @@ export const callUpstream: CallUpstream = async (options) => {
     const fields: LogFields = {
       upstreamId: target.upstreamId,
       attempt: attempts,
+      kind: result.failure.kind,
       durationMs: options.now() - attemptStartedAt,
     };
     if (result.failure.kind === "http") {
       const { status, code } = result.failure;
       fields.status = status;
-      fields.code = code;
+      fields.code = code?.slice(0, 64) ?? null;
       if (status === 400 || status === 422) {
         return {
           ok: false, attempts, target, failure: result.failure,

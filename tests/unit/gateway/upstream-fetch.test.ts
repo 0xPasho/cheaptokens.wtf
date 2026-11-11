@@ -92,6 +92,12 @@ it.each([
   expect(mock.requests[0].headers["x-max-output-price"]).toBe(expected);
 });
 
+it.each(["costInputPer1M", "costOutputPer1M"] as const)("rechaza %s negativo con RangeError antes de iniciar fetch", async (field) => {
+  const transport = vi.fn<typeof fetch>();
+  await expect(fetchUpstream(options(false, { fetch: transport }), target({ [field]: BigInt(-1) }))).rejects.toThrow(RangeError);
+  expect(transport).not.toHaveBeenCalled();
+});
+
 it("fuerza include_usage cuando no había stream_options", async () => {
   const result = await fetchUpstream(options(true), target());
   if (result.ok && result.stream) for await (const event of result.events) expect(event).toBeDefined();
@@ -163,6 +169,53 @@ it.each(["", ": comment\n\n", "data: [DONE]\n\n", 'data: {"error":null}\n\n', "d
     });
   },
 );
+
+it.each([null, [], "text", 42, {}, { choices: {} }, { choices: [], error: null }])(
+  "rechaza un JSON sin stream inválido (%j)", async (payload) => {
+    expect(await fetchUpstream(options(false, { fetch: responseFetch(() => Response.json(payload)) }), target())).toEqual({
+      ok: false, failure: { kind: "stream_error" }, clientMessage: null,
+    });
+  },
+);
+
+it.each([
+  ["ok", "middle"], ["ok", "done"], ["ok", "usage"], ["mid-stream-error", "error"],
+])("salir del stream real %s en %s no lanza", async (scenario, stopAt) => {
+  const input = options(true);
+  const result = await fetchUpstream({
+    ...input, body: { ...input.body, x_mock: { chunks: 5, chunkDelayMs: 40 } },
+  }, target({ upstreamModel: `mock/${scenario}` }));
+  if (!result.ok || !result.stream) throw new Error("Expected stream");
+  let stopped = false;
+  await expect((async () => {
+    let contentChunks = 0;
+    for await (const event of result.events) {
+      if (event.type !== "data") continue;
+      if (event.data.includes('"content":"Hola')) contentChunks++;
+      if ((stopAt === "middle" && contentChunks === 2)
+        || (stopAt === "done" && event.data === "[DONE]")
+        || (stopAt === "usage" && event.data.includes('"usage":{'))
+        || (stopAt === "error" && event.data.includes('"error":'))) {
+        stopped = true;
+        break;
+      }
+    }
+  })()).resolves.toBeUndefined();
+  expect(stopped).toBe(true);
+  if (stopAt === "middle") await vi.waitFor(() => expect(mock.requests[0].clientAborted).toBe(true));
+});
+
+it("return sin iterar un stream real no lanza y cancela el request", async () => {
+  const input = options(true);
+  const result = await fetchUpstream({
+    ...input, body: { ...input.body, x_mock: { chunks: 10, chunkDelayMs: 100 } },
+  }, target());
+  if (!result.ok || !result.stream) throw new Error("Expected stream");
+  const iterator = result.events[Symbol.asyncIterator]();
+  await expect(iterator.return?.()).resolves.toMatchObject({ done: true });
+  expect(await iterator.next()).toMatchObject({ done: true });
+  await vi.waitFor(() => expect(mock.requests[0].clientAborted).toBe(true));
+});
 
 it("devolver un iterable sin consumirlo cancela el body y libera el aborto global", async () => {
   const signal = new AbortController().signal;
@@ -236,6 +289,32 @@ it.each([
   }
 });
 
+it.each([
+  [true, false, 10_000, "connect"],
+  [false, false, 60_000, "first_byte"],
+  [false, true, 180_000, "first_byte"],
+])("undefined conserva los timeouts por defecto (stream=%s, reasoning=%s)", async (stream, reasoning, milliseconds, phase) => {
+  vi.useFakeTimers();
+  try {
+    const input = options(stream);
+    const settled = vi.fn();
+    const request = fetchUpstream({
+      ...input, model: { ...input.model, isReasoning: reasoning },
+      timeouts: { connectMs: undefined, firstByteMs: undefined, firstByteReasoningMs: undefined },
+      fetch: async (_url, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+      }),
+    }, target()).then((result) => { settled(); return result; });
+    await vi.advanceTimersByTimeAsync(milliseconds - 1);
+    expect(settled).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await request).toMatchObject({ ok: false, failure: { kind: "timeout", phase } });
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it("un corte después del primer dato se propaga al consumidor", async () => {
   const result = await fetchUpstream(options(true), target({ upstreamModel: "mock/cut" }));
   if (!result.ok || !result.stream) throw new Error("Expected stream");
@@ -259,5 +338,16 @@ it("maxDuration interrumpe una lectura pendiente después del primer dato", asyn
   const next = iterator.next();
   controller.abort(reason);
   await expect(next).rejects.toBe(reason);
+  expect(await iterator.next()).toMatchObject({ done: true });
+});
+
+it("un aborto antes de consumir el primer evento conserva el error original", async () => {
+  const controller = new AbortController();
+  const reason = new Error("Maximum duration exceeded");
+  const result = await fetchUpstream(options(true, { signal: controller.signal }), target());
+  if (!result.ok || !result.stream) throw new Error("Expected stream");
+  controller.abort(reason);
+  const iterator = result.events[Symbol.asyncIterator]();
+  await expect(iterator.next()).rejects.toBe(reason);
   expect(await iterator.next()).toMatchObject({ done: true });
 });

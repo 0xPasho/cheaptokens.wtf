@@ -51,12 +51,14 @@ describe.each([false, true])("fallback (stream=%s)", (stream) => {
     if (severity) {
       expect(log.error).toHaveBeenCalledExactlyOnceWith("upstream_alert", expect.objectContaining({
         upstreamId: "upstream-0", attempt: 1, status, severity,
+        kind: "http",
       }));
       expect(log.warn).not.toHaveBeenCalled();
     } else {
       expect(log.error).not.toHaveBeenCalled();
       expect(log.warn).toHaveBeenCalledExactlyOnceWith("upstream_failure", expect.objectContaining({
         upstreamId: "upstream-0", attempt: 1,
+        kind: status === null ? "network" : "http",
         ...(status === null ? {} : { status }),
         ...(scenario === "error-402-bid" ? { code: "no_provider_under_bid" } : {}),
       }));
@@ -94,6 +96,12 @@ describe.each([false, true])("fallback (stream=%s)", (stream) => {
     expect(mock.requests).toHaveLength(1);
   });
 
+  it.each([0, -1, -5])("maxAttempts=%s permite al menos un intento", async (maxAttempts) => {
+    const result = await callUpstream({ ...options(["error-500", "ok", "ok"], stream), maxAttempts });
+    expect(result).toMatchObject({ ok: false, attempts: 1, failure: { kind: "http", status: 500 } });
+    expect(mock.requests).toHaveLength(1);
+  });
+
   it("sin upstreams devuelve no_upstream_available", async () => {
     expect(await callUpstream(options([], stream))).toEqual({
       ok: false, attempts: 0, target: null, failure: null, errorCode: "no_upstream_available", clientMessage: null,
@@ -107,7 +115,7 @@ describe.each([false, true])("fallback (stream=%s)", (stream) => {
       ...input, timeouts: { connectMs: 1000, firstByteMs: 150 },
     });
     expect(result).toMatchObject({ ok: true, attempts: 2 });
-    expect(log.warn).toHaveBeenCalledWith("upstream_failure", expect.objectContaining({ phase: "first_byte" }));
+    expect(log.warn).toHaveBeenCalledWith("upstream_failure", expect.objectContaining({ kind: "timeout", phase: "first_byte" }));
     if (!result.ok) throw new Error("Expected success");
     expect(result.ttfbMs).toBeGreaterThanOrEqual(140);
     await drain(result);
@@ -142,6 +150,25 @@ describe.each([false, true])("fallback (stream=%s)", (stream) => {
     } finally {
       clearTimeout(timer);
     }
+  });
+});
+
+describe("sin stream", () => {
+  it.each(["stream-error-200", "empty-stream", "mid-stream-error"])("%s permite fallback con HTTP 200 inválido", async (scenario) => {
+    const result = await callUpstream(options([scenario, "ok"]));
+    expect(result).toMatchObject({
+      ok: true, stream: false, attempts: 2, target: { upstreamId: "upstream-1" },
+      body: { choices: expect.any(Array) },
+    });
+    expect(mock.requests).toHaveLength(2);
+    expect(log.warn).toHaveBeenCalledExactlyOnceWith("upstream_failure", expect.objectContaining({ kind: "stream_error" }));
+  });
+
+  it.each(["stream-error-200", "empty-stream", "mid-stream-error"])("%s sin alternativa devuelve upstream_error", async (scenario) => {
+    expect(await callUpstream(options([scenario]))).toMatchObject({
+      ok: false, attempts: 1, errorCode: "upstream_error", failure: { kind: "stream_error" }, clientMessage: null,
+    });
+    expect(mock.requests).toHaveLength(1);
   });
 });
 
@@ -190,9 +217,21 @@ it("no inicia fetch si el aborto global ya ocurrió", async () => {
 
 it("logs solo contienen los campos operativos permitidos", async () => {
   await callUpstream(options(["error-402", "error-401", "error-429"]));
-  const allowed = new Set(["upstreamId", "attempt", "status", "code", "phase", "durationMs", "severity"]);
+  const allowed = new Set(["upstreamId", "attempt", "kind", "status", "code", "phase", "durationMs", "severity"]);
   for (const [, fields] of [...log.error.mock.calls, ...log.warn.mock.calls]) {
     expect(Object.keys(fields).every((key) => allowed.has(key))).toBe(true);
   }
   expect(JSON.stringify([...log.error.mock.calls, ...log.warn.mock.calls])).not.toMatch(/secret-key|private prompt|source|message|baseUrl/);
+});
+
+it.each([401, 429])("trunca code a 64 caracteres en el log de HTTP %s", async (status) => {
+  const code = "x".repeat(1000);
+  const result = await callUpstream({
+    ...options(["ok"]), fetch: async () => Response.json({ error: { code } }, { status }),
+  });
+  expect(result).toMatchObject({ ok: false, failure: { kind: "http", code } });
+  const logger = status === 401 ? log.error : log.warn;
+  expect(logger).toHaveBeenCalledExactlyOnceWith(status === 401 ? "upstream_alert" : "upstream_failure", expect.objectContaining({
+    kind: "http", status, code: "x".repeat(64),
+  }));
 });

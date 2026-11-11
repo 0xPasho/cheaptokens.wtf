@@ -15,6 +15,7 @@ const DEFAULT_TIMEOUTS: UpstreamTimeouts = {
 const MAX_ERROR_BYTES = 64 * 1024;
 
 function priceCap(microUsd: bigint): string {
+  if (microUsd < BigInt(0)) throw new RangeError("Price caps must be nonnegative");
   const digits = microUsd.toString().padStart(7, "0");
   const fraction = digits.slice(-6).replace(/0+$/, "");
   return digits.slice(0, -6) + (fraction ? `.${fraction}` : "");
@@ -78,14 +79,23 @@ function replayFirstEvent(
       } catch (error) {
         ended = true;
         close();
-        await iterator.return?.();
+        try {
+          await iterator.return?.();
+        } catch {
+          // El cierre no debe reemplazar el error de lectura original.
+        }
         throw error;
       }
     },
     async return() {
       ended = true;
-      close();
-      await iterator.return?.();
+      try {
+        await iterator.return?.();
+      } catch {
+        // Abandonar la iteración no debe fallar aunque el body ya esté en error.
+      } finally {
+        close();
+      }
       return { done: true, value: undefined };
     },
   };
@@ -93,10 +103,21 @@ function replayFirstEvent(
 
 export async function fetchUpstream(options: CallUpstreamOptions, target: UpstreamTarget): Promise<UpstreamAttemptResult> {
   options.signal?.throwIfAborted();
+  // Un tope inválido es un error de configuración, no una falla de red.
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (target.apiKey !== "") headers.authorization = `Bearer ${target.apiKey}`;
+  if (target.sendsPriceCap) {
+    headers["x-max-input-price"] = priceCap(target.costInputPer1M);
+    headers["x-max-output-price"] = priceCap(target.costOutputPer1M);
+  }
   const controller = new AbortController();
   const abort = () => controller.abort(options.signal?.reason);
   options.signal?.addEventListener("abort", abort, { once: true });
-  const timeouts = { ...DEFAULT_TIMEOUTS, ...options.timeouts };
+  const timeouts: UpstreamTimeouts = {
+    connectMs: options.timeouts?.connectMs ?? DEFAULT_TIMEOUTS.connectMs,
+    firstByteMs: options.timeouts?.firstByteMs ?? DEFAULT_TIMEOUTS.firstByteMs,
+    firstByteReasoningMs: options.timeouts?.firstByteReasoningMs ?? DEFAULT_TIMEOUTS.firstByteReasoningMs,
+  };
   let phase: "connect" | "first_byte" | null = null;
   const expire = (value: "connect" | "first_byte") => {
     phase ??= value;
@@ -125,12 +146,6 @@ export async function fetchUpstream(options: CallUpstreamOptions, target: Upstre
       const streamOptions = isObject(options.body.stream_options) ? options.body.stream_options : {};
       body.stream_options = { ...streamOptions, include_usage: true };
     }
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (target.apiKey !== "") headers.authorization = `Bearer ${target.apiKey}`;
-    if (target.sendsPriceCap) {
-      headers["x-max-input-price"] = priceCap(target.costInputPer1M);
-      headers["x-max-output-price"] = priceCap(target.costOutputPer1M);
-    }
     const response = await options.fetch(`${target.baseUrl}/chat/completions`, {
       method: "POST",
       headers,
@@ -151,6 +166,9 @@ export async function fetchUpstream(options: CallUpstreamOptions, target: Upstre
     }
     if (!options.stream) {
       const payload: unknown = await response.json();
+      if (!isObject(payload) || "error" in payload || !Array.isArray(payload.choices)) {
+        return { ok: false, failure: { kind: "stream_error" }, clientMessage: null };
+      }
       return { ok: true, stream: false, body: payload };
     }
     if (!response.body) return { ok: false, failure: { kind: "stream_error" }, clientMessage: null };
