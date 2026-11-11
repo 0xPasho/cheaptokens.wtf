@@ -133,7 +133,8 @@ describe("gateway handler", () => {
     if (includeUsage) expect(usages[0].usage).toMatchObject({ prompt_tokens: 1, completion_tokens: 14, total_tokens: 15 });
     await harness.flushAfter();
     expect(await harness.db.select().from(requests)).toMatchObject([{ status: "success", stream: true, completionTokens: 14, costMicroUsd: BigInt(10), upstreamCostMicroUsd: BigInt(10) }]);
-    expect(harness.mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true }, model: "mock/ok" });
+    // El catálogo mapea el mock con el mismo ID del modelo (catalog/upstreams.ts), así `x_mock` elige el escenario.
+    expect(harness.mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true }, model: "qwen/qwen3.8-flash" });
   });
 
   it.each([false, true])("estimates missing usage including content and reasoning; stream=%s", async (stream) => {
