@@ -114,7 +114,10 @@
 
 /* ---------- Catalog layout (sidebar + .nr-main) ---------- */
 .nr-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; gap: 40px; }
-.nr-sidebar { position: sticky; top: 96px; max-height: calc(100vh - 120px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* Sticky sin viaje: top = el padding superior de .nr-catalog (112px) para que no suba al empezar,
+   y el alto máximo deja sitio al footer + padding inferior de .nr-main (~140px + margen) para que
+   el anclaje nunca choque con el fin del contenedor y el sidebar no se mueva al hacer scroll. */
+.nr-sidebar { position: sticky; top: 112px; max-height: calc(100dvh - 272px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .nr-sidebar::-webkit-scrollbar { width: 0; display: none; }
 .nr-sidebar-group + .nr-sidebar-group { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
 .nr-sidebar-group h2 { margin: 0 0 10px; padding: 0; color: var(--text-label); font-size: 12px; font-weight: 400; }
