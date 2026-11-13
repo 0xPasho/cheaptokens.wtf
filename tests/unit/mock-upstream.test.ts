@@ -511,7 +511,7 @@ describe("mock upstream: tiempos, registro y cierre", () => {
 describe("el mock y el catálogo", () => {
   // Regresión: con el tope de precio, un costo de mapeo menor que el ask del mock lo rechaza todo (docs/15, ola 3).
   it("todo costo de `mock` en catalog/upstreams.ts queda por encima del ask default del mock", async () => {
-    const { UPSTREAMS } = await import("@catalog/upstreams");
+    const { UPSTREAMS } = await import("../fixtures/catalog-upstreams");
     const { MOCK_DEFAULT_ASK_INPUT_PER_1M, MOCK_DEFAULT_ASK_OUTPUT_PER_1M } = await import("../helpers/mock-upstream");
     const mock = UPSTREAMS.find((upstream) => upstream.id === "mock");
     expect(mock).toBeDefined();

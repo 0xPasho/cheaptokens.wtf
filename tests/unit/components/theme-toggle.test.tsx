@@ -16,12 +16,12 @@ describe("ThemeToggle", () => {
     );
   });
 
-  it("marca system como opción actual cuando no hay preferencia", async () => {
+  it("marca dark como opción actual cuando no hay preferencia", async () => {
     const user = userEvent.setup();
     render(<ThemeToggle labels={labels} />);
     await user.click(screen.getByRole("button", { name: "Tema" }));
     expect(
-      await screen.findByRole("menuitemradio", { name: "Sistema" }),
+      await screen.findByRole("menuitemradio", { name: "Oscuro" }),
     ).toHaveAttribute("aria-checked", "true");
   });
 

@@ -11,6 +11,17 @@ export async function openDesignSystem(page: Page, theme: Theme) {
   }, theme);
   await page.goto("/es/design-system");
   await page.evaluate(() => document.fonts.ready);
+  // Base UI associates labels during hydration. Wait for those associations
+  // before scanning the entire page, especially on slower mobile contexts.
+  await page.waitForFunction(() => {
+    const labels = [...document.querySelectorAll("label")];
+    return [...document.querySelectorAll('[role="progressbar"], [role="switch"], [role="radio"], [role="checkbox"]')].every((element) => {
+      if (element.getAttribute("aria-label")) return true;
+      const labelledBy = element.getAttribute("aria-labelledby");
+      if (labelledBy?.split(" ").some((id) => document.getElementById(id)?.textContent?.trim())) return true;
+      return labels.some((label) => label.htmlFor === element.id && label.textContent?.trim());
+    });
+  });
 }
 
 /** Espera a que terminen las animaciones de entrada (zoom/fade) antes de medir un elemento. */

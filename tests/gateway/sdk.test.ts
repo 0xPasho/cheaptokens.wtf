@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { UPSTREAMS } from "@catalog/upstreams";
+import { UPSTREAMS } from "../fixtures/catalog-upstreams";
 
 import { apiKeys, requests, workspaces } from "@/lib/db/schema";
 

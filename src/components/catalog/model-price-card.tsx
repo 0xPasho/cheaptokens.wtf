@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from "lucide-react";
+import ExternalLinkIcon from "kubai-icons-react/icons/external-link";
 
 import { DiscountBadge } from "@/components/discount-badge";
 import { Price } from "@/components/price";

@@ -1,14 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./nibblerouter.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -59,9 +60,61 @@
 
 :root {
   color-scheme: light;
+  --surface-model-front: #ffffff;
+  --surface-model-pill: #ededed;
+  --icon-body: #2e3036;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --surface-hover: #eeeeee;
+  --navigation-surface: rgb(255 255 255 / 0.88);
+  --toolbar-surface: rgb(247 247 247 / 0.92);
+  --surface-search: #ededed;
+  --surface-pressed: #ededed;
+  --text-label: #5c5c5c;
+  --surface-subtle: #ededed;
+  --text-navigation: #5c5c5c;
+  --text-hover: #5c5c5c;
+  --surface-selected: #ededed;
+  --surface-tag: #ededed;
+  --text-tag: #5c5c5c;
+  --surface-tag-active: #ededed;
+  --text-description: #5c5c5c;
+  --surface-pill: #ededed;
+  --text-pill: #5c5c5c;
+  --text-credit: #5c5c5c;
+  --text-secondary: #5c5c5c;
+  --text-description-strong: #5c5c5c;
+  --surface-chip: #ededed;
+  --text-note: #5c5c5c;
+  --text-control: #5c5c5c;
+  --surface-control: #ededed;
+  --text-selected: #5c5c5c;
+  --text-code: #5c5c5c;
+  --text-code: #5c5c5c;
+  --surface-code: #f0f0f0;
+  --scrollbar: #5c5c5c;
+  --text-count: #5c5c5c;
+  --syntax-comment: #626973;
+  --syntax-keyword: #42566e;
+  --syntax-string: #096074;
+  --syntax-function: #8b4513;
+  --syntax-number: #71529c;
+  --syntax-class: #17637f;
+  --syntax-property: #7b4b20;
+  --text-response: #5c5c5c;
+  --surface-action: #ededed;
+  --surface-action-hover: #ededed;
+  --text-inverse: #f3f3f3;
+  --surface-primary-hover: #ededed;
+  --text-capability: #5c5c5c;
+  --text-resource: #5c5c5c;
+  --text-bright: #5c5c5c;
+  --surface-switch: #ededed;
+  --surface-switch-active: #ededed;
+  --text-footnote: #5c5c5c;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(0.976 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -75,12 +128,12 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   /* Más oscuro que el default de shadcn (0.577 0.245): así pasa AA también sobre su tinte /20. Ver docs/13 */
-  --destructive: oklch(0.5 0.204 27.325);
+  --destructive: oklch(0.49 0.195 27.325);
   /* Dinero a favor del usuario: descuento, ahorro, recarga acreditada. Ver docs/13 */
-  --success: oklch(0.51 0.13 152);
+  --success: oklch(0.50 0.13 152);
   --success-foreground: oklch(0.985 0 0);
   /* Saldo bajo, modelos deprecated: atención sin error */
-  --warning: oklch(0.53 0.12 62);
+  --warning: oklch(0.52 0.11 62);
   --warning-foreground: oklch(0.985 0 0);
   /* Fondo detrás de diálogos. En oscuro va más denso para separar el diálogo de la página */
   --overlay: oklch(0 0 0 / 10%);
@@ -123,19 +176,70 @@
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  --surface-model-front: #242424;
+  --surface-model-pill: #303030;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --surface-hover: #1e1e1e;
+  --navigation-surface: rgb(0 0 0 / 0.88);
+  --toolbar-surface: rgb(20 20 20 / 0.92);
+  --surface-search: #212121;
+  --surface-pressed: #242424;
+  --text-label: #a4a4a4;
+  --surface-subtle: #101010;
+  --text-navigation: #d0d0d0;
+  --text-hover: #9a9a9a;
+  --surface-selected: #1f1f1f;
+  --surface-tag: #2a2a2a;
+  --text-tag: #d6d6d6;
+  --surface-tag-active: #303030;
+  --text-description: #a8a8a8;
+  --surface-pill: #232323;
+  --text-pill: #cfcfcf;
+  --text-credit: #8d8d8d;
+  --text-secondary: #999;
+  --text-description-strong: #aaa;
+  --surface-chip: #202020;
+  --text-note: #969696;
+  --text-control: #ddd;
+  --surface-control: #262626;
+  --text-selected: #ededed;
+  --text-code: #eee;
+  --text-code: #eeeeee;
+  --surface-code: #090909;
+  --scrollbar: #3b3b3b;
+  --text-count: #777;
+  --syntax-comment: #747b85;
+  --syntax-keyword: #a4b9d0;
+  --syntax-string: #72efff;
+  --syntax-function: #ffbd83;
+  --syntax-number: #c6adff;
+  --syntax-class: #9fdfff;
+  --syntax-property: #ffca94;
+  --text-response: #bcbcbc;
+  --surface-action: #2b2b2b;
+  --surface-action-hover: #393939;
+  --text-inverse: #111;
+  --surface-primary-hover: #d9d9d9;
+  --text-capability: #a5c8b3;
+  --text-resource: #bdbdbd;
+  --text-bright: #fff;
+  --surface-switch: #222;
+  --surface-switch-active: #353535;
+  --text-footnote: #888;
+
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.964 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.209 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.643 0 0);
+  --accent: oklch(0.218 0 0);
   --accent-foreground: oklch(0.985 0 0);
   /* Más claro que el default de shadcn (0.704 0.191, fuera de sRGB): pasa AA en hover (/30) y en el pie de una card. Ver docs/13 */
   --destructive: oklch(0.74 0.158 22.216);
@@ -169,12 +273,22 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.922 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+.dark .nr-brand-monochrome {
+  filter: invert(1);
+}
+
+/* Kubai Ink: retain the library's shading and white marks in both themes. */
+.kubai-icon {
+  --ki-c: var(--icon-body);
+  --ki-e: var(--icon-body);
 }
 
 @layer base {
@@ -184,19 +298,11 @@
   body {
     @apply bg-background text-foreground;
     /* Resplandor ambiental arriba (refs 1 y 3): le da al vidrio algo que refractar. */
-    background-image: radial-gradient(
-      ellipse 70% 45% at 50% -8%,
-      var(--ambient-glow),
-      transparent 70%
-    );
+    background-image: none;
     background-attachment: fixed;
   }
   html {
     @apply font-sans;
-  }
-  /* better-ui §14: el trazo del ícono acompaña el peso del texto (400–500). Un solo grosor en todo el sitio. */
-  svg.lucide {
-    stroke-width: 1.75;
   }
   /* Movimiento reducido: sin transiciones ni animaciones (también las de entrada de tw-animate). */
   @media (prefers-reduced-motion: reduce) {
@@ -217,74 +323,25 @@
  * ───────────────────────────────────────────────────────────────────────── */
 
 /* Superficie flotante: popovers, menús, tooltips, marco de diálogos. */
-@utility glass-surface {
-  background-color: var(--glass-surface);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 0 0 1px var(--glass-border),
-    0 16px 48px var(--glass-shadow-color),
-    0 2px 6px var(--glass-shadow-color);
-}
+@utility glass-surface { background: var(--popover); border: 1px solid var(--border); box-shadow: none; }
 
 /* Marco de un diálogo (refs 5, 10, 11). Sin texto encima: el contenido va en un panel opaco adentro. */
-@utility glass-bezel {
-  background-color: var(--glass-bezel);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 0 0 1px var(--glass-border),
-    0 24px 64px var(--glass-shadow-color),
-    0 2px 6px var(--glass-shadow-color);
-}
+@utility glass-bezel { background: var(--popover); border: 1px solid var(--border); box-shadow: none; }
 
 /* Control translúcido: botón outline, inputs, pista de un segmentado. Solo sobre superficies propias. */
-@utility glass-control {
-  background-color: var(--glass-control);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 0 0 1px var(--glass-border);
-}
+@utility glass-control { background: var(--secondary); box-shadow: none; }
 
 /* Acción principal: píldora con brillo (refs 3, 5 y 10). */
-@utility glass-prominent {
-  background-color: var(--prominent-bottom);
-  background-image: linear-gradient(to bottom, var(--prominent-top), var(--prominent-bottom));
-  color: var(--primary-foreground);
-  box-shadow:
-    inset 0 1px 0 var(--prominent-highlight),
-    0 1px 2px var(--glass-shadow-color),
-    0 6px 20px var(--glass-shadow-color);
-}
+@utility glass-prominent { background: var(--primary); color: var(--primary-foreground); box-shadow: none; }
 
 /* Selección activa dentro de un segmentado (refs 3, 4, 6, 7). */
-@utility glass-raised {
-  background-color: var(--raised-bottom);
-  background-image: linear-gradient(to bottom, var(--raised-top), var(--raised-bottom));
-  color: var(--foreground);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 0 0 1px var(--glass-border),
-    0 1px 3px var(--glass-shadow-color);
-}
+@utility glass-raised { background: var(--accent); color: var(--foreground); box-shadow: none; }
 
 /* Pista hundida de switches, sliders y barras de progreso (refs 1 y 6, "Unlimited"). */
-@utility glass-track {
-  background-color: var(--input);
-  box-shadow:
-    inset 0 1px 2px var(--glass-shadow-color),
-    inset 0 0 0 1px var(--glass-border);
-}
+@utility glass-track { background: var(--input); box-shadow: none; }
 
 /* Perilla de vidrio de switches y sliders: sombra y brillo, el color lo pone el componente. */
-@utility glass-knob {
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 0 0 0.5px var(--glass-border),
-    0 1px 3px var(--glass-shadow-color);
-}
+@utility glass-knob { box-shadow: none; }
 
 /*
  * Entrada escalonada (better-ui §5): solo para momentos poco frecuentes, como el hero.
@@ -304,17 +361,10 @@
 }
 
 /* Borde luminoso para contenido opaco: cards, avisos, bloques de código (refs 7 y 12). */
-@utility glass-edge {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--edge-fill, var(--card)), var(--edge-fill, var(--card))) padding-box,
-    linear-gradient(to bottom, var(--glass-edge-top), var(--glass-edge-bottom)) border-box;
-}
+@utility glass-edge { border: 0; background: var(--edge-fill, var(--card)); }
 
 /* Resplandor centrado para estados vacíos (ref 2, "Create Your First Project"). */
-@utility glass-glow {
-  background-image: radial-gradient(circle at 50% 45%, var(--ambient-glow), transparent 65%);
-}
+@utility glass-glow { background: var(--card); }
 
 /* Sin soporte de backdrop-filter, la translucidez solo resta legibilidad: superficies opacas. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -351,3 +401,130 @@
     --glass-edge-bottom: oklch(1 0 0 / 55%);
   }
 }
+
+
+html { scrollbar-gutter: stable; scroll-behavior: smooth; scroll-padding-top: 92px; }
+body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.nr-site { min-height: 100dvh; }
+.nr-site button { cursor: pointer; }
+.nr-site :is(a, button, input, select):focus-visible { outline: 2px solid var(--foreground); outline-offset: 4px; }
+.nr-plain { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; height: auto; color: inherit; font: inherit; }
+.nr-site .nr-pills { margin-bottom: 22px; }
+.nr-grid .nr-model-card { padding: 8px; }
+.nr-model-card-footer { padding: 12px 16px 8px; }
+.nr-model-card-footer .nr-model-meta { margin-top: 0; }
+.nr-model-author { display: inline-flex; align-items: center; gap: 8px; }
+.nr-model-author img { flex: none; width: 18px; height: 18px; object-fit: contain; }
+.nr-model-card-front {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--surface-model-front);
+}
+.nr-model-card-front .nr-desc { margin-top: 12px; }
+.nr-site .nr-model-card-front .nr-pills { margin-bottom: 0; }
+.nr-model-card-front .nr-pills span { background: var(--surface-model-pill); }
+.nr-site .nr-brand-button img { object-fit: contain; }
+.nr-brand-button { color: var(--foreground); font-size: 16px; font-weight: 650; letter-spacing: -0.5px; white-space: nowrap; }
+.nr-header-leading { flex-shrink: 0; }
+.nr-search-box { flex-shrink: 1; min-width: 120px; }
+.nr-header-search { border: 0; box-shadow: none; }
+.nr-section-controls { display: flex; gap: 16px; align-items: center; }
+.nr-sort { color: var(--muted-foreground); font-size: 12px; }
+.nr-sort [data-slot="select-trigger"] { background: none; box-shadow: none; border: 0; height: 32px; padding: 0; font-size: 12px; }
+.nr-list-label { font-size: 14px; font-weight: 500; }
+.nr-sidebar .nr-big-list { align-items: stretch; width: 100%; gap: 2px; }
+.nr-sidebar .nr-big-list :is(button, a) { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; height: auto; border: 0; border-radius: 10px; background: none; box-shadow: none; padding: 8px 10px; justify-content: flex-start; font-size: 14px; font-weight: 450; line-height: 20px; letter-spacing: -.15px; color: var(--text-navigation); text-align: left; }
+.nr-sidebar .nr-big-list .nr-sidebar-label { flex: 1; margin: 0; font: inherit; color: inherit; }
+.nr-sidebar .nr-big-list .nr-sidebar-count { flex: none; margin: 0 0 0 auto; color: var(--muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; }
+.nr-sidebar .nr-big-list :is(svg, img) { flex: none; width: 18px; height: 18px; object-fit: contain; }
+.nr-sidebar .nr-big-list svg.kubai-icon { width: 24px; height: 24px; }
+.nr-sidebar .nr-big-list img { margin-inline: 3px; }
+.nr-sidebar .nr-sidebar-group h2 { padding-inline: 10px; margin-bottom: 8px; }
+.nr-sidebar .nr-sidebar-group + .nr-sidebar-group { margin-top: 16px; padding-top: 16px; }
+
+.nr-sidebar .nr-big-list [aria-pressed="true"], .nr-sidebar .nr-big-list [aria-current="true"] { background: var(--accent); color: var(--foreground); font-weight: 550; }
+.nr-sidebar .nr-big-list :is(button, a):hover { background: var(--surface-hover); color: var(--foreground); }
+.nr-view-toggle [data-slot="toggle-group-item"] { width: 32px; height: 32px; border: 0; border-radius: 999px; background: none; box-shadow: none; padding: 0; color: var(--muted-foreground); }
+.nr-view-toggle [data-slot="toggle-group-item"][aria-pressed="true"] { background: var(--surface-selected); color: var(--foreground); }
+.nr-view-toggle svg { width: 17px; height: 17px; }
+.nr-task, .nr-pills span { line-height: 1.5; }
+.nr-grid.nr-list .nr-model-meta, .nr-grid.nr-list .nr-pills { display: none; }
+.nr-grid.nr-list .nr-model-card-footer { display: none; }
+.nr-model-link:focus-visible { outline: none; }
+.nr-grid .nr-model-id img { width: 18px; height: 18px; object-fit: contain; }
+.nr-detail-tabs[data-slot="tabs-list"] { width: auto; height: 52px; border-radius: 0; background: none; box-shadow: none; }
+.nr-detail-tabs [data-slot="tabs-trigger"] { flex: none; height: 52px; padding: 14px 0; font-size: 14px; font-weight: 450; border-radius: 0; border: 0; border-bottom: 2px solid transparent; color: var(--text-secondary); background: none; box-shadow: none; }
+.nr-detail-tabs [data-slot="tabs-trigger"][data-active] { border-bottom-color: var(--text-selected); color: var(--foreground); background: none; box-shadow: none; }
+.nr-detail-tabs [data-slot="tabs-trigger"]::after { display: none; }
+.nr-code-column [data-slot="tabs"] { gap: 0; height: 100%; }
+.nr-code-column [data-slot="tabs-content"] { margin: 0; }
+.nr-detail-button[data-slot="button"] { height: auto; box-shadow: none; }
+.nr-pill-button[data-slot="button"], .nr-pill-button.group\/button { height: auto; box-shadow: none; line-height: 1.5; }
+.nr-topbar .nr-icon-button[data-slot="button"] { width: 36px; height: 36px; background: none; border-radius: 9px; box-shadow: none; }
+.nr-topbar .nr-icon-button:hover { background: var(--secondary); }
+.nr-site-footer { margin: 0 20px; padding: 48px 0 32px; color: var(--muted-foreground); font-size: 12.5px; }
+.nr-footer-row { display: flex; justify-content: space-between; gap: 24px; }
+.nr-site-footer nav { display: flex; gap: 16px; }
+.nr-site-footer p { margin-top: 12px; }
+.nr-docs { padding-top: 112px; }
+.nr-docs [data-slot="card"], [data-slot="card"] { border-radius: 28px; }
+.nr-docs h1 { font-size: clamp(36px, 3.4vw, 52px); font-weight: 550; letter-spacing: -.045em; }
+.nr-docs :is(pre, code) { font-family: var(--font-mono); }
+.nr-code-block { position: relative; border-radius: 28px; overflow: hidden; background: var(--surface-code); }
+.nr-code-block pre { margin: 0; padding: 24px 52px 24px 24px; overflow: auto; font-size: 14px; line-height: 22px; }
+.nr-code-block > button { position: absolute; top: 16px; right: 16px; }
+.nr-cost { padding: 0 24px 24px; }
+.nr-cost p { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+.nr-cost dl div { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; font-size: 14px; }
+.nr-cost dt { color: var(--text-description-strong); }
+.nr-cost dd { text-align: right; font-variant-numeric: tabular-nums; }
+.nr-documentation-link { text-decoration: underline; text-underline-offset: 3px; }
+.nr-mobile-nav { display: none; }
+@media (max-width: 1080px) { .nr-site-footer { margin-inline: 20px; } }
+@media (max-width: 860px) {
+ .nr-site-footer { margin-inline: 16px; }
+ .nr-footer-row { flex-direction: column; }
+ .nr-catalog { padding-top: 92px; }
+ .nr-catalog > .nr-sidebar { max-height: 248px; overflow: auto; }
+ .nr-mobile-nav { display: flex; gap: 16px; }
+ .nr-section-controls { gap: 8px; }
+ .nr-docs { padding-top: 92px; }
+}
+.nr-model-page { width: 100%; }
+.nr-related-model { display: flex; align-items: center; gap: 16px; padding: 20px 0; font-size: 15px; }
+.nr-related-model code { color: var(--text-description-strong); font: 13px var(--font-mono); overflow-wrap: anywhere; }
+.nr-related-model > :last-child { margin-left: auto; color: var(--muted-foreground); font-size: 13px; }
+.nr-example-options [data-slot="native-select-wrapper"] { width: fit-content; }
+.nr-example-options select { width: auto; box-shadow: none; }
+.nr-detail-panel > [data-slot="tabs"] { gap: 0; }
+.nr-layered-panel { padding: 8px; }
+.nr-layered-panel > .nr-layered-panel-front {
+  min-width: 0;
+  gap: 0;
+  padding: 0;
+  border-radius: 22px;
+  background: var(--surface-model-front);
+}
+.nr-layered-panel-front > [data-slot="tabs"] { gap: 0; }
+.nr-layered-panel-footer { padding: 12px 16px 8px; }
+.nr-layered-panel-footer .nr-model-meta { margin-top: 0; }
+.nr-layered-panel-footer .nr-source-note { padding: 0; }
+.nr-layered-panel .nr-code-box { background: transparent; }
+.nr-detail-overview { margin-bottom: 28px; }
+.nr-detail-overview > .nr-layered-panel-front { padding: 24px; }
+.nr-detail-overview .nr-model-heading h1 { margin-bottom: 0; }
+.nr-detail-overview .nr-detail-description { margin-bottom: 0; }
+@media (max-width: 600px) {
+  .nr-detail-overview > .nr-layered-panel-front { padding: 20px; }
+}
+.nr-detail-panel .nr-api-switch span { padding: 9px 15px; font-size: 13px; color: var(--foreground); }
+.nr-site-footer { padding-top: 0; }
+.nr-site .nr-detail-footer { padding-top: 28px; }
+@media (max-width: 600px) { .nr-related-model { flex-wrap: wrap; } .nr-related-model code { max-width: 100%; } }
+.nr-search-box kbd { opacity: 1; }
+.nr-site-footer .nr-mobile-nav { display: none; }
+@media (max-width: 860px) { .nr-site-footer .nr-mobile-nav { display: flex; margin-bottom: 20px; } }
+
+.nr-resource-links :is(a, button) { display: inline-flex; align-items: center; gap: 6px; }

@@ -2,8 +2,8 @@ import { once } from "node:events";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { Readable } from "node:stream";
 
-import { CATALOG } from "@catalog/models";
-import { UPSTREAMS } from "@catalog/upstreams";
+import { CATALOG } from "../fixtures/catalog-models";
+import { UPSTREAMS } from "../fixtures/catalog-upstreams";
 
 import { grantCredits, usdToMicroUsdExact } from "@/lib/billing/ledger";
 import { createApiKey, ensureDevWorkspace } from "@/lib/billing/workspaces";

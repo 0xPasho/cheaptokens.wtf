@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, CopyIcon } from "lucide-react";
+import CheckIcon from "kubai-icons-react/icons/circle-check";
+import CopyIcon from "kubai-icons-react/icons/copy";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";

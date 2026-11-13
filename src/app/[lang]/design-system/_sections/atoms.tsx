@@ -1,15 +1,20 @@
-import {
-  ArchiveIcon,
-  BookOpenIcon,
-  CopyIcon,
-  KeyRoundIcon,
-  LanguagesIcon,
-  LogOutIcon,
-  PlusIcon,
-  SearchIcon,
-} from "lucide-react";
+import ArchiveIcon from "kubai-icons-react/icons/archive";
+import BookOpenIcon from "kubai-icons-react/icons/book-open";
+import CopyIcon from "kubai-icons-react/icons/copy";
+import KeyRoundIcon from "kubai-icons-react/icons/key-round";
+import SunIcon from "kubai-icons-react/icons/sun";
+import MoonIcon from "kubai-icons-react/icons/moon";
+import MonitorIcon from "kubai-icons-react/icons/monitor";
+import GridIcon from "kubai-icons-react/icons/grid";
+import ListIcon from "kubai-icons-react/icons/list";
+import ChevronDownIcon from "kubai-icons-react/icons/chevron-down";
+import LanguagesIcon from "kubai-icons-react/icons/languages";
+import LogOutIcon from "kubai-icons-react/icons/log-out";
+import PlusIcon from "kubai-icons-react/icons/circle-plus";
+import SearchIcon from "kubai-icons-react/icons/search";
 
 import { Price } from "@/components/price";
+import { ModelLogo } from "@/components/catalog/provider-logo";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -602,6 +607,20 @@ export function Atoms() {
       title="Átomos"
       description="Los componentes de shadcn/ui en @/components/ui, cada uno en el uso que tiene en cheaptokens.wtf. Table, Tabs, Dialog, AlertDialog, Alert, Empty y ToggleGroup se ven arriba, dentro de los patrones."
     >
+      <Section title="Kubai Icons" description="Official kubai-icons-react components in Ink: dark bodies, original shading and white details in both themes. Server-rendered SVG and hover motion with reduced-motion support.">
+        <div className="flex flex-wrap gap-6">
+          {[SearchIcon, CopyIcon, SunIcon, MoonIcon, MonitorIcon, GridIcon, ListIcon, ChevronDownIcon].map((Icon, index) => (
+            <div key={index} className="flex flex-col items-center gap-3 text-muted-foreground"><Icon size={28} /><span className="text-xs">{["Search", "Copy", "Sun", "Moon", "Monitor", "Grid", "List", "Chevron"][index]}</span></div>
+          ))}
+        </div>
+      </Section>
+      <Section title="Model logos" description="Brand colors and gradients, with a theme-aware monochrome mark for OpenAI.">
+        <div className="flex flex-wrap gap-6">
+          {["anthropic/claude-haiku-4.5", "openai/gpt-5", "google/gemini-2.5-pro", "deepseek/deepseek-chat", "qwen/qwen3-coder", "meta-llama/llama-4-maverick"].map((modelId, index) => (
+            <div key={modelId} className="flex flex-col items-center gap-3 text-muted-foreground"><ModelLogo modelId={modelId} /><span className="text-xs">{["Claude", "GPT", "Gemini", "DeepSeek", "Qwen", "Llama"][index]}</span></div>
+          ))}
+        </div>
+      </Section>
       <Buttons />
       <Badges />
       <Forms />

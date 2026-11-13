@@ -19,7 +19,7 @@ const MOCK_UPSTREAM_ID = "mock";
  * es un alias y no tiene precio propio: no se sabría qué modelo ni a qué costo se sirve (ADR-0028).
  */
 const PREFIXED_MODEL_UPSTREAMS: ReadonlySet<string> = new Set(["inferhub"]);
-const PREFIXED_MODEL_PATTERN = /^[a-z0-9][a-z0-9-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const PREFIXED_MODEL_PATTERN = /^[a-z0-9][a-z0-9-]*\/(?:[A-Za-z0-9][A-Za-z0-9._-]*\/)*[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 const BPS = BigInt(10_000);
 

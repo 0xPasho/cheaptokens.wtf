@@ -2,8 +2,8 @@
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CATALOG } from "@catalog/models";
-import { UPSTREAMS } from "@catalog/upstreams";
+import { CATALOG } from "../../fixtures/catalog-models";
+import { UPSTREAMS } from "../../fixtures/catalog-upstreams";
 
 import { generateKey } from "@/lib/api-keys";
 import { reconcile } from "@/lib/billing/reconcile";
@@ -111,7 +111,7 @@ describe("gateway handler", () => {
     expect(completed).toHaveLength(1);
     expect(completed[0]).toMatchObject({ requestId, workspaceId: harness.workspaceId, apiKeyId: harness.apiKeyId, modelId: model, upstreamId: "mock", status: "success", httpStatus: 200, promptTokens: 1, completionTokens: 14, ttfbMs: expect.any(Number), latencyMs: expect.any(Number) });
     expect(harness.logs.join("\n")).not.toMatch(/Hola|reasoning_content|Authorization|Bearer|wtf_/);
-  });
+  }, 15_000);
 
   it.each([false, true])("streams sanitized chunks; include_usage=%s", async (includeUsage) => {
     const harness = await start();

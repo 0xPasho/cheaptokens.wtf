@@ -1,11 +1,14 @@
-import {
-  CircleCheckIcon,
-  KeyRoundIcon,
-  PlusIcon,
-  SearchIcon,
-  TriangleAlertIcon,
-  CircleAlertIcon,
-} from "lucide-react";
+import { ModelQuickstart, ModelApiDetails } from "@/components/catalog/model-quickstart";
+import { ModelDetail } from "@/components/catalog/model-detail";
+import { ModelCatalog } from "@/components/catalog/model-catalog";
+import { getCatalog } from "@/lib/catalog/queries";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import CircleCheckIcon from "kubai-icons-react/icons/circle-check";
+import KeyRoundIcon from "kubai-icons-react/icons/key-round";
+import PlusIcon from "kubai-icons-react/icons/circle-plus";
+import SearchIcon from "kubai-icons-react/icons/search";
+import TriangleAlertIcon from "kubai-icons-react/icons/triangle-alert";
+import CircleAlertIcon from "kubai-icons-react/icons/circle-alert";
 
 import { CopyButton } from "@/components/copy-button";
 import { DiscountBadge } from "@/components/discount-badge";
@@ -505,6 +508,16 @@ export function ProductPatterns() {
     >
       <PricingPattern />
       <CatalogPattern />
+      <Section title="Catalog explorer" description="NibbleRouter composition: capability and author filters, cards and table.">
+        <div className="nr-site"><ModelCatalog models={getCatalog()} locale="es" dict={getDictionary("es")} /></div>
+      </Section>
+      <Section title="Model detail" description="Layered cards: an opaque base and a lighter front surface across the model overview, code preview, pricing and API parameters. The overview keeps the author and task on its lower base.">
+        <div className="nr-site"><ModelDetail model={getCatalog()[0]} models={getCatalog()} locale="es" dict={getDictionary("es")} /></div>
+      </Section>
+      <Section title="API preview" description="Request and example output in parallel, with local syntax highlighting.">
+        <ModelQuickstart model={getCatalog()[0].id} locale="es" dict={getDictionary("es")} />
+        <ModelApiDetails model={getCatalog()[0].id} dict={getDictionary("es")} />
+      </Section>
       <SnippetPattern />
       <DashboardPattern />
       <FeedbackPattern />

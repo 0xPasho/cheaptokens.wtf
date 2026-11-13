@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { CATALOG } from "@catalog/models";
+import { CATALOG } from "../fixtures/catalog-models";
 
 import type { UpstreamDefinition } from "@/lib/catalog/types";
 import { requests } from "@/lib/db/schema";

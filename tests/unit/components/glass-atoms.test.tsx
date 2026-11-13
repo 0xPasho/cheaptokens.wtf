@@ -103,7 +103,7 @@ describe("Card, Alert y CodeBlock (refs 7 y 12: contenido opaco con borde lumino
 
   it("CodeBlock: borde luminoso sobre muted", () => {
     const { container } = render(<CodeBlock code="x" />);
-    expect(container.firstElementChild).toHaveClass("glass-edge", "rounded-2xl", "[--edge-fill:var(--muted)]");
+    expect(container.firstElementChild).toHaveClass("nr-code-block");
   });
 });
 

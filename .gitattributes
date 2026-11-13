@@ -1,0 +1,14 @@
+# Normalización de finales de línea: el repo trabaja en LF.
+* text=auto eol=lf
+
+# Los fixtures SSE los lee el parser byte a byte: LF estricto.
+*.sse text eol=lf
+
+# Imágenes y binarios: sin conversión.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.woff2 binary
+*.woff binary
+*.ttf binary

@@ -32,10 +32,10 @@ describe("preferencia de tema", () => {
     expect(isTheme(null)).toBe(false);
   });
 
-  it("sin preferencia guardada, o con un valor inválido, usa system", () => {
-    expect(readStoredTheme()).toBe("system");
+  it("sin preferencia guardada, o con un valor inválido, usa dark", () => {
+    expect(readStoredTheme()).toBe("dark");
     localStorage.setItem(THEME_STORAGE_KEY, "sepia");
-    expect(readStoredTheme()).toBe("system");
+    expect(readStoredTheme()).toBe("dark");
   });
 
   it("system sigue al sistema operativo", () => {
@@ -54,7 +54,7 @@ describe("themeScript (corre en <head> antes del primer paint)", () => {
     ["dark", false, true],
     ["light", true, false],
     [null, true, true],
-    [null, false, false],
+    [null, false, true],
     ["system", true, true],
   ])("guardado=%s, sistema oscuro=%s → .dark=%s", (stored, systemDark, expected) => {
     if (stored) localStorage.setItem(THEME_STORAGE_KEY, stored);

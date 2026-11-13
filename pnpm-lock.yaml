@@ -29,9 +29,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@electric-sql/pglite@0.5.16)(@types/pg@8.23.1)(pg@8.23.1)
-      lucide-react:
-        specifier: ^1.70.0
-        version: 1.70.0(@types/react@19.3.0)(react@19.3.0)
+      kubai-icons-react:
+        specifier: ^0.7.0
+        version: 0.7.0(react@19.3.0)
       negotiator:
         specifier: ^1.1.0
         version: 1.1.0
@@ -2822,6 +2822,14 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
+  kubai-icons-react@0.7.0:
+    resolution: {integrity: sha512-vN+XWh28wg5IVQ5tau7U0A8kaVzkA5LrQUoFrrF6U4kzT0V9rob3ERoXa0B5m8VAzlJbrNsmnLgc7UIaJMwlBA==}
+    peerDependencies:
+      react: '>=18'
+
+  kubai-icons@0.7.0:
+    resolution: {integrity: sha512-umWosp37mlJzqdUOU3ZjzVzhRmWFE2DVUOhbGXkGIPq9GyYSlVOfdmcjJYX9uCRI1DzXs2Z+NnurY8WM6d/1nQ==}
+
   language-subtag-registry@0.3.23:
     resolution: {integrity: sha512-0K65Lea881pHotoGEa5gDlMxt3pctLi2RplBb7Ezh4rRdLEOtgi7n4EwK9lamnUCkKBqaeKRVebTq6BAxSkpXQ==}
 
@@ -2928,15 +2936,6 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
-
-  lucide-react@1.70.0:
-    resolution: {integrity: sha512-gCTPPN1MlQUBtUgdsUv+0CAUj+X8hifRUiRBw4E5v7lvDIOIpx0EZezdGQMSimS8pKA6esvullJub4GYr0mCHA==}
-    peerDependencies:
-      '@types/react': '*'
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -6439,6 +6438,13 @@ snapshots:
 
   kleur@4.1.5: {}
 
+  kubai-icons-react@0.7.0(react@19.3.0):
+    dependencies:
+      kubai-icons: 0.7.0
+      react: 19.3.0
+
+  kubai-icons@0.7.0: {}
+
   language-subtag-registry@0.3.23: {}
 
   language-tags@1.0.9:
@@ -6524,12 +6530,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide-react@1.70.0(@types/react@19.3.0)(react@19.3.0):
-    dependencies:
-      react: 19.3.0
-    optionalDependencies:
-      '@types/react': 19.3.0
 
   lz-string@1.5.0: {}
 

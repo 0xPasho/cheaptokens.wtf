@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 
 import { ThemeSync } from "@/components/theme-sync";
@@ -10,15 +10,8 @@ import { themeScript } from "@/lib/theme";
 
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = localFont({ src: "../fonts/inter-variable.woff2", variable: "--font-inter", weight: "100 900", display: "swap" });
+const jetbrains = localFont({ src: "../fonts/jetbrains-mono.woff2", variable: "--font-jetbrains", weight: "400", display: "swap" });
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -42,7 +35,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   return (
     <html
       lang={lang}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrains.variable} h-full antialiased`}
       // `themeScript` agrega la clase `.dark` antes de hidratar.
       suppressHydrationWarning
     >

@@ -1,4 +1,4 @@
-import { SearchXIcon } from "lucide-react";
+import SearchXIcon from "kubai-icons-react/icons/search";
 import Link from "next/link";
 
 import { Container } from "@/components/container";

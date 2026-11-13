@@ -3,7 +3,9 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "cn"
-import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
+import ChevronDownIcon from "kubai-icons-react/icons/chevron-down";
+import CheckIcon from "kubai-icons-react/icons/circle-check";
+import ChevronUpIcon from "kubai-icons-react/icons/chevron-up";
 
 const Select = SelectPrimitive.Root
 
@@ -46,11 +48,9 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon
-        render={
-          <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
-        }
-      />
+      <SelectPrimitive.Icon className="pointer-events-none inline-flex size-4 text-muted-foreground">
+        <ChevronDownIcon className="size-4" />
+      </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
 }

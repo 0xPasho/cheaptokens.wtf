@@ -19,7 +19,7 @@ export function SnippetTabs({
 }) {
   return (
     <Tabs defaultValue={defaultLanguage}>
-      <TabsList>
+      <TabsList className="nr-detail-tabs">
         {SNIPPET_LANGUAGES.map((language) => (
           <TabsTrigger key={language} value={language}>
             {SNIPPET_LANGUAGE_LABELS[language]}

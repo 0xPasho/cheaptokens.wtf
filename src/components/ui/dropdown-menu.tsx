@@ -3,7 +3,8 @@
 import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { cn } from "cn"
-import { ChevronRightIcon, CheckIcon } from "lucide-react"
+import ChevronRightIcon from "kubai-icons-react/icons/chevron-right";
+import CheckIcon from "kubai-icons-react/icons/circle-check";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />

@@ -1,6 +1,8 @@
 "use client";
 
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import MonitorIcon from "kubai-icons-react/icons/monitor";
+import MoonIcon from "kubai-icons-react/icons/moon";
+import SunIcon from "kubai-icons-react/icons/sun";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +32,10 @@ const ICONS = {
 
 export function ThemeToggle({
   labels,
+  className,
 }: {
   labels?: Partial<ThemeToggleLabels>;
+  className?: string;
 }) {
   const { theme, setTheme } = useTheme();
   const text = { ...DEFAULT_LABELS, ...labels };
@@ -39,7 +43,7 @@ export function ThemeToggle({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" aria-label={text.trigger} />}
+        render={<Button variant="ghost" size="icon" className={className} aria-label={text.trigger} />}
       >
         {/* El ícono sigue a la clase `.dark`, así que no depende de la hidratación. */}
         <SunIcon className="dark:hidden" />

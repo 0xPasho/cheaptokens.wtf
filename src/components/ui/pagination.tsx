@@ -3,7 +3,9 @@ import { type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 import { buttonVariants } from "@/components/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
+import ChevronLeftIcon from "kubai-icons-react/icons/chevron-left";
+import ChevronRightIcon from "kubai-icons-react/icons/chevron-right";
+import MoreHorizontalIcon from "kubai-icons-react/icons/more-horizontal";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (

@@ -6,6 +6,8 @@ import { CATALOG } from "@catalog/models";
 import { buildModelsResponse, priceInUsd } from "@/lib/catalog/public-api";
 import { getCatalog } from "@/lib/catalog/queries";
 
+vi.mock("@catalog/models", () => import("../../fixtures/catalog-models"));
+
 vi.mock("next/cache", () => ({ cacheTag: vi.fn() }));
 
 import { cacheTag } from "next/cache";

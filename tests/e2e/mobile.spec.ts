@@ -11,7 +11,7 @@ for (const theme of THEMES) {
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
-    expect(overflow, "la página no debe desplazarse en horizontal").toBe(0);
+    expect(overflow, "la página no debe desplazarse en horizontal").toBeLessThanOrEqual(0);
 
     const { violations } = await axeScan(page, "main");
     expect(violations).toEqual([]);
@@ -54,13 +54,13 @@ test("móvil: Anterior y Siguiente siguen teniendo nombre aunque el texto se ocu
   expect(box.width).toBeLessThanOrEqual(1);
 });
 
-for (const path of ["/es", "/en/models", "/es/models/google/gemini-2.5-pro"]) {
+for (const path of ["/es", "/en/models", "/es/models/google/gemini-4-argon"]) {
   test(`móvil: ${path} no se desborda y la navegación cabe`, async ({ page }) => {
     await page.goto(path);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
-    expect(overflow).toBe(0);
+    expect(overflow).toBeLessThanOrEqual(0);
     const header = (await page.locator("header").first().boundingBox())!;
     expect(header.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     await expect(page.getByRole("navigation", { name: /Main|Principal/ }).getByRole("link").first()).toBeVisible();

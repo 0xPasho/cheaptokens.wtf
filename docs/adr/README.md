@@ -46,6 +46,19 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0032](./0032-postgres-node-postgres-y-pglite.md) | Postgres con Drizzle y node-postgres; PGlite en desarrollo y pruebas | Aceptada | Default |
 | [0033](./0033-gateway-con-dependencias-inyectadas.md) | El gateway es una función con dependencias inyectadas | Aceptada | Default |
 | [0034](./0034-construccion-por-olas.md) | El gateway se construye por olas, con planificador, ejecutores y revisores | Aceptada | Usuario + Default |
+| [0035](./0035-catalogo-nibblerouter.md) | Catálogo público con la composición de NibbleRouter y tema inicial oscuro | Aceptada | Usuario |
+| [0036](./0036-estilo-nibblerouter-completo.md) | Traslado completo del estilo de NibbleRouter, fuentes locales y material plano | Aceptada | Usuario |
+| [0037](./0037-iconos-kubai.md) | Kubai Icons como iconografía de interfaz, reemplazando Lucide | Aceptada | Usuario |
+| [0038](./0038-sidebar-izquierda-con-iconos.md) | Sidebar junto al borde izquierdo con filas compactas e iconos Kubai | Aceptada | Usuario |
+| [0039](./0039-iconos-kubai-ink.md) | Iconos Kubai con acabado Ink en ambos temas | Aceptada | Usuario |
+| [0040](./0040-logos-de-modelos-a-color.md) | Logos de familias de modelos con sus colores de marca | Aceptada | Usuario |
+| [0041](./0041-iconos-sidebar-mas-grandes.md) | Iconos funcionales de sidebar de 24 px, sin aumentar logos de modelos | Aceptada | Usuario |
+| [0042](./0042-tarjetas-de-modelos-en-dos-capas.md) | Tarjetas de modelos con base y panel delantero más claro | Aceptada | Usuario |
+| [0043](./0043-tarjeta-clara-arriba-y-autor-abajo.md) | Tarjeta clara arriba con modelo y logo; autor y tarea abajo sobre la base | Aceptada | Usuario |
+| [0044](./0044-logo-corporativo-junto-al-autor.md) | Logo corporativo junto al nombre del autor en la franja inferior | Aceptada | Usuario |
+| [0045](./0045-tarjetas-en-capas-en-el-detalle.md) | Extender las tarjetas en dos capas a toda la página de modelo | Aceptada | Usuario |
+| [0046](./0046-catalogo-desde-la-lista-oficial.md) | Importar modelos, precios y rutas desde la lista oficial de InferHub | Aceptada | Usuario |
+| [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
 
 ## Plantilla
 

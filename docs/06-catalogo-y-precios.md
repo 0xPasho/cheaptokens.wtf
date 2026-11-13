@@ -1,5 +1,11 @@
 # 06 · Catálogo y precios
 
+## Origen actual del catálogo
+
+Desde [ADR-0046](./adr/0046-catalogo-desde-la-lista-oficial.md), `pnpm catalog:refresh` importa modelos de pago desde la lista oficial pública de InferHub. Los modelos visibles, precios de referencia y rutas proceden de `catalog/generated/`, exportados por `catalog/models.ts` y `catalog/upstreams.ts`. El reporte guarda la URL de origen, fecha y conteos de importación. `pnpm catalog:sync` sigue siendo el paso que valida y persiste la configuración en la base del gateway.
+
+Se agrupan rutas duplicadas y se excluyen alias, pools gratuitos y entradas sin datos suficientes. Cada modelo conserva una ruta explícita y sus metadatos. Los descuentos importados cubren la mediana de sus ofertas más el margen mínimo del 10%, con un máximo de 90%. Los precios de referencia reportados por el proveedor mantienen la verificación con el creador pendiente. Los modelos retirados conservan su ID y no se publican.
+
 ## Identificadores de modelo
 
 - **Formato:** `autor/modelo`, en minúsculas, con guiones (`anthropic/claude-haiku-4.5`, `openai/gpt-5-mini`, `google/gemini-2.5-flash`).

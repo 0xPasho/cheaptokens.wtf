@@ -7,15 +7,15 @@ import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Stat } from "@/components/stat";
 
 describe("Container", () => {
-  it("default: max-w-5xl con márgenes laterales", () => {
+  it("default: max-w-[1440px] con márgenes laterales", () => {
     const { container } = render(<Container>x</Container>);
-    expect(container.firstElementChild).toHaveClass("mx-auto", "max-w-5xl", "px-4", "sm:px-6");
+    expect(container.firstElementChild).toHaveClass("mx-auto", "max-w-[1440px]", "px-4", "sm:px-6");
   });
 
   it("prose: max-w-3xl para texto largo", () => {
     const { container } = render(<Container size="prose">x</Container>);
     expect(container.firstElementChild).toHaveClass("max-w-3xl");
-    expect(container.firstElementChild).not.toHaveClass("max-w-5xl");
+    expect(container.firstElementChild).not.toHaveClass("max-w-[1440px]");
   });
 });
 

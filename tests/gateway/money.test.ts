@@ -2,7 +2,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { UPSTREAMS } from "@catalog/upstreams";
+import { UPSTREAMS } from "../fixtures/catalog-upstreams";
 
 import { grantCredits } from "@/lib/billing/ledger";
 import { reconcile } from "@/lib/billing/reconcile";

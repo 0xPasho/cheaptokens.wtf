@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 const WIDTHS = {
   /** Landing, catálogo y dashboard. */
-  default: "max-w-5xl",
+  default: "max-w-[1440px] lg:px-10 xl:px-20",
   /** Texto largo: /docs, términos, privacidad. */
   prose: "max-w-3xl",
 } as const;

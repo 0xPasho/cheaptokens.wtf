@@ -1,4 +1,7 @@
-import { CheckIcon, CircleDashedIcon, ServerIcon, XIcon } from "lucide-react";
+import CheckIcon from "kubai-icons-react/icons/circle-check";
+import CircleDashedIcon from "kubai-icons-react/icons/circle";
+import ServerIcon from "kubai-icons-react/icons/server";
+import XIcon from "kubai-icons-react/icons/circle-x";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -90,7 +93,7 @@ export default async function DocsPage() {
   const minimum = formatUsd(Number(MIN_CHARGE_MICRO_USD), locale, "cost");
 
   return (
-    <Container size="prose" className="flex flex-col gap-10 pt-12 text-base sm:pt-16">
+    <Container size="prose" className="flex flex-col gap-10 nr-docs text-base">
       <PageHeader title={d.title} description={d.description} />
 
       <DocsSection id="authentication" title={d.auth.title}>

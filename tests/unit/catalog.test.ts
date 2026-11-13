@@ -24,6 +24,9 @@ import type {
 import { type CatalogValidationInput, MIN_MARGIN_BPS, validateCatalog } from "@/lib/catalog/validate";
 
 // La página de detalle lee el idioma con `next/root-params`, que solo existe dentro de Next.
+vi.mock("@catalog/upstreams", () => import("../fixtures/catalog-upstreams"));
+vi.mock("@catalog/models", () => import("../fixtures/catalog-models"));
+
 vi.mock("next/root-params", () => ({ lang: async () => "en" }));
 
 const ENVIRONMENTS: UpstreamEnvironment[] = ["development", "preview", "production"];
@@ -311,7 +314,7 @@ describe("validateCatalog", () => {
       expect(validate({ upstreams: [upstream(), other] }).errors).toEqual([]);
     });
 
-    it.each(["claude-haiku-4-5", "qwen3.8-flash", "/qwen3.8-flash", "alicn/", "alicn/qwen/flash"])(
+    it.each(["claude-haiku-4-5", "qwen3.8-flash", "/qwen3.8-flash", "alicn/", "alicn//flash"])(
       "en InferHub rechaza el upstreamModel %j: siempre prefijo/modelo, nunca un alias (ADR-0028)",
       (upstreamModel) => {
         const inferhub = upstream({ id: "inferhub", sendsPriceCap: true, models: [mapping({ upstreamModel })] });

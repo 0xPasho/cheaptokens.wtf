@@ -441,7 +441,7 @@ it("uses only tx inside billing transactions over the PGlite socket with a singl
 
 
 // Los procesos reales comprueban la guardia principal y el código que observa un cron.
-it("runs all three CLIs through symlinks and reports failures with their causes", async () => {
+it("runs all three CLIs through symlinks and reports failures with their causes", async (ctx) => {
   const client = await PGlite.create();
   const server = new PGLiteSocketServer({ db: client, host: "127.0.0.1", port: 0, maxConnections: 5 });
   const directory = await mkdtemp(join(tmpdir(), "billing-cli-"));
@@ -453,7 +453,16 @@ it("runs all three CLIs through symlinks and reports failures with their causes"
     const db = drizzle(pool, { schema });
     await migrateNodePostgres(db);
     for (const script of ["keys-create", "credits-grant", "reconcile"]) {
-      await symlink(resolve(`scripts/${script}.ts`), join(directory, `${script}.ts`));
+      const target = join(directory, `${script}.ts`);
+      // Windows sin modo desarrollador deniega symlink (EPERM) y el guard de los
+      // scripts depende de la resolución realpath del enlace: no hay sustituto equivalente.
+      try {
+        await symlink(resolve(`scripts/${script}.ts`), target);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EPERM") throw error;
+        ctx.skip(true, "symlink denegado por el sistema");
+        return;
+      }
     }
     const run = (script: string, args: string[] = []) => new Promise<{
       code: number; stdout: string; stderr: string;

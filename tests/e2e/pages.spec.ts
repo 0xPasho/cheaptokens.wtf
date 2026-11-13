@@ -1,3 +1,5 @@
+import { getCatalog, requestCost } from "../../src/lib/catalog/queries";
+import { formatUsd } from "../../src/lib/format";
 import { expect, type Page, test } from "@playwright/test";
 
 import { axeScan, type Theme, THEMES } from "./helpers";
@@ -8,7 +10,7 @@ const LOCALES = ["en", "es"] as const;
 const PAGES = [
   { name: "landing", path: "" },
   { name: "modelos", path: "/models" },
-  { name: "detalle", path: "/models/anthropic/claude-sonnet-4.5" },
+  { name: "detalle", path: "/models/anthropic/claude-sonnet-4.6" },
   { name: "docs", path: "/docs" },
 ] as const;
 
@@ -72,12 +74,12 @@ test.describe("catálogo", () => {
     await open(page, "/es/models");
   });
 
-  const rows = (page: Page) => page.getByRole("region", { name: "Modelos" }).locator("tbody tr");
+  const rows = (page: Page) => page.getByRole("region", { name: "Modelos" }).locator("article");
 
   test("busca por nombre o autor y anuncia el número de resultados", async ({ page }) => {
     await page.getByRole("searchbox", { name: "Buscar modelos" }).fill("gemini");
-    await expect(rows(page)).toHaveCount(2);
-    await expect(page.getByRole("status")).toHaveText("2 modelos");
+    await expect(rows(page)).toHaveCount(getCatalog().filter((model) => model.author === "google").length);
+    await expect(page.getByRole("status")).toContainText(`${getCatalog().filter((model) => model.author === "google").length} modelos`);
   });
 
   test("el atajo / enfoca la búsqueda", async ({ page }) => {
@@ -94,33 +96,34 @@ test.describe("catálogo", () => {
 
   test("los tags se combinan con Y", async ({ page }) => {
     const filters = page.getByRole("group", { name: "Filtrar por capacidad" });
-    await filters.getByRole("button", { name: "Pesos abiertos" }).click();
-    const openWeights = await rows(page).count();
-    await filters.getByRole("button", { name: "Visión" }).click();
+    await filters.getByRole("button", { name: /^Visión/ }).click();
+    const visionModels = await rows(page).count();
+    await filters.getByRole("button", { name: /^Razonamiento/ }).click();
     const both = await rows(page).count();
     expect(both).toBeGreaterThan(0);
-    expect(both).toBeLessThan(openWeights);
+    expect(both).toBeLessThan(visionModels);
   });
 
   test("sin resultados muestra el estado vacío y Limpiar filtros los quita", async ({ page }) => {
     await page.getByRole("searchbox", { name: "Buscar modelos" }).fill("no-existe");
     await expect(page.getByText("Ningún modelo coincide")).toBeVisible();
     await page.getByRole("button", { name: "Limpiar filtros" }).click();
-    await expect(rows(page)).toHaveCount(10);
+    await expect(rows(page)).toHaveCount(getCatalog().length);
   });
 
   test("ordena por nombre", async ({ page }) => {
     await page.getByRole("combobox", { name: "Ordenar por" }).click();
     await page.getByRole("option", { name: "Nombre" }).click();
-    const names = await rows(page).locator("td:first-child a").allTextContents();
+    const names = await rows(page).locator("h2 a").allTextContents();
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
   });
 
   test("cada modelo tiene su página de detalle", async ({ page }) => {
-    const links = await rows(page).locator("td:first-child a").evaluateAll((anchors) =>
+    test.setTimeout(120_000);
+    const links = await rows(page).locator("h2 a").evaluateAll((anchors) =>
       anchors.map((a) => ({ href: a.getAttribute("href")!, name: a.textContent!.trim() })),
     );
-    expect(links).toHaveLength(10);
+    expect(links).toHaveLength(getCatalog().length);
     for (const { href, name } of links) {
       const response = await page.goto(href);
       expect(response?.status(), href).toBe(200);
@@ -131,11 +134,14 @@ test.describe("catálogo", () => {
 
 test.describe("detalle", () => {
   test("muestra el ahorro del request de ejemplo y el snippet con el ID del modelo", async ({ page }) => {
-    await open(page, "/es/models/anthropic/claude-sonnet-4.5");
-    // docs/06: 2,000 + 500 tokens a $0.30 / $1.50 → $0.00135 con cheaptokens.wtf, $0.0135 oficial.
-    await expect(page.getByText(/0,00135\s?US\$/).first()).toBeVisible();
-    await expect(page.getByText(/0,01215\s?US\$/)).toBeVisible();
-    await expect(page.getByRole("tabpanel")).toContainText('model="anthropic/claude-sonnet-4.5"');
+    await open(page, "/es/models/anthropic/claude-sonnet-4.6");
+    const model = getCatalog().find((entry) => entry.id === "anthropic/claude-sonnet-4.6")!;
+    const discounted = requestCost(model.discountedInput, model.discountedOutput, 2000, 500);
+    const official = requestCost(model.officialInput, model.officialOutput, 2000, 500);
+    await expect(page.locator(".nr-cost").getByText(formatUsd(discounted, "es", "cost"), { exact: true })).toBeVisible();
+    await expect(page.locator(".nr-cost").getByText(formatUsd(official - discounted, "es", "cost"), { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Python", exact: true }).click();
+    await expect(page.getByRole("tabpanel").filter({ has: page.locator(".nr-code-box") }).first()).toContainText('model="anthropic/claude-sonnet-4.6"');
   });
 
   test("un modelo desconocido da 404 en el idioma de la ruta", async ({ page }) => {
@@ -184,7 +190,23 @@ test.describe("docs", () => {
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
-      expect(overflow).toBe(0);
+      expect(overflow).toBeLessThanOrEqual(0);
     });
   });
+});
+
+
+test("catalog cards combine author and search filters and keep results when switching views", async ({ page }) => {
+  await open(page, "/en/models", "dark");
+  const region = page.getByRole("region", { name: "Models", exact: true });
+  await expect(region.locator("article")).toHaveCount(getCatalog().length);
+  await page.getByRole("button", { name: "Anthropic", exact: true }).click();
+  await expect(region.locator("article")).toHaveCount(getCatalog().filter((model) => model.author === "anthropic").length);
+  await page.getByRole("searchbox", { name: "Search models" }).fill("claude-sonnet-4.6");
+  await expect(region.locator("article")).toHaveCount(1);
+  await page.getByRole("button", { name: "List view", exact: true }).click();
+  await expect(region.locator("article")).toHaveCount(1);
+  await page.getByRole("button", { name: "Grid view", exact: true }).click();
+  await region.getByRole("link", { name: "Claude Sonnet 4.6" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Claude Sonnet 4.6");
 });

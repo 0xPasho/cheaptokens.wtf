@@ -17,7 +17,7 @@ export type CatalogEntry = {
   officialInput: number;
   officialOutput: number;
   officialPriceSourceUrl: string;
-  /** `null` mientras el precio sea de ejemplo y nadie lo haya verificado. */
+  /** `null` mientras el precio reportado no se haya verificado con el creador del modelo. */
   officialPriceVerifiedAt: string | null;
   discountBps: number;
   /** Solo los tags curados. `long-context` y `cheap` se calculan. */

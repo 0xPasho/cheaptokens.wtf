@@ -3,7 +3,7 @@ export type Theme = (typeof THEMES)[number];
 export type ResolvedTheme = Exclude<Theme, "system">;
 
 export const THEME_STORAGE_KEY = "theme";
-export const DEFAULT_THEME: Theme = "system";
+export const DEFAULT_THEME: Theme = "dark";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
@@ -12,7 +12,7 @@ const DARK_QUERY = "(prefers-color-scheme: dark)";
  * equivocado. Ver la guía `preventing-flash-before-hydration` de Next 16.
  * Debe aplicar la misma regla que `resolveTheme`.
  */
-export const themeScript = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");var d=t==="dark"||(t!=="light"&&matchMedia("${DARK_QUERY}").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}})()`;
+export const themeScript = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");var d=t!=="light"&&(t!=="system"||matchMedia("${DARK_QUERY}").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}})()`;
 
 export function isTheme(value: unknown): value is Theme {
   return THEMES.includes(value as Theme);

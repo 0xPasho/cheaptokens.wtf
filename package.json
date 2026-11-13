@@ -20,6 +20,7 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "mock:upstream": "tsx scripts/mock-upstream.ts",
     "catalog:sync": "tsx scripts/sync-catalog.ts",
+    "catalog:refresh": "tsx scripts/refresh-catalog.ts",
     "keys:create": "tsx scripts/keys-create.ts",
     "credits:grant": "tsx scripts/credits-grant.ts",
     "reconcile": "tsx scripts/reconcile.ts"
@@ -32,7 +33,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
     "drizzle-orm": "^0.45.4",
-    "lucide-react": "^1.70.0",
+    "kubai-icons-react": "^0.7.0",
     "negotiator": "^1.1.0",
     "next": "16.4.5",
     "pg": "^8.23.1",
