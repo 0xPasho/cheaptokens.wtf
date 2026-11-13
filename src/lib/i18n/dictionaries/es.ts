@@ -11,6 +11,10 @@ export const es: Dictionary = {
     modelsTitle: "Modelos y precios",
     modelsDescription: "Cada modelo con su precio oficial, el precio cheaptokens.wtf y el descuento.",
   },
+  retro: {
+    on: "¡Modo retro activado! 🌈 Bienvenido a 2003. Vuelve a meter el código para regresar.",
+    off: "Modo retro desactivado. Bienvenido de vuelta al presente.",
+  },
   nav: {
     skip: "Saltar al contenido",
     label: "Principal",

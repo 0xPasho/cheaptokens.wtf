@@ -59,6 +59,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0045](./0045-tarjetas-en-capas-en-el-detalle.md) | Extender las tarjetas en dos capas a toda la página de modelo | Aceptada | Usuario |
 | [0046](./0046-catalogo-desde-la-lista-oficial.md) | Importar modelos, precios y rutas desde la lista oficial de InferHub | Aceptada | Usuario |
 | [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
+| [0048](./0048-modo-retro-konami.md) | El código Konami (↑↑↓↓←→←→BA Enter) activa el modo retro de toda la web | Aceptada | Usuario |
 
 ## Plantilla
 

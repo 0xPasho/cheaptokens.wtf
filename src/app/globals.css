@@ -528,3 +528,84 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 @media (max-width: 860px) { .nr-site-footer .nr-mobile-nav { display: flex; margin-bottom: 20px; } }
 
 .nr-resource-links :is(a, button) { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Modo retro (código Konami: ↑ ↑ ↓ ↓ ← → ← → B A Enter) · ADR-0048
+ * Toda la web vuela a 2003: Comic Sans, arcoíris pastel y bordes de caricatura.
+ * Colores fijos a propósito: es un disfraz, no el sistema de diseño.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+html.retro-party {
+  --font-inter: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
+}
+
+/* Fondo arcoíris: pastel en el tema claro, tintas apagadas en el oscuro. */
+html.retro-party body {
+  background-image: linear-gradient(180deg, #ffe3f6 0%, #e3f6ff 35%, #fff7d6 70%, #e7ffe9 100%);
+  background-attachment: fixed;
+}
+html.retro-party.dark body {
+  background-image: linear-gradient(180deg, #2b1e33 0%, #1e2b33 35%, #33291e 70%, #1e3324 100%);
+}
+
+/* Bordes de caricatura con arcoíris en movimiento sobre tarjetas y paneles. */
+html.retro-party .nr-model-card,
+html.retro-party .nr-detail-panel,
+html.retro-party .nr-site [data-slot="card"] {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(90deg, #ff9ecb, #ffd489, #fbff8f, #a2f5c4, #9ad1ff, #d9a5ff, #ff9ecb) border-box,
+    var(--card) padding-box;
+  animation: retro-border-flow 3.2s linear infinite;
+}
+/* Inclinaciones «al azar» por posición de tarjeta. */
+html.retro-party .nr-model-card:nth-child(2n) { rotate: 0.35deg; }
+html.retro-party .nr-model-card:nth-child(3n) { rotate: -0.45deg; }
+html.retro-party .nr-model-card:nth-child(5n) { rotate: 0.5deg; }
+
+/* El CTA de la cabecera, con su borde arcoíris. */
+html.retro-party .nr-pill-button {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(90deg, #ff9ecb, #ffd489, #fbff8f, #a2f5c4, #9ad1ff, #d9a5ff, #ff9ecb) border-box,
+    var(--secondary) padding-box;
+  animation: retro-border-flow 3.2s linear infinite;
+}
+
+/* Tira arcoíris bajo la navegación fija. */
+html.retro-party .nr-topbar {
+  border-bottom: 3px solid;
+  border-image: linear-gradient(90deg, #ff9ecb, #ffd489, #fbff8f, #a2f5c4, #9ad1ff, #d9a5ff, #ff9ecb) 1;
+}
+
+/* Títulos en caramelo saturado: se leen sobre el fondo pastel y sobre la tinta oscura. */
+html.retro-party .nr-site h1,
+html.retro-party .nr-site h2 {
+  background-image: linear-gradient(90deg, #e84a8a, #ff8f3f, #e8b93f, #3fc47f, #3f8fe8, #9a5cff, #e84a8a);
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: retro-border-flow 4s linear infinite;
+}
+
+html.retro-party ::selection { background: #ff9ecb; color: #4a0d33; }
+
+/* Aviso al activar o desactivar el modo. */
+.retro-banner {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 2px solid #ff9ecb;
+  border-radius: 999px;
+  background: #fff6fc;
+  color: #4a0d33;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgb(255 158 203 / 0.45);
+}
+
+@keyframes retro-border-flow {
+  from { background-position: 0% 50%, 0 0; }
+  to { background-position: 400% 50%, 0 0; }
+}

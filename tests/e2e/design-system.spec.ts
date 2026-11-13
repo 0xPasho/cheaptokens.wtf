@@ -81,6 +81,26 @@ test.describe("interacción", () => {
     await expect(page.locator("html")).toHaveClass(/dark/);
   });
 
+  test("el código Konami activa y desactiva el modo retro", async ({ page }) => {
+    await openDesignSystem(page, "light");
+    await expect(page.locator("html")).not.toHaveClass(/retro-party/);
+
+    for (const key of ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a", "Enter"]) {
+      await page.keyboard.press(key);
+    }
+    await expect(page.locator("html")).toHaveClass(/retro-party/);
+    await expect(page.locator(".retro-banner")).toContainText("Modo retro activado");
+
+    // Recargar conserva el modo (y no hay flash: el script de arranque lo aplica).
+    await page.reload();
+    await expect(page.locator("html")).toHaveClass(/retro-party/);
+
+    for (const key of ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a", "Enter"]) {
+      await page.keyboard.press(key);
+    }
+    await expect(page.locator("html")).not.toHaveClass(/retro-party/);
+  });
+
   test("diálogo de key nueva: foco adentro, overlay del token, Escape cierra y devuelve el foco", async ({ page }) => {
     await openDesignSystem(page, "light");
     const trigger = page

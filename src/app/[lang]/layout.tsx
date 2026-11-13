@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 
+import { KonamiRetro } from "@/components/konami-retro";
 import { ThemeSync } from "@/components/theme-sync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { hasLocale, LOCALES } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { retroScript } from "@/lib/retro";
 import { themeScript } from "@/lib/theme";
 
 import "../globals.css";
@@ -31,6 +33,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
+  const dict = getDictionary(lang);
 
   return (
     <html
@@ -43,7 +46,10 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col">
+        {/* El código Konami (↑↑↓↓←→←→BA Enter) alterna el modo retro; ver ADR-0048. */}
+        <script dangerouslySetInnerHTML={{ __html: retroScript }} />
         <ThemeSync />
+        <KonamiRetro dict={dict} />
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

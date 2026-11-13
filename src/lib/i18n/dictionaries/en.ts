@@ -10,6 +10,10 @@ export const en = {
     modelsTitle: "Models and prices",
     modelsDescription: "Every model with its official price, the cheaptokens.wtf price and the discount.",
   },
+  retro: {
+    on: "Retro mode on! 🌈 Welcome to 2003. Enter the code again to come back.",
+    off: "Retro mode off. Welcome back to the present.",
+  },
   nav: {
     skip: "Skip to content",
     label: "Main",
