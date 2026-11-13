@@ -22,6 +22,40 @@
 .nr-header-leading { display: flex; align-items: center; gap: 34px; min-width: 0; }
 .nr-brand-button { display: inline-flex; align-items: center; border: 0; padding: 4px; background: none; }
 .nr-brand-button img { width: 27px; height: 27px; }
+/* El «wtf» del logo: Comic Sans, arcoíris pastel en movimiento y letras que se menean — guiño a la web de 2003. */
+.nr-brand-accent {
+  display: inline-flex;
+  font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+.nr-brand-accent span {
+  --nr-wtf-tilt: 0deg;
+  display: inline-block;
+  transform: rotate(var(--nr-wtf-tilt));
+  background-image: linear-gradient(90deg,
+    #ff9ecb, #ffd489, #fbff8f, #a2f5c4, #9ad1ff, #d9a5ff, #ff9ecb);
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: nr-wtf-flow 2.6s linear infinite, nr-wtf-wiggle 1.3s ease-in-out infinite;
+}
+.nr-brand-accent span:nth-child(3n + 1) { --nr-wtf-tilt: -8deg; }
+.nr-brand-accent span:nth-child(3n + 2) { --nr-wtf-tilt: 6deg; animation-delay: -0.9s, -0.4s; }
+.nr-brand-accent span:nth-child(3n) { --nr-wtf-tilt: -4deg; animation-delay: -1.7s, -0.8s; }
+@keyframes nr-wtf-flow {
+  from { background-position: 0% 50%; filter: hue-rotate(0deg) drop-shadow(0 0 6px rgb(255 158 203 / 0.6)); }
+  to { background-position: 400% 50%; filter: hue-rotate(360deg) drop-shadow(0 0 6px rgb(255 158 203 / 0.6)); }
+}
+@keyframes nr-wtf-wiggle {
+  0%, 100% { transform: rotate(var(--nr-wtf-tilt)) translateY(0) scale(1); }
+  50% { transform: rotate(var(--nr-wtf-tilt)) translateY(-3px) scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nr-brand-accent span { animation: none; }
+}
 .nr-desktop-nav { display: flex; align-items: center; gap: 26px; }
 .nr-desktop-nav a {
   padding: 8px 0;

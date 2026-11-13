@@ -3,6 +3,8 @@ import type { Dictionary } from "./en";
 export const es: Dictionary = {
   meta: {
     siteName: "cheaptokens.wtf",
+    brandBase: "cheaptokens.",
+    brandTld: "wtf",
     homeTitle: "cheaptokens.wtf · Un endpoint. Todos los modelos. Hasta 90% menos.",
     homeDescription:
       "Usa Claude, GPT, Gemini y modelos abiertos con un solo endpoint compatible con OpenAI, pagando mucho menos que el precio oficial.",

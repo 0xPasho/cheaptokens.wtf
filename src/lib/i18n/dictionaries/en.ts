@@ -2,6 +2,8 @@
 export const en = {
   meta: {
     siteName: "cheaptokens.wtf",
+    brandBase: "cheaptokens.",
+    brandTld: "wtf",
     homeTitle: "cheaptokens.wtf · One endpoint. Every model. Up to 90% off.",
     homeDescription:
       "Use Claude, GPT, Gemini and open models through one OpenAI-compatible endpoint, for much less than the official price.",

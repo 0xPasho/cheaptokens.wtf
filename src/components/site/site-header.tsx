@@ -30,7 +30,12 @@ export function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary 
     <header className="nr-topbar">
       <div className="nr-header-leading">
         <Link href={`/${locale}`} className="nr-brand-button" aria-label={dict.nav.home}>
-          {dict.meta.siteName}
+          {dict.meta.brandBase}
+          <span className="nr-brand-accent">
+            {Array.from(dict.meta.brandTld).map((letter, index) => (
+              <span key={`${index}-${letter}`}>{letter}</span>
+            ))}
+          </span>
         </Link>
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
           <Link href={`/${locale}/models`} className={!isDocs ? "nr-active" : undefined} aria-current={!isDocs ? "page" : undefined}>{dict.nav.models}</Link>
