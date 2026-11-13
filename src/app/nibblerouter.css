@@ -411,7 +411,7 @@
 .nr-route-rates summary code { color: var(--text-description-strong); font: 13px/1.5 var(--font-mono); overflow-wrap: anywhere; }
 .nr-route-rates summary > :last-child { margin-left: auto; color: var(--text-secondary); font-size: 13px; }
 .nr-route-rates summary:hover { color: var(--text-bright); }
-.nr-route-rates summary:focus-visible { outline: 2px solid var(--text-description-strong); outline-offset: -2px; }
+.nr-route-rates summary:focus-visible { outline: none; }
 .nr-route-specs { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 20px; padding: 12px 0 24px; font-size: 14px; }
 .nr-route-specs dt { color: var(--text-secondary); margin-bottom: 6px; }
 .nr-route-specs dd { margin: 0; overflow-wrap: anywhere; }
