@@ -122,6 +122,21 @@
    y el alto máximo deja sitio al footer + padding inferior de .nr-main (~140px + margen) para que
    el anclaje nunca choque con el fin del contenedor y el sidebar no se mueva al hacer scroll. */
 .nr-sidebar { position: sticky; top: 112px; max-height: calc(100dvh - 184px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* En pantallas anchas el sidebar del catálogo se fija a la ventana: arranca justo bajo el
+   topbar (72px), llega hasta el borde inferior y no se mueve nunca (un elemento fijo no lo
+   empuja el fin del contenedor). La máscara degradada difumina el corte del contenido que no cabe. */
+@media (min-width: 1081px) {
+  .nr-main .nr-catalog > .nr-sidebar {
+    position: fixed;
+    top: 72px; bottom: 0; left: 20px;
+    width: 240px; max-height: none;
+    overscroll-behavior: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+  }
+  /* Al salir el sidebar del flujo, la columna principal se ancla a la pista 2 a mano. */
+  .nr-main .nr-layout > section { grid-column: 2; }
+}
 .nr-sidebar::-webkit-scrollbar { width: 0; display: none; }
 .nr-sidebar-group + .nr-sidebar-group { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
 .nr-sidebar-group h2 { margin: 0 0 10px; padding: 0; color: var(--text-label); font-size: 12px; font-weight: 400; }
