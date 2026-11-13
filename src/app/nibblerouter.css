@@ -402,7 +402,6 @@
 .nr-detail-toast { position: fixed; z-index: 100; bottom: 24px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 14px 22px; border-radius: 16px; background: var(--text-code); color: var(--text-inverse); font-size: 14px; }
 .nr-model-card { position: relative; }
 .nr-model-card .nr-model-link::after { content: ""; position: absolute; inset: 0; border-radius: 28px; }
-.nr-model-card:focus-within { outline: 2px solid var(--text-description-strong); outline-offset: 3px; }
 [hidden] { display: none !important; }
 .nr-source-note { margin: 0; padding: 0 24px 24px; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
 .nr-upstream-section { margin-top: 28px; }

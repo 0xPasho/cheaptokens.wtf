@@ -407,7 +407,7 @@ html { scrollbar-gutter: stable; scroll-behavior: smooth; scroll-padding-top: 92
 body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 .nr-site { min-height: 100dvh; }
 .nr-site button { cursor: pointer; }
-.nr-site :is(a, button, input, select):focus-visible { outline: 2px solid var(--foreground); outline-offset: 4px; }
+.nr-site :is(a, button, input, select):focus-visible:not(.nr-search-box input) { outline: 2px solid var(--foreground); outline-offset: 4px; }
 .nr-plain { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; height: auto; color: inherit; font: inherit; }
 .nr-site .nr-pills { margin-bottom: 22px; }
 .nr-grid .nr-model-card { padding: 8px; }
