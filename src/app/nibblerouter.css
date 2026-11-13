@@ -99,7 +99,7 @@
 .nr-account-link { color: var(--muted-foreground); font-size: 13px; padding: 8px 4px; transition: color 150ms; }
 .nr-account-link:hover { color: var(--foreground); }
 
-.nr-main { padding-inline: 20px; padding-bottom: 80px; }
+.nr-main { padding-inline: 20px; }
 
 /* ---------- Page head: one huge tight heading, one muted line ---------- */
 .nr-page-head { padding: 132px 0 44px; }
@@ -112,12 +112,16 @@
 }
 .nr-page-head .nr-sub { margin: 14px 0 0; color: var(--muted-foreground); font-size: 14px; }
 
+/* El padding inferior va dentro de la columna principal: alarga el área del grid y con ella
+   el recorrido del sticky del sidebar, que así puede mostrar más filas sin empujarse al final. */
+.nr-main .nr-layout > section { padding-bottom: 80px; }
+
 /* ---------- Catalog layout (sidebar + .nr-main) ---------- */
 .nr-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; gap: 40px; }
 /* Sticky sin viaje: top = el padding superior de .nr-catalog (112px) para que no suba al empezar,
    y el alto máximo deja sitio al footer + padding inferior de .nr-main (~140px + margen) para que
    el anclaje nunca choque con el fin del contenedor y el sidebar no se mueva al hacer scroll. */
-.nr-sidebar { position: sticky; top: 112px; max-height: calc(100dvh - 272px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.nr-sidebar { position: sticky; top: 112px; max-height: calc(100dvh - 184px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .nr-sidebar::-webkit-scrollbar { width: 0; display: none; }
 .nr-sidebar-group + .nr-sidebar-group { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
 .nr-sidebar-group h2 { margin: 0 0 10px; padding: 0; color: var(--text-label); font-size: 12px; font-weight: 400; }
