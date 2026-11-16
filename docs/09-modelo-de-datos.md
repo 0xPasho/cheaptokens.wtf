@@ -12,6 +12,12 @@ erDiagram
   workspaces ||--o{ api_keys : tiene
   workspaces ||--o{ credit_transactions : recibe
   workspaces ||--o{ requests : consume
+  workspaces ||--o| subscriptions : "tiene plan"
+  workspaces ||--o{ usage_windows : "gasta en"
+  workspaces ||--o{ model_packs : compra
+  workspaces ||--o{ payments : paga
+  model_packs ||--o{ requests : paga
+  models ||--o{ model_packs : "es de"
   api_keys ||--o{ requests : autentica
   models ||--o{ model_upstreams : "se sirve por"
   upstreams ||--o{ model_upstreams : sirve
@@ -21,14 +27,19 @@ erDiagram
 
 ## `workspaces`
 
-Es el dueño del saldo y de las keys. En el MVP hay uno por usuario de Clerk ([ADR-0016](./adr/0016-workspace-dueno.md)).
+Es el dueño del plan, del saldo y de las keys. En el MVP hay uno por usuario de Clerk ([ADR-0016](./adr/0016-workspace-dueno.md)).
 
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | uuid PK | |
-| `clerk_user_id` | text, único, not null | Se crea de forma perezosa en el primer acceso al dashboard |
-| `balance_micro_usd` | bigint, not null, default 0 | Desnormalizado. Puede ser negativo ([08](./08-creditos-y-pagos.md#el-saldo-puede-quedar-levemente-negativo)) |
-| `rate_limit_rpm` | int, null | Override del rate limit. Null = valor global |
+| `clerk_user_id` | text, único, not null | Se crea de forma perezosa en el primer acceso al dashboard. En el modo de desarrollo es `dev:<nombre>` ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
+| `balance_micro_usd` | bigint, not null, default 0 | Saldo de créditos. Desnormalizado. Puede ser negativo ([08](./08-creditos-y-pagos.md#el-saldo-puede-quedar-levemente-negativo)) |
+| `rate_limit_rpm` | int, null | Override del rate limit. Null = el del plan activo o, sin plan, el global |
+| `overflow_mode` | enum `continue \| stop`, default `continue` | Qué pasa al llegar al límite del plan ([08](./08-creditos-y-pagos.md#orden-de-cobro-y-excedente)) |
+| `overflow_packs`, `overflow_credits` | boolean, default true | Si el excedente usa paquetes y créditos |
+| `overflow_cap_micro_usd` | bigint, default 25000000 | Tope mensual de créditos usados como excedente ($25) |
+| `overflow_month` | date, null | Primer día del mes (UTC) al que corresponde `overflow_spent_micro_usd` |
+| `overflow_spent_micro_usd` | bigint, default 0 | Créditos usados como excedente en ese mes. Otro mes cuenta como 0 |
 | `suspended_at` | timestamptz, null | Por contracargo o abuso. El gateway responde `403 account_suspended` |
 | `deleted_at` | timestamptz, null | Cuando llega `user.deleted` de Clerk |
 | `created_at`, `updated_at` | timestamptz | |
@@ -47,6 +58,9 @@ Es el dueño del saldo y de las keys. En el MVP hay uno por usuario de Clerk ([A
 | `spend_limit_micro_usd` | bigint, null | Null = sin límite |
 | `spent_micro_usd` | bigint, not null, default 0 | |
 | `last_used_at` | timestamptz, null | |
+| `billing_source` | enum `plan_then_prepaid \| plan_only \| prepaid_only`, default `plan_then_prepaid` | De dónde cobra ([05](./05-api-keys.md#fuente-de-cobro-y-modelos)) |
+| `allowed_models` | text[], null | Null = todos los modelos |
+| `expires_at` | timestamptz, null | Fin de la gracia de una key rotada. Null = no vence |
 | `created_at` | timestamptz | |
 | `revoked_at` | timestamptz, null | Borrado suave |
 
@@ -125,7 +139,12 @@ Una fila por cada request que llegó a la etapa de elegir upstream. Los rechazos
 | `completion_tokens` | int | |
 | `cached_tokens` | int, null | Se guarda desde ya, aunque en el MVP no cambie el precio |
 | `usage_estimated` | boolean | True si el upstream no reportó `usage` |
-| `cost_micro_usd` | bigint | **Lo que se cobró** |
+| `cost_micro_usd` | bigint | **Lo que se cobró**: el valor de uso a precio cheaptokens.wtf |
+| `plan_micro_usd` | bigint, default 0 | Parte que pagó el plan |
+| `pack_micro_usd` | bigint, default 0 | Parte que pagó un paquete |
+| `credits_micro_usd` | bigint, default 0 | Parte que pagaron los créditos. Es lo único que baja el saldo |
+| `absorbed_micro_usd` | bigint, default 0 | Parte que nadie pagó: la absorbemos ([08](./08-creditos-y-pagos.md#orden-de-cobro-y-excedente)) |
+| `pack_id` | uuid FK → model_packs, null | El paquete que pagó, si alguno |
 | `upstream_cost_micro_usd` | bigint | Lo que nos cuesta: `usage.cost` si el upstream lo reporta (InferHub sí), o el costo del mapeo |
 | `official_cost_micro_usd` | bigint | Lo que habría costado al precio oficial (para el "ahorro") |
 | `ttfb_ms` | int, null | Tiempo al primer byte |
@@ -133,6 +152,8 @@ Una fila por cada request que llegó a la etapa de elegir upstream. Los rechazos
 | `created_at` | timestamptz | |
 
 Índices: `(workspace_id, created_at DESC)` para el dashboard; `(api_key_id, created_at DESC)`; `(upstream_id, created_at)` para la conciliación.
+
+CHECK `requests_cost_split_check`: `plan + pack + credits + absorbed = cost`. La migración `drizzle/0001_spotty_power_pack.sql` puso `credits_micro_usd = cost_micro_usd` en los requests anteriores, que se cobraban solo de créditos.
 
 Crecimiento: es la tabla más grande. En la fase 2 se evalúa particionarla por mes y agregar una tabla de resumen diario por workspace y modelo para que el dashboard no recorra todas las filas.
 
@@ -151,11 +172,77 @@ Entradas de dinero y ajustes.
 | `note` | text, null | Obligatorio en `adjustment` |
 | `created_at` | timestamptz | |
 
+## `subscriptions`
+
+El plan vigente del workspace ([ADR-0049](./adr/0049-suscripcion-con-limites.md)). Una fila por workspace; los cobros quedan en `payments`.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK, único | |
+| `plan_id` | text | `plus`, `pro` o `max` (`src/lib/billing/plans.ts`) |
+| `status` | enum `active \| past_due \| canceled` | Solo `active` da límites |
+| `current_period_start`, `current_period_end` | timestamptz | El plan vale hasta `current_period_end` |
+| `cancel_at_period_end` | boolean, default false | Cancelado: termina al fin del periodo |
+| `next_plan_id` | text, null | Plan que entra al renovar (bajar de plan) |
+| `payment_provider` | text | |
+| `external_id` | text, único, null | ID de la suscripción en el MoR |
+| `created_at`, `updated_at` | timestamptz | |
+
+## `usage_windows`
+
+Lo usado del plan en la ventana de 5 horas y en la semana.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `workspace_id` | uuid FK | PK compuesta |
+| `kind` | enum `five_hour \| week` | PK compuesta |
+| `started_at` | timestamptz | El primer request que cobró del plan en esta ventana |
+| `resets_at` | timestamptz | `started_at` + 5 h o 7 días. Si ya pasó, la ventana cuenta como vacía y el siguiente cobro la reabre |
+| `used_micro_usd` | bigint, default 0 | Valor de uso que pagó el plan |
+
+## `model_packs`
+
+Uso prepagado de un modelo, con bono y vencimiento.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `model_id` | text FK → models | |
+| `paid_micro_usd` | bigint | Lo que se pagó |
+| `granted_micro_usd` | bigint | Lo pagado × 1.2 |
+| `balance_micro_usd` | bigint, check entre 0 y `granted` | Lo que queda |
+| `expires_at` | timestamptz | 90 días después de la compra |
+| `created_at` | timestamptz | |
+
+Índice: `(workspace_id, model_id, expires_at)`.
+
+## `payments`
+
+Cada cobro: recargas, planes y paquetes. El saldo sigue saliendo de `credit_transactions`.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `kind` | enum `topup \| subscription \| pack` | |
+| `amount_micro_usd` | bigint | |
+| `item` | text, null | `plan_id` en planes, `model_id` en paquetes |
+| `payment_provider` | text | `dev` mientras no haya MoR |
+| `external_id` | text, único | **Clave de idempotencia** de todas las compras |
+| `receipt_url` | text, null | Recibo del MoR |
+| `created_at` | timestamptz | |
+
+Índices: único en `external_id`; `(workspace_id, created_at DESC)`.
+
 ## Invariantes
 
 1. **Saldo:** para cada workspace,
-   `balance_micro_usd = Σ credit_transactions.amount_micro_usd − Σ requests.cost_micro_usd`.
-   Un cron diario lo verifica y alerta si hay diferencia.
+   `balance_micro_usd = Σ credit_transactions.amount_micro_usd − Σ requests.credits_micro_usd`.
+   Un cron diario lo verifica y alerta si hay diferencia (`src/lib/billing/reconcile.ts`).
 2. **Gasto de la key:** `api_keys.spent_micro_usd = Σ requests.cost_micro_usd` de esa key.
-3. **Margen:** para todo `model_upstreams` habilitado, el precio cheaptokens.wtf ≥ costo × (1 + `MIN_MARGIN`). Lo garantiza la sincronización ([06](./06-catalogo-y-precios.md#margen-mínimo)).
-4. **Movimientos atómicos:** todo cambio de saldo ocurre en la misma transacción que la fila (`requests` o `credit_transactions`) que lo justifica.
+3. **Paquetes:** para cada paquete, `model_packs.balance_micro_usd = granted_micro_usd − Σ requests.pack_micro_usd` de ese paquete. Lo verifica la misma conciliación.
+4. **Reparto:** en cada request, `plan + pack + credits + absorbed = cost`. Lo garantiza un CHECK.
+5. **Margen:** para todo `model_upstreams` habilitado, el precio cheaptokens.wtf ≥ costo × (1 + `MIN_MARGIN`). Lo garantiza la sincronización ([06](./06-catalogo-y-precios.md#margen-mínimo)).
+6. **Movimientos atómicos:** todo cambio de saldo, de paquete o de ventana ocurre en la misma transacción que la fila (`requests`, `credit_transactions` o `payments`) que lo justifica.

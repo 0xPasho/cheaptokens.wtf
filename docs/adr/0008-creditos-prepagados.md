@@ -1,6 +1,6 @@
 # ADR-0008: Créditos prepagados y cobro después del request
 
-- **Estado:** Aceptada
+- **Estado:** Reemplazada por [ADR-0049](./0049-suscripcion-con-limites.md) el 2026-11-15: ahora hay planes con límites y paquetes por modelo. Los créditos prepagados siguen, con el mismo cobro después del request, como respaldo del plan y como forma de pago sin plan.
 - **Fecha:** 2026-11-08
 - **Origen:** Default
 

@@ -14,12 +14,12 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 |---|---|---|---|
 | [0001](./0001-upstreams-agregadores.md) | El descuento sale de comprar tokens a plataformas agregadoras (upstreams) | Aceptada | Usuario |
 | [0002](./0002-api-compatible-openai.md) | API pública compatible con OpenAI Chat Completions | Aceptada (ampliada por 0031) | Default |
-| [0003](./0003-clerk-solo-dashboard.md) | Clerk solo para el dashboard, API keys propias | Aceptada | Usuario |
+| [0003](./0003-clerk-solo-dashboard.md) | Clerk solo para el dashboard, API keys propias | Aceptada (ampliada por 0050) | Usuario |
 | [0004](./0004-formato-api-keys.md) | Formato de API key con prefijo + checksum, guardadas como SHA-256 | Reemplazada por 0027 | Default |
 | [0005](./0005-gateway-en-nextjs-vercel.md) | Gateway dentro de Next.js en Vercel, aislado para poder extraerlo | Aceptada | Default |
 | [0006](./0006-postgres-neon-drizzle.md) | Postgres en Neon con Drizzle | Reemplazada por 0032 | Default |
 | [0007](./0007-dinero-en-micro-dolares.md) | Dinero como enteros en micro-dólares | Aceptada | Default |
-| [0008](./0008-creditos-prepagados.md) | Créditos prepagados y cobro después del request | Aceptada | Default |
+| [0008](./0008-creditos-prepagados.md) | Créditos prepagados y cobro después del request | Reemplazada por 0049 | Default |
 | [0009](./0009-stripe-checkout.md) | Stripe Checkout para recargas | Reemplazada por 0019 (plan B) | Default |
 | [0010](./0010-precio-por-descuento.md) | Precio cheaptokens.wtf = oficial × (1 − descuento por modelo), con margen mínimo | Aceptada | Usuario + Default |
 | [0011](./0011-tags-curados.md) | Lista fija de tags: curados y calculados | Aceptada | Usuario + Default |
@@ -60,6 +60,8 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0046](./0046-catalogo-desde-la-lista-oficial.md) | Importar modelos, precios y rutas desde la lista oficial de InferHub | Aceptada | Usuario |
 | [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
 | [0048](./0048-modo-retro-konami.md) | El código Konami (↑↑↓↓←→←→BA Enter) activa el modo retro de toda la web | Aceptada | Usuario |
+| [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada | Usuario |
+| [0050](./0050-login-clerk-y-modo-desarrollo.md) | Login con Clerk cuando está configurado, y un modo de desarrollo solo en local | Aceptada | Usuario |
 
 ## Plantilla
 

@@ -2,6 +2,13 @@
 
 Lo que falta decidir o conseguir. Cada pregunta tiene un **default**: es lo que se implementa si nadie dice otra cosa. Cuando se resuelve una, se mueve a un ADR y se borra de aquí.
 
+## Resueltas el 2026-11-15
+
+| Pregunta | Respuesta | ADR |
+|---|---|---|
+| ¿Hay suscripción? | Sí: planes Plus, Pro y Max con un límite cada 5 horas y otro cada semana, paquetes por modelo y créditos de respaldo. Los límites están por calibrar (#10) | [0049](./adr/0049-suscripcion-con-limites.md) |
+| ¿Cómo se entra sin la instancia de Clerk? | Solo en desarrollo, con un nombre. Preview y producción necesitan Clerk (#11) | [0050](./adr/0050-login-clerk-y-modo-desarrollo.md) |
+
 ## Resueltas el 2026-11-10
 
 | Pregunta | Respuesta | ADR |
@@ -33,7 +40,7 @@ Se decide al cerrar la fase de pruebas, que corre con InferHub y el upstream sim
 
 ### 2. Aprobación por escrito de un MoR
 
-Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y pedir la confirmación por escrito ([ADR-0019](./adr/0019-merchant-of-record.md)). Si los dos rechazan, se activa el plan B: Stripe directo con Stripe Tax ([ADR-0009](./adr/0009-stripe-checkout.md)). *Default: Polar.*
+Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y pedir la confirmación por escrito ([ADR-0019](./adr/0019-merchant-of-record.md)). La descripción incluye los planes mensuales y los paquetes por modelo, no solo las recargas ([ADR-0049](./adr/0049-suscripcion-con-limites.md)). Si los dos rechazan, se activa el plan B: Stripe directo con Stripe Tax ([ADR-0009](./adr/0009-stripe-checkout.md)). *Default: Polar.*
 
 ### 3. Validación legal y fiscal en México
 
@@ -45,6 +52,21 @@ Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y p
 ### 4. Registrar `cheaptokens.wtf`
 
 El nombre y el dominio ya están decididos ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)), pero el 2026-11-10 el dominio seguía libre, sin registrar. Hay que comprarlo **antes de anunciar el nombre** y antes de configurarlo en Vercel y en Clerk. *Sin default.*
+
+### 10. Calibrar los límites de los planes y el margen
+
+Los límites de Plus, Pro y Max se miden a precio cheaptokens.wtf, y sus valores son iniciales ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)). Usados al máximo, los tres planes solo cubren su costo si el costo upstream es ≤ ~38 % del precio. Con Claude Opus 5.5 es ≈ 91 % (InferHub nos cobra $0.436 / $2.18 por 1M y lo vendemos a $0.48 / $2.40). Los paquetes, con 20 % extra, necesitan ≤ 83 %.
+
+- (a) Bajar los límites hasta que el peor caso cuadre con el modelo de menor margen.
+- (b) Ponderar por modelo: los de margen bajo gastan el límite con un multiplicador o quedan fuera del plan y de los paquetes.
+- (c) Medir los límites al costo upstream (descartado por ahora en ADR-0049).
+- (d) Aceptar la pérdida del peor caso, si el uso real queda lejos del máximo, y vigilar el margen por plan.
+
+*Sin default: se decide con el costo de los upstreams de producción (#1). Hasta entonces los valores de `src/lib/billing/plans.ts` son de prueba.*
+
+### 11. Crear la instancia de Clerk
+
+El login con Clerk ya está en el código y se activa con `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY` ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)). Falta crear la instancia propia (#9), configurarla con el dominio (#4), elegir los métodos de inicio de sesión y registrar el webhook `user.deleted` con `CLERK_WEBHOOK_SIGNING_SECRET`. Sin ella, preview y producción no dejan iniciar sesión. *Sin default: la tiene que crear el dueño.*
 
 ## No bloquean (los defaults ya están en los docs)
 
@@ -60,7 +82,7 @@ Con un MoR, una recarga de $10 pierde unos $0.80–$1.00 (8–10%) en comisión,
 
 ### 6. ¿Los créditos expiran?
 
-*Default: no expiran. Tiene que quedar en los términos.* Ojo: si un upstream expira **nuestros** créditos prepagados (OpenRouter lo hace a los 365 días), es otra razón para prepagarles poco.
+*Default: no expiran. Tiene que quedar en los términos.* Los paquetes por modelo sí vencen a los 90 días ([ADR-0049](./adr/0049-suscripcion-con-limites.md)), y eso también va en los términos. Ojo: si un upstream expira **nuestros** créditos prepagados (OpenRouter lo hace a los 365 días), es otra razón para prepagarles poco.
 
 ### 7. ¿Qué margen mínimo sobre el costo upstream?
 
@@ -68,7 +90,7 @@ Con un MoR, una recarga de $10 pierde unos $0.80–$1.00 (8–10%) en comisión,
 
 ### 8. ¿Qué rate limit inicial?
 
-*Default: 60 requests/min por workspace, con override por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)).*
+*Default: 60 requests/min por workspace, con override por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Con plan: 60 en Plus, 120 en Pro y 300 en Max ([ADR-0049](./adr/0049-suscripcion-con-limites.md)).*
 
 ### 9. ¿cheaptokens.wtf comparte usuarios con Deska?
 

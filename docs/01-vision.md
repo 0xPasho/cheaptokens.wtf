@@ -41,7 +41,7 @@ Fuera del MVP: usuarios de Claude Code, que necesitan el formato `/v1/messages` 
 
 - No hospedamos modelos ni tenemos GPUs.
 - No hacemos routing "inteligente" que elija el modelo por el usuario. El usuario elige el modelo y nosotros elegimos el upstream.
-- No hay plan gratis, créditos de regalo ni suscripción ([ADR-0018](./adr/0018-sin-creditos-gratis.md)).
+- No hay plan gratis ni créditos de regalo ([ADR-0018](./adr/0018-sin-creditos-gratis.md)). Los planes con límites son de pago ([ADR-0049](./adr/0049-suscripcion-con-limites.md)).
 - No hay equipos ni organizaciones ([ADR-0016](./adr/0016-workspace-dueno.md)).
 - No hay playground ni chat en la web.
 - No hay formato Anthropic, Responses API, embeddings, imágenes ni audio.
@@ -56,7 +56,7 @@ Costo upstream (C)  <  Precio cheaptokens.wtf (P)  <<  Precio oficial (O)
 - Vendemos a `P = O × (1 − descuento)`, con un descuento por modelo ([ADR-0010](./adr/0010-precio-por-descuento.md)).
 - **Fase de pruebas:** el upstream es InferHub ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)). Los upstreams de producción se eligen después, con la [lista de requisitos](./07-upstreams.md#requisitos-para-aceptar-un-upstream).
 - Ganamos `P − C` por token. Un validador impide publicar un precio que no cubra el costo más un margen mínimo.
-- El usuario paga por adelantado (prepago), así que no hay riesgo de crédito ([ADR-0008](./adr/0008-creditos-prepagados.md)). Cobra un Merchant of Record, que se encarga de los impuestos de cada país ([ADR-0019](./adr/0019-merchant-of-record.md)).
+- El usuario paga por adelantado (plan mensual, paquete o créditos), así que no hay riesgo de crédito ([ADR-0049](./adr/0049-suscripcion-con-limites.md)). Un plan usado al máximo puede costarnos más de lo que paga: sus límites se calibran contra el costo upstream ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)). Cobra un Merchant of Record, que se encarga de los impuestos de cada país ([ADR-0019](./adr/0019-merchant-of-record.md)).
 
 Riesgo principal del modelo: **dependemos de terceros cuyo precio y continuidad no controlamos.** Ver [07 · Upstreams › Riesgos](./07-upstreams.md#riesgos-y-mitigaciones).
 

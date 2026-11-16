@@ -118,32 +118,32 @@ sequenceDiagram
   G->>DB: SHA-256(key) → key + workspace (1 query)
   G->>R: Rate limit del workspace
   G->>G: Modelo en catálogo (caché en memoria)
-  G->>G: Saldo > 0, límite de la key, workspace no suspendido
+  G->>G: Workspace no suspendido, modelo permitido, límite de la key, plan/paquete/créditos
   G->>U: Request con model del upstream e include_usage forzado
   U-->>G: Stream SSE
   G-->>C: Stream reescrito (model, id, solo campos permitidos)
   U-->>G: Último chunk con usage
   G-->>C: [DONE]
-  G->>DB: after(): requests + débito de saldo + gasto de la key (1 transacción)
+  G->>DB: after(): reparto plan/paquete/créditos + requests + gasto de la key (1 transacción)
 ```
 
 Paso a paso:
 
 1. **Validación local de la key.** Se revisan prefijo, longitud y checksum CRC32 sin tocar la base. La basura se rechaza con `401` sin costo ([05 · API keys](./05-api-keys.md)).
-2. **Lookup.** `SHA-256(key)` se busca contra un índice único. Una sola query trae la key (revocada o no, límite y gastado) y su workspace (saldo, suspendido o no).
+2. **Lookup.** `SHA-256(key)` se busca contra un índice único. Una sola query trae la key (revocada o vencida, límite, gastado, fuente de cobro y modelos), su workspace (saldo, suspendido o no, excedente) y el plan con sus ventanas.
 3. **Rate limit** por workspace en Redis. Si se excede, `429` con `retry-after`.
 4. **Modelo.** Se busca en el catálogo, que vive cacheado en memoria por 60 s. Si no existe, `404 model_not_found`. Si está `retired`, `410 model_retired`.
-5. **Saldo y límites,** en este orden: con el workspace suspendido, `403 account_suspended`; sin saldo, `402 insufficient_credits`; con la key en su límite, `403 key_limit_exceeded`.
+5. **Cuenta y cobro,** en este orden: con el workspace suspendido, `403 account_suspended`; con un modelo que la key no permite, `403 model_not_allowed_for_key`; con la key en su límite, `403 key_limit_exceeded`. Después, la admisión: plan, paquete del modelo o créditos; si nada alcanza, `429 usage_limit_reached`, `402 no_active_plan` o `402 insufficient_credits` ([08 · Créditos › Cobro por request](./08-creditos-y-pagos.md#cobro-por-request)).
 6. **Upstream.** Se elige el primero habilitado según prioridad ([07 · Upstreams](./07-upstreams.md#selección-y-fallback)). Se reemplaza `model` por el ID del upstream y, si es streaming, se fuerza `stream_options.include_usage = true`. Si el upstream acepta un tope de precio (InferHub sí), se manda con el costo del mapeo ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)).
 7. **Fallback.** Solo si el error ocurre **antes de enviar el primer chunk de datos** (hasta entonces no salen headers): error de red, timeout, `429`, `5xx`, o `401/402/403/404` del upstream (todos son problema nuestro, no del cliente). Un `400` del upstream se devuelve al cliente sanitizado.
 8. **Respuesta.** Se reescriben `id` y `model`, se dejan solo los campos del estándar de OpenAI y se descarta cualquier campo o header del upstream ([07 · Upstreams › Ocultar](./07-upstreams.md#ocultar-el-upstream)).
-9. **Cobro.** Al terminar, dentro de `after()`, una sola transacción inserta el request, descuenta el saldo y suma el gasto de la key ([08 · Créditos](./08-creditos-y-pagos.md#cobro-por-request)).
+9. **Cobro.** Al terminar, dentro de `after()`, una sola transacción bloquea el workspace, reparte el costo entre plan, paquete y créditos, inserta el request y suma el gasto de la key ([08 · Créditos](./08-creditos-y-pagos.md#cobro-por-request)).
 
 ## Hot path: qué toca y qué no
 
 | Toca | No toca |
 |---|---|
-| Postgres: 1 lectura antes y 1 transacción después (en `after()`) | Clerk |
+| Postgres: 1 lectura antes (2 si el plan no alcanza y hay que mirar los paquetes) y 1 transacción después (en `after()`) | Clerk |
 | Redis: 1 operación de rate limit | El MoR (pagos) |
 | Memoria: catálogo cacheado 60 s | Diccionarios de i18n |
 | Upstream | Cualquier render de React |
@@ -174,7 +174,7 @@ Son valores iniciales configurables. Se revisan con datos reales.
 ## Web (dashboard)
 
 - Server Components para leer y Server Functions para mutar (crear o revocar key, iniciar checkout).
-- **`proxy.ts` no es la autorización.** La documentación de Next 16 lo dice explícitamente: el proxy sirve para redirecciones optimistas. Cada página privada y cada Server Function vuelve a verificar la sesión con `auth()` de Clerk y resuelve el workspace del usuario antes de tocar datos.
+- **`proxy.ts` no es la autorización.** La documentación de Next 16 lo dice explícitamente: el proxy sirve para redirecciones optimistas. Cada página privada y cada Server Function vuelve a verificar la sesión (con `auth()` de Clerk, o la cookie del modo de desarrollo, [ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) y resuelve el workspace del usuario antes de tocar datos.
 - El workspace se crea **de forma perezosa**: la primera vez que un usuario autenticado entra al dashboard se hace un upsert por `clerk_user_id` ([ADR-0016](./adr/0016-workspace-dueno.md)).
 - `cacheComponents` está activo en `next.config.ts`. El dashboard lee datos por usuario en tiempo de request. El catálogo público y `GET /v1/models` se cachean con `use cache` y `cacheTag('catalog')`. Al terminar, `pnpm catalog:sync` llama a `/api/internal/revalidate-catalog` (protegido con un secreto), que ejecuta `revalidateTag('catalog', 'max')`.
 

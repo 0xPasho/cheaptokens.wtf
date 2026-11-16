@@ -1,6 +1,6 @@
 # ADR-0003: Clerk solo para el dashboard, API keys propias
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. [ADR-0050](./0050-login-clerk-y-modo-desarrollo.md) agregó el modo de desarrollo para cuando Clerk no está configurado.
 - **Fecha:** 2026-11-08
 - **Origen:** Usuario
 

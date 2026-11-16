@@ -11,12 +11,14 @@ Todas las páginas web viven en `cheaptokens.wtf` y llevan el idioma en la ruta 
 | `/[lang]` | Pública | Entender qué es y registrarse |
 | `/[lang]/models` | Pública | Ver modelos, precios y descuentos |
 | `/[lang]/docs` | Pública | Conectar en 1 minuto |
-| `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Login y registro con Clerk |
+| `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Login y registro con Clerk. En desarrollo, sin Clerk, se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
-| `/[lang]/dashboard` | Privada | Ver saldo y empezar |
-| `/[lang]/dashboard/keys` | Privada | Crear y revocar API keys |
-| `/[lang]/dashboard/credits` | Privada | Recargar e historial de pagos |
-| `/[lang]/dashboard/usage` | Privada | Ver qué se gastó y cuánto se ahorró |
+| `/[lang]/dashboard` | Privada | Ver plan, límites y saldo, y empezar |
+| `/[lang]/dashboard/plan` | Privada | Elegir plan, ver límites y decidir qué pasa al llegar al límite |
+| `/[lang]/dashboard/credits` | Privada | Recargar, comprar paquetes e historial de pagos |
+| `/[lang]/dashboard/keys` | Privada | Crear, rotar y revocar API keys |
+| `/[lang]/dashboard/usage` | Privada | Ver qué se gastó, de dónde se cobró y cuánto se ahorró |
+| `/[lang]/dashboard/settings` | Privada | Cuenta, cerrar sesión y exportar datos |
 | `/[lang]/design-system` | Interna | Referencia de átomos de UI |
 | `api.cheaptokens.wtf/v1/*` | API key | El gateway, en su propio host ([04 · API](./04-api.md), [ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)) |
 
@@ -55,35 +57,62 @@ Es la página de venta y debe funcionar sin login.
 
 Los IDs, tags y la regla del precio se definen en [06 · Catálogo y precios](./06-catalogo-y-precios.md).
 
-## Dashboard: inicio (`/[lang]/dashboard`)
+## Iniciar y cerrar sesión
 
-- **Saldo** grande y botón **Recargar**.
-- **Checklist de 3 pasos** mientras el usuario no haya hecho su primer request:
-  1. Recarga créditos.
-  2. Crea una API key.
-  3. Copia este snippet (en Python, JS y curl, con la base URL ya puesta).
-- Cuando ya hay uso, el checklist se reemplaza por los **totales del mes**: gasto, ahorro frente al precio oficial y número de requests.
-- **Aviso de saldo bajo** cuando quedan menos de $2 (umbral configurable).
+- **Con Clerk configurado,** `/[lang]/sign-in` y `/[lang]/sign-up` muestran los componentes de Clerk, traducidos al idioma de la ruta. **Sin Clerk y en desarrollo,** un formulario pide un nombre y abre el workspace `dev:<nombre>`. **En preview o producción sin Clerk,** la página avisa que todavía no se puede entrar ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
+- Entrar a `/[lang]/dashboard…` sin sesión lleva a iniciar sesión y, al terminar, de vuelta a la página pedida.
+- La cabecera muestra **Iniciar sesión** o el menú de cuenta (Dashboard, API keys, Ajustes y Cerrar sesión). Se resuelve en el navegador para que las páginas públicas sigan estáticas.
+- Cerrar sesión lleva a la landing. Las keys siguen funcionando.
 
-## API keys (`/[lang]/dashboard/keys`)
+## Dashboard
 
-- **Lista** con nombre, hint (`wtf_Ab3x…9kQz`), fecha de creación, último uso, gastado, límite y acción **Revocar** (con confirmación).
-- **Crear key:** nombre (obligatorio) y límite de gasto en USD (opcional). Se abre un modal que muestra la key **una sola vez**, con botón de copiar, el aviso "No la volverás a ver" y el snippet con la key ya puesta.
-- Detalle técnico en [05 · API keys](./05-api-keys.md).
+Una sidebar con la composición del catálogo ([ADR-0038](./adr/0038-sidebar-izquierda-con-iconos.md)) lleva a Inicio, Plan y límites, Créditos, API keys, Uso y Ajustes, más Modelos y Docs. Todavía no hay Playground ni Combos. Las pantallas usan los componentes de producto (`Card` con `Stat` y `Price`, `PriceComparison`, `ModelDetailPanel`, `QuickstartSnippet`, `UsageMeter`) y se ven en `/design-system`. Mientras el MoR no apruebe, comprar muestra un aviso de pagos no disponibles; en desarrollo los pagos se confirman al instante y no cobran ([08 · Créditos y pagos](./08-creditos-y-pagos.md#quién-cobra-un-merchant-of-record)).
 
-## Créditos (`/[lang]/dashboard/credits`)
+### Inicio (`/[lang]/dashboard`)
+
+- **Límites del plan:** la ventana de 5 horas y la semana con `UsageMeter` (porcentaje usado, cuándo se reinicia y valor usado), cuántas requests típicas quedan y qué pasa al llegar al límite, con un link a ajustarlo. Sin plan, una tarjeta lo explica y lleva a elegir uno.
+- **Créditos** con botón **Recargar**, y los **paquetes activos** con lo que queda y su vencimiento.
+- **Checklist de 3 pasos** mientras no haya ningún request: elegir plan o recargar, crear una API key y copiar el snippet (Python, JS y curl, con la base URL ya puesta).
+- **Últimos 7 días:** requests, valor de uso (y cuánto vino del plan), ahorro frente al precio oficial y tokens.
+- **Qué gasta tu límite:** la parte del uso del plan por modelo.
+- **Aviso de saldo bajo** cuando no hay plan y quedan menos de $2.
+
+### Plan y límites (`/[lang]/dashboard/plan`)
+
+- **Plan actual:** los dos medidores, la fecha de renovación o de fin, el cambio de plan programado, el rate limit y **Cancelar plan** (con confirmación; se conserva hasta el fin del periodo).
+- **Al llegar al límite:** seguir con paquetes y créditos o detenerse hasta el reinicio, los interruptores de paquetes y créditos, y el tope mensual de créditos con lo usado este mes.
+- **Planes:** Plus, Pro y Max con precio, límite cada 5 horas y cada semana, requests típicas que caben y rate limit. Subir cobra la diferencia prorrateada y aplica ya; bajar se programa para la renovación.
+- **Consumo por modelo:** precio de entrada y salida, multiplicador frente a Claude Sonnet 5.5 y requests típicas por ventana y por semana.
+- Las reglas están en [08 · Créditos y pagos](./08-creditos-y-pagos.md#planes) ([ADR-0049](./adr/0049-suscripcion-con-limites.md)).
+
+### Créditos (`/[lang]/dashboard/credits`)
 
 - Saldo actual.
-- Montos rápidos ($10, $25, $50, $100) y monto libre ($10–$1,000). El botón lleva al checkout del Merchant of Record, que agrega ahí el impuesto de cada país, y al volver se confirma con el saldo ya actualizado.
-- Historial de recargas: fecha, monto, estado y link al recibo del MoR.
+- **Recargar:** montos rápidos ($10, $25, $50, $100) y monto libre ($10–$1,000). Con el MoR, el botón llevará al checkout, que agrega el impuesto de cada país, y al volver se confirma con el saldo ya actualizado.
+- **Orden de cobro:** plan, paquete del modelo y créditos, explicado en una tarjeta.
+- **Paquetes por modelo:** qué recibes por lo que pagas y cuántas requests típicas son, con un diálogo de compra. Debajo, tus paquetes: restante, pagado, fecha de compra y vencimiento.
+- **Historial de pagos** (recargas, planes y paquetes): fecha, concepto, monto, estado y link al recibo del MoR.
 - Detalle en [08 · Créditos y pagos](./08-creditos-y-pagos.md).
 
-## Uso (`/[lang]/dashboard/usage`)
+### API keys (`/[lang]/dashboard/keys`)
 
-- **Totales del mes:** gasto, ahorro frente al precio oficial y requests.
-- **Tabla paginada de requests:** fecha, modelo, key, tokens in/out, costo, ahorro, latencia y estado.
-- **Filtros:** por key, modelo y rango de fechas.
+- **Lista** con nombre, hint (`wtf_Ab3x…9kQz`), de dónde cobra, modelos permitidos, gastado frente al límite, fecha de creación, último uso y las acciones **Rotar** y **Revocar** (las dos con confirmación).
+- **Crear key:** nombre (obligatorio), límite de gasto en USD (opcional), de dónde cobra (plan y créditos, solo plan o solo créditos) y modelos permitidos (todos o una lista). Un diálogo muestra la key **una sola vez**, con botón de copiar y el aviso "No la volverás a ver".
+- **Rotar** crea una key con los mismos ajustes y deja la anterior funcionando 24 horas.
+- Detalle técnico en [05 · API keys](./05-api-keys.md).
+
+### Uso (`/[lang]/dashboard/usage`)
+
+- **Filtros:** rango (hoy, 24 h, 7 días, 30 días), key, modelo y fuente de cobro (plan, paquete, créditos o errores y rechazos).
+- **Por fuente de cobro:** cuánto del valor de uso salió del plan, de paquetes y de créditos, y cuánto pagamos nosotros.
+- **Tabla paginada de requests:** fecha, modelo, key, tokens de entrada y salida, valor, fuente, ahorro, latencia y estado.
 - No hay contenido de prompts, porque no lo guardamos ([ADR-0014](./adr/0014-no-guardar-contenido.md)).
+
+### Ajustes (`/[lang]/dashboard/settings`)
+
+- **Cuenta:** con Clerk, su perfil (correo, contraseña, verificación en dos pasos y sesiones). En desarrollo, un aviso de que es una sesión de prueba.
+- **Cerrar sesión.**
+- **Tus datos:** descargar un JSON con la cuenta, las keys (sin secretos), el resumen de uso y los pagos.
 
 ## Docs (`/[lang]/docs`)
 
@@ -96,6 +125,8 @@ Una sola página, en este orden: base URL, autenticación, ejemplo en curl, Pyth
 | Sin keys | "No API keys yet." + botón "Create key" |
 | Sin uso | "No requests yet." + el snippet |
 | Saldo en cero | Banner: "Your balance is $0. Requests will fail with 402." + Recargar |
+| Límite del plan alcanzado | El medidor dice "Límite alcanzado" y cuándo se reinicia. La API responde `429 usage_limit_reached` si el excedente no cubre |
+| Pagos no disponibles | Aviso en Plan y Créditos: los pagos se abren cuando el MoR apruebe la cuenta |
 | Saldo negativo | Banner: "Your balance is −$0.12. Top up to keep using the API." |
 | Pago fallido | Se vuelve a `/credits` con "Payment didn't go through. You weren't charged." |
 

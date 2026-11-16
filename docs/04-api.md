@@ -84,6 +84,7 @@ El formato estándar de OpenAI (`chat.completion` o `chat.completion.chunk`), co
 - `id` es nuestro (`chatcmpl-<request_id>`), no el del upstream.
 - **Solo pasan los campos del estándar:** `id`, `object`, `created`, `model`, `choices`, `usage`. La única excepción es `reasoning_content` en `message` y en `delta`, el razonamiento del modelo ([ADR-0031](./adr/0031-reasoning-content-pasa-al-cliente.md)). Dentro de `usage` solo pasan `prompt_tokens`, `completion_tokens`, `total_tokens`, `prompt_tokens_details` y `completion_tokens_details`. Todo lo demás se descarta, incluidos campos como `usage.cost` o `provider` que algunos upstreams agregan y que revelarían nuestro costo o proveedor.
 - **Header `x-request-id`:** el ID para soporte, el mismo que aparece en el dashboard.
+- **Headers del plan,** solo si la key cobra del plan y el workspace tiene uno activo ([Límites del plan](#límites-del-plan)).
 
 ### Streaming
 
@@ -158,14 +159,17 @@ Usan el formato de OpenAI, así los SDKs los parsean sin cambios:
 | HTTP | `code` | Cuándo |
 |---|---|---|
 | 400 | `invalid_request` | JSON inválido, falta `model` o `messages`, o el upstream rechazó un parámetro |
-| 401 | `invalid_api_key` | Key ausente, mal formada, inexistente o revocada |
-| 402 | `insufficient_credits` | Saldo del workspace ≤ 0 |
+| 401 | `invalid_api_key` | Key ausente, mal formada, inexistente, revocada o vencida después de rotarla |
+| 402 | `insufficient_credits` | Nada puede pagar el request: sin plan con límite, sin paquete del modelo y con saldo ≤ 0 |
+| 402 | `no_active_plan` | La key es de solo plan y el workspace no tiene un plan activo |
 | 403 | `key_limit_exceeded` | La key llegó a su límite de gasto |
 | 403 | `account_suspended` | Workspace suspendido (por ejemplo, por un contracargo) |
+| 403 | `model_not_allowed_for_key` | La key no tiene permitido ese modelo |
 | 404 | `model_not_found` | El modelo no existe o está oculto para este usuario |
 | 410 | `model_retired` | El modelo se retiró |
 | 413 | `request_too_large` | Body mayor a 4.5 MB |
 | 429 | `rate_limit_exceeded` | Se pasó el rate limit del workspace. Incluye `retry-after` |
+| 429 | `usage_limit_reached` | El plan llegó a su límite y el excedente no cubre (apagado, sin paquete o en el tope). Incluye `retry-after` hasta el reinicio |
 | 502 | `upstream_error` | Todos los upstreams fallaron con un error |
 | 503 | `no_upstream_available` | El modelo no tiene ningún upstream habilitado |
 | 504 | `upstream_timeout` | Venció el timeout del primer byte en todos los upstreams |
@@ -174,8 +178,22 @@ Los mensajes nunca mencionan al upstream.
 
 ## Rate limits
 
-- **Inicial:** 60 requests por minuto por workspace, configurable por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)).
+- **Inicial:** 60 requests por minuto por workspace, configurable por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Con un plan activo vale el del plan: 60 en Plus, 120 en Pro y 300 en Max. El override del workspace manda sobre los dos.
 - Al excederlo: `429` con el header `retry-after` en segundos.
+
+## Límites del plan
+
+Con un plan, cada request gasta de dos límites lo que cuesta a precio cheaptokens.wtf: una ventana de 5 horas y una semana ([ADR-0049](./adr/0049-suscripcion-con-limites.md), [08 · Créditos y pagos](./08-creditos-y-pagos.md#planes)). Cuando la key cobra del plan, cada respuesta trae:
+
+| Header | Valor |
+|---|---|
+| `x-usage-window-remaining` | Lo que queda de la ventana de 5 horas **antes** de este request, de 0 a 1 con dos decimales (`0.66`) |
+| `x-usage-week-remaining` | Lo mismo para la semana |
+| `x-usage-window-reset` | Cuándo se reinicia la ventana, en ISO 8601. Solo si está abierta |
+| `x-usage-week-reset` | Cuándo se reinicia la semana, en ISO 8601. Solo si está abierta |
+
+- Las keys de solo créditos (`prepaid_only`) y los workspaces sin plan no reciben estos headers.
+- El request que cruza el límite termina completo. Lo que no cabe se cobra a paquetes y créditos si el excedente está activo. Si no, el siguiente request recibe `429 usage_limit_reached`.
 
 ## Compatibilidad con herramientas (MVP)
 

@@ -6,7 +6,8 @@ Objetivo: la base sobre la que todo lo demás se apoya.
 
 - [x] Drizzle: esquema completo de [09 · Modelo de datos](./09-modelo-de-datos.md) y migraciones, con PGlite en local ([ADR-0032](./adr/0032-postgres-node-postgres-y-pglite.md)). Neon se conecta con el deploy.
 - [x] i18n: mover la app a `src/app/[lang]/`, diccionarios `en`/`es` y `proxy.ts` con redirección de idioma ([10 · i18n](./10-i18n.md)).
-- [ ] Clerk: login y registro localizados, `clerkMiddleware` en `proxy.ts`, verificación con `auth()` en las páginas privadas y creación perezosa del workspace.
+- [x] Clerk: login y registro localizados, `clerkMiddleware` en `proxy.ts`, sesión verificada en cada página privada y creación perezosa del workspace. Se activa con las claves de Clerk; sin ellas, en desarrollo se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
+- [ ] Instancia de Clerk del dueño: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY` en Vercel, y el webhook `user.deleted` registrado con `CLERK_WEBHOOK_SIGNING_SECRET`. Necesita el dominio registrado.
 - [x] Catálogo: `catalog/models.ts`, `catalog/upstreams.ts`, `pnpm catalog:sync` con validación de margen y tags calculados.
 - [x] Página pública `/[lang]/models` con filtros por tag ([14 · Plan](./14-plan-landing-y-catalogo.md)).
 - [ ] Key de InferHub solo para cheaptokens.wtf y catálogo de pruebas con 3–5 modelos ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)). El plan del gateway está en [15 · Plan](./15-plan-gateway.md).
@@ -15,7 +16,7 @@ Objetivo: la base sobre la que todo lo demás se apoya.
 
 ## Fase 1 · MVP (lanzamiento)
 
-Objetivo: un desconocido se registra, recarga, crea una key y hace su primer request en menos de 3 minutos.
+Objetivo: un desconocido se registra, elige un plan o recarga, crea una key y hace su primer request en menos de 3 minutos.
 
 **Gateway**
 
@@ -27,19 +28,29 @@ Objetivo: un desconocido se registra, recarga, crea una key y hace su primer req
 - [x] `GET /v1/models` público y cacheado.
 - [x] Errores con formato OpenAI y `x-request-id`.
 
+**Planes y límites** ([ADR-0049](./adr/0049-suscripcion-con-limites.md))
+
+- [x] Planes Plus, Pro y Max con ventana de 5 horas y semana, medidos en valor de uso a precio cheaptokens.wtf.
+- [x] Paquetes por modelo (20 % extra, 90 días) y orden de cobro plan → paquete → créditos, con excedente configurable y tope mensual.
+- [x] Por key: fuente de cobro, modelos permitidos y rotación con 24 horas de gracia.
+- [x] Headers `x-usage-*` y errores `usage_limit_reached`, `no_active_plan` y `model_not_allowed_for_key`.
+- [x] Conciliación con el reparto por request y el invariante de paquetes.
+- [ ] Calibrar los límites de los planes y los paquetes con el costo upstream de cada modelo ([12 · Preguntas abiertas](./12-preguntas-abiertas.md)).
+- [ ] Renovación, cambio de plan programado y `past_due` con los eventos del MoR.
+
 **Web**
 
 - [x] Landing (`/[lang]`), catálogo (`/[lang]/models`) y detalle de modelo (`/[lang]/models/[author]/[model]`), con datos de ejemplo. El detalle se adelantó de la fase 2 a pedido del dueño del producto ([14 · Plan](./14-plan-landing-y-catalogo.md)).
-- [ ] Dashboard: inicio con checklist, keys, créditos y uso.
+- [x] Dashboard: inicio, plan y límites, créditos, API keys, uso y ajustes ([02 · Producto y UX](./02-producto-y-ux.md#dashboard)). Playground y Combos quedan para después.
 - [x] `/docs` con quickstart.
 - [ ] Términos (intermediario y uso aceptable trasladado) y aviso de privacidad, validados por un abogado mexicano ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
 
 **Pagos y operación**
 
 - [ ] Aprobación por escrito del MoR (Polar o Paddle) **antes** de integrar ([ADR-0019](./adr/0019-merchant-of-record.md)).
-- [ ] `PaymentProvider` con el adaptador del MoR + webhook idempotente.
+- [ ] `PaymentProvider` con el adaptador del MoR + webhook idempotente. La interfaz, las compras idempotentes y un proveedor de desarrollo ya existen ([08 · Créditos y pagos](./08-creditos-y-pagos.md#proveedor-de-desarrollo)).
 - [ ] Webhooks de disputa y reembolso. Suspensión de workspace.
-- [ ] Webhook `user.deleted` de Clerk.
+- [x] Webhook `user.deleted` de Clerk (`/api/webhooks/clerk`). Falta registrarlo en la instancia (fase 0).
 - [ ] Cron diario de reconciliación de saldos.
 - [ ] Al menos 2 upstreams de producción que pasen la [lista de requisitos](./07-upstreams.md#requisitos-para-aceptar-un-upstream). Durante las pruebas: InferHub + simulado.
 
@@ -47,12 +58,13 @@ Objetivo: un desconocido se registra, recarga, crea una key y hace su primer req
 
 - [ ] El SDK oficial de OpenAI (Python y JS) funciona cambiando solo `base_url` y `api_key`, con y sin streaming, incluyendo tools. JS verificado ([15 · Plan › Terminado](./15-plan-gateway.md#6-terminado)); falta probar Python.
 - [x] La reconciliación da 0 de diferencia después de una prueba de carga con requests concurrentes y cancelaciones.
+- [ ] Ningún plan ni paquete pierde dinero usado al máximo con el costo upstream de sus modelos ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
 - [x] Revocar una key hace fallar el request siguiente.
 - [x] Apagar un upstream con `ops_disabled_at` mueve el tráfico al siguiente en ≤ 60 s.
 - [x] Ninguna respuesta, header ni error revela el upstream. Hay un test automatizado que busca su nombre y dominio en las respuestas.
 - [x] Ningún log contiene keys, prompts ni respuestas.
 - [x] Las páginas web funcionan en `en` y `es`, y `pnpm check` pasa.
-- [ ] Las [preguntas abiertas](./12-preguntas-abiertas.md) bloqueantes están resueltas: upstreams, aprobación del MoR, validación legal y fiscal, y el registro del dominio.
+- [ ] Las [preguntas abiertas](./12-preguntas-abiertas.md) bloqueantes están resueltas: upstreams, aprobación del MoR, validación legal y fiscal, el registro del dominio y los límites de los planes.
 
 ## Fase 2 · Crecer el uso
 
@@ -64,7 +76,6 @@ Objetivo: un desconocido se registra, recarga, crea una key y hace su primer req
 - Monitoreo automático del saldo con cada upstream.
 - Pruebas periódicas de fidelidad de los upstreams.
 - Panel de admin para el catálogo (rol admin en Clerk).
-- Rotación de keys con período de gracia y keys restringidas por modelo.
 - Recarga automática con tarjeta guardada.
 - Alertas: tasa de error por upstream, saldo con upstream y diferencias de reconciliación.
 

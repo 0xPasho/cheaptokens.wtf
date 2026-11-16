@@ -25,6 +25,7 @@ Por cada key se guarda ([09 · Modelo de datos](./09-modelo-de-datos.md#api_keys
 - `hash`: **SHA-256 de la key completa**, en hex, con índice único.
 - `hint`: `wtf_` + 4 primeros caracteres aleatorios + `…` + 4 últimos (`wtf_4f8K…b3Zx`). Sirve para que el usuario la reconozca en la lista.
 - `name`, `spend_limit_micro_usd` (opcional), `spent_micro_usd`, `last_used_at`, `created_at`, `revoked_at`.
+- `billing_source`, `allowed_models` y `expires_at` ([Fuente de cobro y modelos](#fuente-de-cobro-y-modelos), [Rotar](#rotar)).
 
 **La key en claro no se guarda nunca**, ni en la base, ni en logs, ni en analytics.
 
@@ -34,8 +35,8 @@ Por cada key se guarda ([09 · Modelo de datos](./09-modelo-de-datos.md#api_keys
 
 ### Crear
 
-1. El usuario, autenticado con Clerk, pide una key nueva desde `/dashboard/keys` con nombre y límite opcional.
-2. Una Server Function verifica la sesión con `auth()` y resuelve el workspace.
+1. El usuario, con sesión iniciada ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)), pide una key nueva desde `/dashboard/keys` con nombre, límite opcional, fuente de cobro y modelos permitidos.
+2. Una Server Function vuelve a leer la sesión y resuelve el workspace.
 3. Se genera la key, se calculan `hash` y `hint`, y se inserta la fila.
 4. **La key en claro se devuelve una sola vez** al modal. Si se pierde, no se puede recuperar: se crea otra.
 
@@ -48,8 +49,24 @@ En cada request a `/v1/*` ([03 · Arquitectura](./03-arquitectura.md#flujo-de-un
 1. Se lee `Authorization: Bearer <key>`.
 2. **Validación local, sin red:** prefijo `wtf_`, largo 53, alfabeto base62 y checksum correcto. Si algo falla, `401 invalid_api_key`.
 3. Se calcula `SHA-256(key)` y una sola query trae la key y su workspace.
-4. Si no existe o tiene `revoked_at`, `401 invalid_api_key`. El mensaje es el mismo en los dos casos, para no revelar si una key existió.
-5. Si `spend_limit_micro_usd` no es nulo y `spent_micro_usd ≥ spend_limit_micro_usd`, `403 key_limit_exceeded`.
+4. Si no existe, tiene `revoked_at` o ya pasó su `expires_at`, `401 invalid_api_key`. El mensaje es el mismo en todos los casos, para no revelar si una key existió.
+5. Si `allowed_models` no es nulo y no incluye el modelo pedido, `403 model_not_allowed_for_key`.
+6. Si `spend_limit_micro_usd` no es nulo y `spent_micro_usd ≥ spend_limit_micro_usd`, `403 key_limit_exceeded`.
+7. Después se decide si el plan, un paquete o los créditos pueden pagarlo ([08 · Créditos › Cobro por request](./08-creditos-y-pagos.md#cobro-por-request)).
+
+### Fuente de cobro y modelos
+
+Cada key elige de dónde cobra (`billing_source`, [ADR-0049](./adr/0049-suscripcion-con-limites.md)):
+
+| Valor | En el dashboard | Qué hace |
+|---|---|---|
+| `plan_then_prepaid` (default) | Plan y créditos | Usa el plan primero. Al llegar al límite sigue según el excedente del workspace |
+| `plan_only` | Solo plan | Nunca toca paquetes ni créditos. Al llegar al límite, `429 usage_limit_reached`; sin plan activo, `402 no_active_plan` |
+| `prepaid_only` | Solo créditos | Nunca gasta el límite del plan. Paga con paquetes y créditos. Pensada para CI y producción |
+
+`allowed_models` es null (todos los modelos) o una lista no vacía de IDs. Cualquier otro modelo responde `403 model_not_allowed_for_key`.
+
+El límite de gasto de la key cuenta todo su costo, venga del plan, de un paquete o de créditos.
 
 ### Registrar uso
 
@@ -62,6 +79,13 @@ SET spent_micro_usd = spent_micro_usd + $cost,
 WHERE id = $key_id;
 ```
 
+### Rotar
+
+- Desde el dashboard, con confirmación. Se crea una key nueva con el mismo nombre, límite, fuente de cobro y modelos, y se muestra una sola vez.
+- La key anterior recibe `expires_at = now() + 24 h`: sigue funcionando 24 horas para cambiarla sin cortes. Después responde `401 invalid_api_key`.
+- Una key que ya tiene `expires_at` no se puede volver a rotar. Se puede revocar antes de que venza.
+- El límite de 25 keys activas cuenta las que no están revocadas, así que una key rotada sigue contando aunque ya haya vencido. Revocarla libera el lugar.
+
 ### Revocar
 
 - Desde el dashboard, con confirmación. Se marca `revoked_at = now()` (borrado suave, así el historial de uso conserva la referencia).
@@ -73,8 +97,6 @@ WHERE id = $key_id;
 
 | Función | Cuándo |
 |---|---|
-| Rotación con período de gracia (key vieja y nueva válidas por N horas) | Fase 2 |
-| Restricción por modelo (una key solo puede usar ciertos modelos) | Fase 2 |
 | Restricción por IP | Fase 3 |
 | Keys de prueba (`wtf_test_`) que no cobran | Solo si hay demanda |
 | Registro en el programa de secret scanning de GitHub (revocación automática de keys filtradas en repos públicos) | Fase 3, el prefijo `wtf_` y el checksum ya lo permiten |
