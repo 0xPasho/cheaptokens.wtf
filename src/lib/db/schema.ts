@@ -147,3 +147,39 @@ export const creditTransactions = pgTable("credit_transactions", {
 }, (table) => [
   uniqueIndex("credit_transactions_external_id_unique").on(table.externalId),
 ]);
+
+/**
+ * Un plan abierto por un socio por la puerta de socios (docs/17): un workspace propio con su suscripción.
+ * El plan está abierto mientras `closed_at` sea null; solo puede haber uno abierto por `external_ref`.
+ */
+export const partnerPlans = pgTable("partner_plans", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  partnerId: text("partner_id").notNull(),
+  /** La referencia del socio (en Deska, `deska:team:<teamId>:user:<userId>`). */
+  externalRef: text("external_ref").notNull(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id).unique(),
+  /** Fin del periodo que pagó el socio. La suscripción vale unos días más (docs/17 › Decisiones). */
+  paidThrough: timestamp("paid_through", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("partner_plans_open_ref_unique").on(table.partnerId, table.externalRef).where(sql`${table.closedAt} is null`),
+]);
+
+/**
+ * Respuestas guardadas por `Idempotency-Key` de la puerta de socios (docs/17). El cuerpo va cifrado: el de
+ * `POST /plans/{id}/keys` lleva la key. Se borran a las 24 horas.
+ */
+export const partnerIdempotencyKeys = pgTable("partner_idempotency_keys", {
+  partnerId: text("partner_id").notNull(),
+  key: text("key").notNull(),
+  /** SHA-256 del método, la ruta y el body: la misma key con otro body se rechaza. */
+  fingerprint: text("fingerprint").notNull(),
+  status: smallint("status").notNull(),
+  /** AES-256-GCM. Null en las respuestas sin cuerpo (204). */
+  bodySealed: text("body_sealed"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.partnerId, table.key] }),
+  index("partner_idempotency_keys_created_idx").on(table.createdAt),
+]);
