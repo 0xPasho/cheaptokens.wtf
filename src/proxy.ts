@@ -20,6 +20,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Fuera: la API (/v1), los route handlers (/api), los archivos internos de Next y los estáticos.
-  matcher: ["/((?!v1|api|_next|.*\\..*).*)"],
+  // Fuera: la API (/v1), los route handlers (/api), la puerta de socios (/partner/, docs/17), los archivos internos de Next y los estáticos.
+  matcher: ["/((?!v1|api|partner/|_next|.*\\..*).*)"],
 };
