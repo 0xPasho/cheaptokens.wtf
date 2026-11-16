@@ -9,12 +9,13 @@ import { useCatalogFilters } from "@/hooks/use-catalog-filters";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function SiteHeader({ locale, dict, account }: { locale: Locale; dict: Dictionary; account: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const filters = useCatalogFilters();
   const input = useRef<HTMLInputElement>(null);
   const isDocs = pathname.includes("/docs");
+  const isModels = pathname.includes("/models");
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -38,7 +39,7 @@ export function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary 
           </span>
         </Link>
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
-          <Link href={`/${locale}/models`} className={!isDocs ? "nr-active" : undefined} aria-current={!isDocs ? "page" : undefined}>{dict.nav.models}</Link>
+          <Link href={`/${locale}/models`} className={isModels ? "nr-active" : undefined} aria-current={isModels ? "page" : undefined}>{dict.nav.models}</Link>
           <Link href={`/${locale}/docs`} className={isDocs ? "nr-active" : undefined} aria-current={isDocs ? "page" : undefined}>{dict.nav.docs}</Link>
           <Link href={`/${locale}/docs#quickstart`}>{dict.nav.howItWorks}</Link>
         </nav>
@@ -52,8 +53,8 @@ export function SiteHeader({ locale, dict }: { locale: Locale; dict: Dictionary 
       </form>
       <div className="nr-header-actions">
         <ThemeToggle labels={dict.theme} className="nr-icon-button" />
-        <Link href={`/${locale}/docs#quickstart`} className={buttonVariants({ variant: "secondary", className: "nr-pill-button" })}>{dict.nav.getKey}</Link>
-        <Link href={`/${locale}/docs`} className="nr-account-link">{dict.nav.docs}</Link>
+        <Link href={`/${locale}/dashboard/keys`} className={buttonVariants({ variant: "secondary", className: "nr-pill-button" })}>{dict.nav.getKey}</Link>
+        {account}
       </div>
     </header>
   );

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 
 import { KonamiRetro } from "@/components/konami-retro";
+import { AuthProvider } from "@/components/site/auth-provider";
 import { ThemeSync } from "@/components/theme-sync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { hasLocale, LOCALES } from "@/lib/i18n/config";
@@ -50,7 +51,9 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         <script dangerouslySetInnerHTML={{ __html: retroScript }} />
         <ThemeSync />
         <KonamiRetro dict={dict} />
-        <TooltipProvider>{children}</TooltipProvider>
+        <AuthProvider locale={lang}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </AuthProvider>
       </body>
     </html>
   );
