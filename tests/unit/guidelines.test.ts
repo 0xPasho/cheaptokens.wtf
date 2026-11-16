@@ -94,9 +94,9 @@ describe("referencia viva: /design-system", () => {
   });
 
   it("muestra cada componente de producto de src/components", () => {
-    // Fuera de /design-system a propósito: theme-sync vive en el layout raíz y code-block
-    // se ve dentro de QuickstartSnippet.
-    const allowed = new Set(["theme-sync", "code-block"]);
+    // Fuera de /design-system a propósito: theme-sync y konami-retro viven en el layout raíz
+    // (montarlos dos veces duplicaría sus efectos) y code-block se ve dentro de QuickstartSnippet.
+    const allowed = new Set(["theme-sync", "konami-retro", "code-block"]);
     const components = readdirSync(join(SRC, "components"))
       .filter((f) => f.endsWith(".tsx"))
       .map((f) => basename(f, ".tsx"))

@@ -163,11 +163,13 @@ test.describe("docs", () => {
     await expect(page).toHaveTitle("Docs · cheaptokens.wtf");
   });
 
-  test("la tabla de errores tiene los 12 códigos y las cifras salen con el formato del idioma", async ({ page }) => {
+  test("la tabla de errores tiene los 15 códigos y las cifras salen con el formato del idioma", async ({ page }) => {
     await open(page, "/es/docs");
     const errors = page.getByRole("region", { name: "Códigos de error" });
-    await expect(errors.locator("tbody tr")).toHaveCount(12);
-    await expect(errors.locator("tbody tr").filter({ hasText: "429" })).toContainText("rate_limit_exceeded");
+    await expect(errors.locator("tbody tr")).toHaveCount(15);
+    await expect(errors.locator("tbody tr").filter({ hasText: "rate_limit_exceeded" })).toContainText("429");
+    // ADR-0049: el límite del plan también responde 429, con su propio código.
+    await expect(errors.locator("tbody tr").filter({ hasText: "usage_limit_reached" })).toContainText("429");
     await expect(errors).toContainText("4,5 MB");
     // ADR-0030: el cobro mínimo, formateado con @/lib/format.
     await expect(page.getByText(/al menos 0,00001\s?US\$/)).toBeVisible();

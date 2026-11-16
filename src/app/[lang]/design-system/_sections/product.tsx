@@ -17,6 +17,11 @@ import { MODEL_TAG_ICONS, ModelTagBadge } from "@/components/model-tag";
 import { Price, PriceComparison } from "@/components/price";
 import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Stat } from "@/components/stat";
+import { UsageMeter } from "@/components/usage-meter";
+import { AccountMenu } from "@/components/dashboard/account-menu";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { PlanMeters } from "@/components/dashboard/plan-meters";
+import { PLANS } from "@/lib/billing/plans";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -499,6 +504,56 @@ function TopUpPattern() {
   );
 }
 
+/** Instante fijo: así las capturas de la ventana y la semana no cambian entre corridas. */
+const SAMPLE_NOW = Date.UTC(2026, 10, 15, 15, 20);
+
+function PlanLimitsPattern() {
+  const dict = getDictionary(LOCALE);
+  return (
+    <Section
+      title="Límites del plan"
+      description="UsageMeter es Progress con estado y detalle: la ventana de 5 horas y la semana del plan. Desde el 80 % pasa a warning. PlanMeters arma los dos con su reinicio y el valor usado."
+    >
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <UsageMeter label="Ventana de 5 horas" fraction={0.34} status="34 % usado" details={["Se reinicia en 2h 41min", "2,38 US$ de 7 US$ de uso"]} />
+          <UsageMeter label="Semana" fraction={0.86} status="86 % usado" details={["Se reinicia en 2d 18h", "25,80 US$ de 30 US$ de uso"]} />
+        </div>
+        <PlanMeters
+          now={SAMPLE_NOW}
+          locale={LOCALE}
+          labels={dict.dashboard.limits}
+          usage={{
+            plan: PLANS.pro,
+            fiveHour: { usedMicroUsd: BigInt(7_000_000), resetsAt: SAMPLE_NOW + 3 * 3_600_000 },
+            week: { usedMicroUsd: BigInt(12_400_000), resetsAt: SAMPLE_NOW + 4 * 86_400_000 },
+          }}
+        />
+      </div>
+    </Section>
+  );
+}
+
+function DashboardChromePattern() {
+  const dict = getDictionary(LOCALE);
+  return (
+    <Section
+      title="Navegación del dashboard"
+      description="DashboardNav reusa la sidebar del catálogo. AccountMenu es el menú de cuenta de la cabecera, con cerrar sesión."
+    >
+      <div className="flex flex-wrap items-start gap-10">
+        <div className="w-60"><DashboardNav locale={LOCALE} labels={dict.dashboard.nav} /></div>
+        <AccountMenu
+          locale={LOCALE}
+          mode="dev"
+          identity="ana@ejemplo.com"
+          labels={{ account: dict.auth.account, dashboard: dict.dashboard.nav.overview, keys: dict.dashboard.nav.keys, settings: dict.dashboard.nav.settings, signOut: dict.auth.signOut }}
+        />
+      </div>
+    </Section>
+  );
+}
+
 export function ProductPatterns() {
   return (
     <Group
@@ -520,6 +575,8 @@ export function ProductPatterns() {
       </Section>
       <SnippetPattern />
       <DashboardPattern />
+      <PlanLimitsPattern />
+      <DashboardChromePattern />
       <FeedbackPattern />
       <ApiKeyPatterns />
       <TopUpPattern />
