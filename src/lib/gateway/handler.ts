@@ -1,5 +1,6 @@
 import { chargeRequest } from "@/lib/billing/ledger";
 import type { RequestRecord, RequestStatus } from "@/lib/billing/types";
+import { countRun, deskaRun } from "@/lib/partner/runs";
 
 import { authenticate, checkAccount } from "./authenticate";
 import { errorResponse, streamErrorChunk } from "./errors";
@@ -170,6 +171,11 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
     id, workspaceId: context.workspaceId, apiKeyId: context.apiKeyId, modelId: model.id,
     upstreamId: result.target?.upstreamId ?? null, attempts: result.attempts, stream: validated.stream,
   };
+  // Corridas por plan de socio y mes (docs/17): solo el digest de `x-deska-run`, de los requests que se registran.
+  const run = deskaRun(request.headers);
+  if (run) {
+    deps.after(() => countRun(deps.db, context.workspaceId, run, deps.now()).catch(() => deps.log.error("run_count_failed", { requestId })));
+  }
   if (!result.ok) {
     clearTimeout(timer);
     const code = result.errorCode;

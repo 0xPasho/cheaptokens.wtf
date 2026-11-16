@@ -16,6 +16,7 @@ import { authenticatePartner, idempotencySealKey, type PartnerId } from "./auth"
 import { PartnerDoorError, partnerErrorResponse } from "./errors";
 import { fingerprint, MAX_IDEMPOTENCY_KEY_LENGTH, type StoredAnswer, withIdempotency } from "./idempotency";
 import { fromPublicId, type PublicIdPrefix } from "./ids";
+import { USAGE_MONTH } from "./months";
 import { changePlan, closePlan, issueKey, MAX_EXTRA_CAP_MICRO_USD, openPlan, planUsage, revokeKey, setExtraCap } from "./service";
 import { PARTNER_TIERS } from "./tiers";
 
@@ -183,10 +184,13 @@ export function revokeKeyRoute(request: Request, deps: PartnerDeps, keyId: strin
   });
 }
 
-/** `GET /partner/v1/plans/{planId}/usage` */
+/** `GET /partner/v1/plans/{planId}/usage?month=YYYY-MM`: sin `month`, el mes UTC actual; mal formado, 400. */
 export function usageRoute(request: Request, deps: PartnerDeps, planId: string): Promise<Response> {
-  return serve(request, deps, "usage", "read", async ({ partnerId, db }) =>
-    json(200, await planUsage(db, { partnerId, planId: internalId("plan", planId), now: deps.now() })));
+  return serve(request, deps, "usage", "read", async ({ partnerId, db }) => {
+    const month = new URL(request.url).searchParams.get("month");
+    if (month !== null && !USAGE_MONTH.test(month)) throw new PartnerDoorError("invalid_request");
+    return json(200, await planUsage(db, { partnerId, planId: internalId("plan", planId), now: deps.now(), month: month ?? undefined }));
+  });
 }
 
 /** `PUT /partner/v1/plans/{planId}/extra-cap` */
@@ -194,7 +198,7 @@ export function extraCapRoute(request: Request, deps: PartnerDeps, planId: strin
   return serve(request, deps, "extra_cap", "store", async ({ partnerId, raw, db }) => {
     const body = parse(bodies.extraCap, raw);
     await setExtraCap(db, {
-      partnerId, planId: internalId("plan", planId), capMicroUsd: body.capMicroUsd === null ? null : BigInt(body.capMicroUsd),
+      partnerId, planId: internalId("plan", planId), capMicroUsd: body.capMicroUsd === null ? null : BigInt(body.capMicroUsd), now: deps.now(),
     });
     return NO_CONTENT;
   });

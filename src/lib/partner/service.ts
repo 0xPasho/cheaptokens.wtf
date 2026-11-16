@@ -7,18 +7,19 @@
  *
  * Las funciones reciben el ID interno (UUID); la capa HTTP traduce los IDs públicos.
  */
-import { and, asc, count, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { activeWindow, type StoredWindow, windowFraction } from "@/lib/billing/limits";
 import { overflowSettings, storedWindow } from "@/lib/billing/state";
 import { createApiKey } from "@/lib/billing/workspaces";
-import { apiKeys, models, partnerPlans, requests, subscriptions, usageWindows, workspaces } from "@/lib/db/schema";
+import { apiKeys, models, partnerPlanCaps, partnerPlans, partnerRuns, requests, subscriptions, usageWindows, workspaces } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 import { uuidv7 } from "@/lib/db/uuid";
 
 import { PartnerDoorError } from "./errors";
 import { toPublicId } from "./ids";
+import { monthDate, monthRange, usageMonth } from "./months";
 import { type PartnerTier, partnerPlan } from "./tiers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -58,6 +59,8 @@ export interface PartnerUsageView {
   extra: { spentMicroUsd: number; capMicroUsd: number | null; month: string };
   monthMicroUsd: number;
   requestsThisMonth: number;
+  /** Corridas distintas (`x-deska-run`) en el mes. */
+  runsThisMonth: number;
 }
 
 /**
@@ -226,9 +229,9 @@ export async function revokeKey(db: Db, input: { partnerId: string; keyId: strin
 /**
  * Prende el excedente hasta un tope mensual (UTC), cobrado al socio, o lo apaga con null. Usa el excedente de
  * ADR-0049 con créditos y sin paquetes; el socio paga después (`postpaid.ts`). Un tope menor que lo gastado
- * en el mes queda alcanzado.
+ * en el mes queda alcanzado. El tope queda anotado en su mes para leer los meses pasados.
  */
-export async function setExtraCap(db: Db, input: { partnerId: string; planId: string; capMicroUsd: bigint | null }): Promise<void> {
+export async function setExtraCap(db: Db, input: { partnerId: string; planId: string; capMicroUsd: bigint | null; now: number }): Promise<void> {
   await db.transaction(async (tx) => {
     const plan = await lockOpenPlan(tx, input.partnerId, input.planId);
     const on = input.capMicroUsd !== null;
@@ -239,16 +242,14 @@ export async function setExtraCap(db: Db, input: { partnerId: string; planId: st
       overflowCapMicroUsd: input.capMicroUsd ?? BigInt(0),
     }).where(eq(workspaces.id, plan.workspaceId));
     await tx.update(apiKeys).set({ billingSource: on ? "plan_then_prepaid" : "plan_only" }).where(liveKeysOf(plan.workspaceId));
+    const month = monthDate(usageMonth(input.now));
+    await tx.insert(partnerPlanCaps).values({ planId: plan.id, month, capMicroUsd: input.capMicroUsd })
+      .onConflictDoUpdate({ target: [partnerPlanCaps.planId, partnerPlanCaps.month], set: { capMicroUsd: input.capMicroUsd } });
   });
 }
 
 const fiveHourWindow = alias(usageWindows, "five_hour_window");
 const weekWindow = alias(usageWindows, "week_window");
-
-function monthStart(now: number): Date {
-  const date = new Date(now);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-}
 
 function left(window: StoredWindow | null, limit: bigint | undefined, now: number) {
   const remaining = limit === undefined ? 0 : 1 - windowFraction(window, limit, now);
@@ -256,8 +257,21 @@ function left(window: StoredWindow | null, limit: bigint | undefined, now: numbe
   return { remaining: Math.round(remaining * 10_000) / 10_000, resetsAt: open ? new Date(open.resetsAt).toISOString() : null };
 }
 
-/** Lo que queda del plan y lo usado en el mes. Dos queries por índice: se lee en cada vista de los medidores. */
-export async function planUsage(db: Db, input: { partnerId: string; planId: string; now: number }): Promise<PartnerUsageView> {
+/** El tope de un mes pasado: el que se puso ese mes o, si no se cambió, el último anterior. Sin ninguno, apagado. */
+async function pastCap(db: Db, planId: string, month: string): Promise<number | null> {
+  const [row] = await db.select({ cap: partnerPlanCaps.capMicroUsd }).from(partnerPlanCaps)
+    .where(and(eq(partnerPlanCaps.planId, planId), lte(partnerPlanCaps.month, monthDate(month))))
+    .orderBy(desc(partnerPlanCaps.month)).limit(1);
+  return row?.cap === null || row?.cap === undefined ? null : Number(row.cap);
+}
+
+/**
+ * Lo que queda del plan ahora (la ventana y la semana siempre son las actuales) y lo usado en un mes UTC, el
+ * actual si no se pide otro. Tres queries por índice: se lee en cada vista de los medidores. Los meses pasados
+ * salen de `requests`, `partner_runs` y `partner_plan_caps`, que no se borran, así que un plan cerrado se
+ * sigue leyendo.
+ */
+export async function planUsage(db: Db, input: { partnerId: string; planId: string; now: number; month?: string }): Promise<PartnerUsageView> {
   const [row] = await db.select({
     workspaceId: partnerPlans.workspaceId,
     tier: subscriptions.planId,
@@ -279,23 +293,30 @@ export async function planUsage(db: Db, input: { partnerId: string; planId: stri
     .where(and(eq(partnerPlans.id, input.planId), eq(partnerPlans.partnerId, input.partnerId)));
   if (!row) throw new PartnerDoorError("not_found");
 
-  const [month] = await db.select({
+  const current = usageMonth(input.now);
+  const month = input.month ?? current;
+  const { start, end } = monthRange(month);
+  const [totals] = await db.select({
     cost: sql<string | null>`sum(${requests.costMicroUsd})`,
+    credits: sql<string | null>`sum(${requests.creditsMicroUsd})`,
     requests: count(),
-  }).from(requests).where(and(eq(requests.workspaceId, row.workspaceId), gte(requests.createdAt, monthStart(input.now))));
+  }).from(requests).where(and(eq(requests.workspaceId, row.workspaceId), gte(requests.createdAt, start), lt(requests.createdAt, end)));
+  const [runs] = await db.select({ runs: count() }).from(partnerRuns)
+    .where(and(eq(partnerRuns.planId, input.planId), eq(partnerRuns.month, monthDate(month))));
 
   const plan = row.tier === null ? null : partnerPlan(row.tier);
   const overflow = overflowSettings(row, input.now);
+  // El mes actual sale del contador con el que el gateway aplica el tope; uno pasado, de lo que pagaron los créditos.
+  const extra = month === current
+    ? { spentMicroUsd: Number(overflow.spentThisMonthMicroUsd), capMicroUsd: overflow.mode === "continue" ? Number(overflow.capMicroUsd) : null }
+    : { spentMicroUsd: Number(totals?.credits ?? 0), capMicroUsd: await pastCap(db, input.planId, month) };
   return {
     planId: toPublicId("plan", input.planId),
     window: left(storedWindow({ usedMicroUsd: row.fiveHourUsed, resetsAt: row.fiveHourResetsAt }), plan?.fiveHourLimitMicroUsd, input.now),
     week: left(storedWindow({ usedMicroUsd: row.weekUsed, resetsAt: row.weekResetsAt }), plan?.weekLimitMicroUsd, input.now),
-    extra: {
-      spentMicroUsd: Number(overflow.spentThisMonthMicroUsd),
-      capMicroUsd: overflow.mode === "continue" ? Number(overflow.capMicroUsd) : null,
-      month: new Date(input.now).toISOString().slice(0, 7),
-    },
-    monthMicroUsd: Number(month?.cost ?? 0),
-    requestsThisMonth: month?.requests ?? 0,
+    extra: { ...extra, month },
+    monthMicroUsd: Number(totals?.cost ?? 0),
+    requestsThisMonth: totals?.requests ?? 0,
+    runsThisMonth: runs?.runs ?? 0,
   };
 }
