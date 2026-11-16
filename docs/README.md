@@ -23,6 +23,7 @@ Web: `cheaptokens.wtf` · API: `https://api.cheaptokens.wtf/v1`. Fecha de esta v
 | 13 | [Sistema de diseño](./13-sistema-de-diseno.md) | Color, tema, tipografía, formatos y componentes de la interfaz |
 | 14 | [Plan: landing, catálogo y detalle](./14-plan-landing-y-catalogo.md) | Cómo se construyeron las páginas públicas y qué salió al hacerlo |
 | 15 | [Plan: gateway con InferHub](./15-plan-gateway.md) | Prerrequisitos, decisiones y paquetes de trabajo para construir el gateway con orquestación |
+| 17 | [Puerta de socios](./17-puerta-de-socios.md) | `/partner/v1`: un socio (Deska) abre un plan por asiento, con su key, su uso y su excedente pospago |
 | — | [ADRs](./adr/README.md) | Registro de decisiones, con alternativas descartadas |
 
 ## Decisiones clave en una línea
