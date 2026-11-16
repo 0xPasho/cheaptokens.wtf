@@ -6,7 +6,7 @@
  */
 import type { Plan } from "@/lib/billing/plans";
 
-export const PARTNER_TIERS = ["plan-9", "plan-49", "plan-99"] as const;
+export const PARTNER_TIERS = ["plan-3", "plan-9", "plan-49", "plan-99"] as const;
 export type PartnerTier = (typeof PARTNER_TIERS)[number];
 
 export interface PartnerPlan extends Omit<Plan, "id"> {
@@ -20,6 +20,7 @@ const cents = (value: number) => BigInt(value) * BigInt(10_000);
  * Así un asiento usado al máximo tiene el mismo margen que un plan público.
  */
 export const PARTNER_PLANS: Readonly<Record<PartnerTier, PartnerPlan>> = {
+  "plan-3": { id: "plan-3", priceMicroUsd: cents(300), fiveHourLimitMicroUsd: cents(42), weekLimitMicroUsd: cents(180), rateLimitRpm: 120 },
   "plan-9": { id: "plan-9", priceMicroUsd: cents(900), fiveHourLimitMicroUsd: cents(126), weekLimitMicroUsd: cents(540), rateLimitRpm: 60 },
   "plan-49": { id: "plan-49", priceMicroUsd: cents(4_900), fiveHourLimitMicroUsd: cents(686), weekLimitMicroUsd: cents(2_940), rateLimitRpm: 120 },
   "plan-99": { id: "plan-99", priceMicroUsd: cents(9_900), fiveHourLimitMicroUsd: cents(1_386), weekLimitMicroUsd: cents(5_940), rateLimitRpm: 200 },

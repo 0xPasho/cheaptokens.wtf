@@ -65,7 +65,7 @@ export interface PartnerUsageView {
 
 /**
  * Los modelos de un plan de socio: los que muestra el catálogo público (`active` y `deprecated`), los mismos
- * para los tres planes (docs/17 › Decisiones). Los `hidden` funcionan en la API pero todavía no se anuncian.
+ * para los cuatro planes (docs/17 › Decisiones). Los `hidden` funcionan en la API pero todavía no se anuncian.
  */
 export async function planModels(db: Db): Promise<string[]> {
   const rows = await db.select({ id: models.id }).from(models)

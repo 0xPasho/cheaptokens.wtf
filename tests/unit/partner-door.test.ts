@@ -167,6 +167,23 @@ describe("auth", () => {
 });
 
 describe("POST /plans", () => {
+  it("opens Deska Pro's plan-3 with public models and the Pro request rate", async () => {
+    const answer = await open({ tier: "plan-3" });
+    expect(answer.status).toBe(200);
+    expect(answer.body).toMatchObject({
+      tier: "plan-3",
+      models: ["test/model-a", "test/model-b", "test/old"],
+    });
+    expect(PARTNER_PLANS["plan-3"]).toEqual({
+      id: "plan-3",
+      priceMicroUsd: BigInt(3_000_000),
+      fiveHourLimitMicroUsd: BigInt(420_000),
+      weekLimitMicroUsd: BigInt(1_800_000),
+      rateLimitRpm: 120,
+    });
+    expect((await planRow(answer.body.planId)).subscription.planId).toBe("plan-3");
+  });
+
   it("opens a plan on its own workspace with extra usage off", async () => {
     const answer = await open();
     expect(answer.status).toBe(200);
@@ -221,10 +238,10 @@ describe("POST /plans", () => {
 describe("PATCH /plans/{id}", () => {
   it("changes the tier from the next request, both ways, and the paid period", async () => {
     const { body: plan } = await open({ tier: "plan-9" });
-    const up = await patch(plan.planId, { tier: "plan-99" });
+    const up = await patch(plan.planId, { tier: "plan-3" });
     expect(up.status).toBe(200);
-    expect(up.body).toMatchObject({ planId: plan.planId, tier: "plan-99", status: "open" });
-    expect((await planRow(plan.planId)).subscription.planId).toBe("plan-99");
+    expect(up.body).toMatchObject({ planId: plan.planId, tier: "plan-3", status: "open" });
+    expect((await planRow(plan.planId)).subscription.planId).toBe("plan-3");
 
     const paidThrough = new Date(NOW + 61 * DAY).toISOString();
     const down = await patch(plan.planId, { tier: "plan-9", paidThrough });

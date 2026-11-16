@@ -68,13 +68,14 @@ Funcionan como los planes públicos, con la ventana y la semana en valor de uso 
 
 | Plan | Precio al mes | Ventana de 5 horas | Semana | Requests por minuto |
 |---|---|---|---|---|
+| `plan-3` | $3 | $0.42 | $1.80 | 120 |
 | `plan-9` | $9 | $1.26 | $5.40 | 60 |
 | `plan-49` | $49 | $6.86 | $29.40 | 120 |
 | `plan-99` | $99 | $13.86 | $59.40 | 200 |
 
-La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 % (la proporción de Pro). Así un asiento usado al máximo tiene el mismo margen que un plan público, con el mismo riesgo: **hay que calibrarlos** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
+La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 % (la proporción de Pro). `plan-3` cubre el plan Pro de Deska a menor precio y conserva su rate limit de 120 requests por minuto. Así un asiento usado al máximo tiene el mismo margen que un plan público, con el mismo riesgo: **hay que calibrarlos** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
 
-Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los tres planes. Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
+Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los cuatro planes. Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
 
 ## Excedente pospago
 
@@ -109,7 +110,7 @@ Los modelos de un plan son los del catálogo público (`active` y `deprecated`),
 
 | # | Decisión | Origen | Por qué |
 |---|---|---|---|
-| D1 | Tres planes de socio nuevos (`plan-9`, `plan-49`, `plan-99`) a $9, $49 y $99, con la semana al 60 % y la ventana al 14 % del precio | Default | El contrato pide esos precios y los públicos son $20, $50 y $150. Mapearlos a Plus, Pro y Max regalaría límites; con la misma proporción el margen es el de ADR-0049 |
+| D1 | Cuatro planes de socio (`plan-3`, `plan-9`, `plan-49`, `plan-99`): $3, $9, $49 y $99; semana al 60 % y ventana al 14 % del precio | Default | Los precios de $9, $49 y $99 vienen del contrato; `plan-3` permite a Deska ofrecer Pro a ese precio. Todos conservan el margen de ADR-0049 y `plan-3` usa el rate limit Pro de 120 requests por minuto |
 | D2 | Un workspace por plan, con su suscripción de `payment_provider = partner:<socio>` | Default | Reusa ventanas, admisión, cobro, headers y conciliación sin tocarlos |
 | D3 | La suscripción vale hasta `paidThrough` + 8 días | Default | Son los 7 días de gracia de un pago atrasado y uno más, el mismo margen con el que Deska pide las keys. Si el pago no llega, Deska cierra el plan |
 | D4 | Los modelos son el catálogo público (`active` y `deprecated`); los `hidden` no entran | Default | Es lo que el sitio anuncia. `hidden` es para probar antes de anunciar |
@@ -130,5 +131,5 @@ Los modelos de un plan son los del catálogo público (`active` y `deprecated`),
 - **Medir `partner_runs`.** Es una escritura más por request de Deska (en `after()`, casi siempre sin efecto). Si pesa, se puede quitar la consulta a `partner_plans` guardando el plan en el contexto de la key.
 - **Configurar** `PARTNER_DESKA_SECRET` en el deploy y dárselo a Deska como su `TOKEN_PARTNER_SECRET`, con `TOKEN_PARTNER_URL` apuntando al host que sirve `/partner/v1`.
 - **Migrar** la base de producción con `pnpm db:migrate` (las migraciones `0002` y `0003` dependen de la `0001` de ADR-0049).
-- **Calibrar** los límites de los tres planes junto con los públicos (D1).
+- **Calibrar** los límites de los cuatro planes junto con los públicos (D1).
 - **Rate limit:** con varias instancias, el limiter en memoria no comparte la cuenta ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Aplica igual a los asientos de socio.
