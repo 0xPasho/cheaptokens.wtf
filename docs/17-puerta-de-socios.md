@@ -10,7 +10,7 @@ No es un sistema aparte. Se monta sobre el cobro de [ADR-0049](./adr/0049-suscri
 
 - **Un plan de socio es un workspace propio** con una fila en `subscriptions`. `clerk_user_id` es `partner:<socio>:<plan>`, como los `dev:` de [ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md), así que nunca entra al dashboard. `payment_provider` es `partner:<socio>`: lo paga el socio.
 - **Una key de socio es una key normal** del workspace (`createApiKey`), con `billing_source`, `allowed_models` y `expires_at` ([05 · API keys](./05-api-keys.md#fuente-de-cobro-y-modelos)).
-- **El gateway casi no cambia.** Autentica, limita, admite y cobra esas keys como cualquier otra, con los mismos headers `x-usage-*` y el mismo `429 usage_limit_reached`. Solo hay dos puntos nuevos: `activePlan` (`src/lib/billing/state.ts`) también conoce los planes de socio, y la admisión (`admitUsage`) trata el excedente de un plan de socio como pospago (ver [Excedente](#excedente-pospago)).
+- **El gateway casi no cambia.** Autentica, limita, admite y cobra esas keys como cualquier otra, con los mismos headers `x-usage-*` y el mismo `429 usage_limit_reached`. Solo hay tres puntos nuevos: `activePlan` (`src/lib/billing/state.ts`) también conoce los planes de socio, la admisión (`admitUsage`) trata el excedente de un plan de socio como pospago (ver [Excedente](#excedente-pospago)), y el handler cuenta las corridas de `x-deska-run` (ver [Corridas](#corridas)).
 
 Código: `src/lib/partner/` (reglas y HTTP) y `src/app/partner/v1/` (route handlers que solo llaman a `src/lib/partner/http.ts`, como el gateway con [ADR-0033](./adr/0033-gateway-con-dependencias-inyectadas.md)). El proxy deja fuera `/partner/` para no redirigirla a un idioma.
 
@@ -25,12 +25,30 @@ Base: `https://<host>/partner/v1`. JSON en los dos sentidos, dinero en µUSD ent
 | `POST /plans/{planId}/close` | `{}` | `204` | Cierra el plan y revoca todas sus keys en la misma transacción. Idempotente |
 | `POST /plans/{planId}/keys` | `{ expiresAt }` | `200` Key | La única respuesta con una key en claro. `expires_at` = `expiresAt` |
 | `POST /keys/{keyId}/revoke` | `{}` | `204` | Revoca al instante, sin las 24 horas de gracia de una rotación. Idempotente |
-| `GET /plans/{planId}/usage` | | `200` Uso | Lo que queda de la ventana y la semana (0 a 1), el excedente del mes y el uso del mes. Dos queries por índice |
+| `GET /plans/{planId}/usage?month=YYYY-MM` | | `200` Uso | Lo que queda de la ventana y la semana (0 a 1, siempre las actuales) y, del mes UTC pedido (el actual si falta `month`): el excedente con su tope, el uso, los requests y las corridas. Un `month` mal formado es `400`. Tres queries por índice |
 | `PUT /plans/{planId}/extra-cap` | `{ capMicroUsd: number \| null }` | `204` | Número: excedente hasta ese tope en el mes UTC, cobrado al socio. `null`: apagado |
 
 Los IDs públicos llevan prefijo, como `req_…`: `plan_<uuid sin guiones>` y `key_<uuid sin guiones>`. Un ID que no tiene la forma responde `404`, igual que uno que no existe o que es de otro socio.
 
 Una key revocada o de un plan cerrado responde `401 invalid_api_key` en el request siguiente: el gateway no cachea keys ([05 › Revocar](./05-api-keys.md#revocar)).
+
+## Uso por mes
+
+- **`month`** es un mes UTC (`2026-11`). Sin él, el actual. Uno futuro o sin uso responde ceros.
+- **`monthMicroUsd` y `requestsThisMonth`** suman `requests` del mes, de todas las fuentes y con los fallidos.
+- **`extra.spentMicroUsd`:** en el mes actual, el contador con el que el gateway aplica el tope (`overflow_spent_micro_usd`); en uno pasado, `Σ requests.credits_micro_usd` del mes, que en un plan de socio solo paga el excedente.
+- **`extra.capMicroUsd`:** en el mes actual, el del workspace; en uno pasado, el que se puso ese mes o, si no se cambió, el último anterior (`partner_plan_caps`). Sin ninguno, `null`: el excedente empieza apagado.
+- **`runsThisMonth`:** las corridas distintas del mes ([Corridas](#corridas)).
+- **Un plan cerrado se sigue leyendo:** nada de lo que alimenta los meses pasados (`requests`, `partner_runs`, `partner_plan_caps`) se borra. El contrato pide al menos 13 meses.
+
+## Corridas
+
+El forwarder de Deska manda en cada llamada a `/v1/chat/completions` el header `x-deska-run`: un digest opaco de 32 hex, uno por corrida de Deska Harness, nunca un nombre ni un prompt.
+
+- Después de admitir el request y llamar al upstream (los mismos requests que se registran), el handler agenda en `after()` una sola sentencia (`countRun` en `src/lib/partner/runs.ts`): inserta `(plan, mes, digest)` en `partner_runs` si el workspace es de un plan de socio, y no hace nada si ya estaba.
+- `runsThisMonth` cuenta las filas del plan en el mes. Una corrida que cruza el fin de mes cuenta en los dos.
+- Sin el header, o con algo que no sean 32 hex, no se cuenta nada. Las keys que no son de un socio nunca guardan corridas.
+- El digest no se loguea y no llega al upstream: el gateway no reenvía headers del cliente.
 
 ## Autenticación
 
@@ -83,7 +101,9 @@ Los modelos de un plan son los del catálogo público (`active` y `deprecated`),
 
 - **`partner_plans`:** `id` (el plan), `partner_id`, `external_ref`, `workspace_id` (único), `paid_through`, `created_at`, `closed_at`. Índice único parcial en `(partner_id, external_ref)` mientras `closed_at` es null: un solo plan abierto por referencia.
 - **`partner_idempotency_keys`:** PK `(partner_id, key)`, `fingerprint` (SHA-256 de método, ruta y body), `status`, `body_sealed`, `created_at`.
-- Migración: `drizzle/0002_youthful_dust.sql`. El resto vive en las tablas de ADR-0049: `workspaces`, `subscriptions`, `usage_windows`, `api_keys` y `requests`.
+- **`partner_runs`:** PK `(plan_id, month, run)`. `month` es el primer día del mes UTC; `run`, el digest de `x-deska-run`.
+- **`partner_plan_caps`:** PK `(plan_id, month)`, `cap_micro_usd` (null: apagado). Una fila por mes en que el socio cambió el tope; guarda el último del mes.
+- Migraciones: `drizzle/0002_youthful_dust.sql` y `drizzle/0003_tidy_mysterio.sql`. El resto vive en las tablas de ADR-0049: `workspaces`, `subscriptions`, `usage_windows`, `api_keys` y `requests`.
 
 ## Decisiones
 
@@ -100,11 +120,15 @@ Los modelos de un plan son los del catálogo público (`active` y `deprecated`),
 | D9 | El secreto del socio va en una variable por socio (`PARTNER_DESKA_SECRET`), de 32 caracteres o más | Default | Un solo socio hoy; otro socio es una línea en `PARTNERS` |
 | D10 | `inferenceBaseUrl` es `https://<API_HOST>/v1`, o el origen del request sin `API_HOST` | Default | En producción la API vive en `api.cheaptokens.wtf` ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)); en local, donde corre la app |
 | D11 | `requestsThisMonth` cuenta todos los requests del mes, también los fallidos | Default | Es el mismo conjunto que `monthMicroUsd`; los fallidos cuestan 0 |
+| D12 | Una corrida cuenta cuando su request se admite y llega al upstream; un `429` o un `401` no la cuentan | Default | Así `runsThisMonth` sale de los mismos requests que `requestsThisMonth`: corridas que usaron el plan |
+| D13 | El tope de un mes pasado es el último que el socio puso en ese mes o antes (`partner_plan_caps`) | Default | El contrato devuelve el tope en cada mes y el workspace solo guarda el actual |
+| D14 | `partner_runs` y `partner_plan_caps` no se limpian | Default | El contrato pide 13 meses legibles; son una fila por corrida y por cambio de tope al mes. Se poda cuando pese |
 
 ## Antes de producción
 
 - **Cobrarle al socio.** Falta el estado de cuenta mensual: los planes del mes (`subscriptions` con `payment_provider = partner:<socio>`, prorrateando altas, bajas y cambios) más el excedente (`Σ requests.credits_micro_usd` de sus workspaces). Y registrar cada pago, que hoy no tiene dónde (`payments` es del MoR). El contrato exige que esto esté vivo antes de producción.
+- **Medir `partner_runs`.** Es una escritura más por request de Deska (en `after()`, casi siempre sin efecto). Si pesa, se puede quitar la consulta a `partner_plans` guardando el plan en el contexto de la key.
 - **Configurar** `PARTNER_DESKA_SECRET` en el deploy y dárselo a Deska como su `TOKEN_PARTNER_SECRET`, con `TOKEN_PARTNER_URL` apuntando al host que sirve `/partner/v1`.
-- **Migrar** la base de producción con `pnpm db:migrate` (la migración `0002` depende de la `0001` de ADR-0049).
+- **Migrar** la base de producción con `pnpm db:migrate` (las migraciones `0002` y `0003` dependen de la `0001` de ADR-0049).
 - **Calibrar** los límites de los tres planes junto con los públicos (D1).
 - **Rate limit:** con varias instancias, el limiter en memoria no comparte la cuenta ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Aplica igual a los asientos de socio.
