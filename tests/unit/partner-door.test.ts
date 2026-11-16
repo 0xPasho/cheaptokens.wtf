@@ -9,13 +9,14 @@ import { chargeRequest } from "@/lib/billing/ledger";
 import { activePlan } from "@/lib/billing/state";
 import type { RequestRecord } from "@/lib/billing/types";
 import { createApiKey, ensureDevWorkspace } from "@/lib/billing/workspaces";
-import { apiKeys, models, partnerIdempotencyKeys, partnerPlans, subscriptions, workspaces } from "@/lib/db/schema";
+import { apiKeys, models, partnerIdempotencyKeys, partnerPlans, partnerRuns, requests, subscriptions, workspaces } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 import { uuidv7 } from "@/lib/db/uuid";
 import {
   changePlanRoute, closePlanRoute, extraCapRoute, issueKeyRoute, openPlanRoute, type PartnerDeps, revokeKeyRoute, usageRoute,
 } from "@/lib/partner/http";
 import { fromPublicId } from "@/lib/partner/ids";
+import { countRun, deskaRun } from "@/lib/partner/runs";
 import { PLAN_GRACE_MS } from "@/lib/partner/service";
 import { PARTNER_PLANS } from "@/lib/partner/tiers";
 
@@ -75,7 +76,7 @@ const close = (planId: string, headers?: Record<string, string>) => on(closePlan
 const issue = (planId: string, expiresAt = new Date(NOW + 38 * DAY).toISOString(), headers?: Record<string, string>) =>
   on(issueKeyRoute, "POST", `/plans/${planId}/keys`, planId, { expiresAt }, headers);
 const revoke = (keyId: string, headers?: Record<string, string>) => on(revokeKeyRoute, "POST", `/keys/${keyId}/revoke`, keyId, {}, headers);
-const usage = (planId: string) => on(usageRoute, "GET", `/plans/${planId}/usage`, planId);
+const usage = (planId: string, query = "") => on(usageRoute, "GET", `/plans/${planId}/usage${query}`, planId);
 const cap = (planId: string, capMicroUsd: unknown, headers?: Record<string, string>) =>
   on(extraCapRoute, "PUT", `/plans/${planId}/extra-cap`, planId, { capMicroUsd }, headers);
 
@@ -393,6 +394,7 @@ describe("GET /plans/{id}/usage", () => {
       extra: { spentMicroUsd: 0, capMicroUsd: null, month: "2026-11" },
       monthMicroUsd: 0,
       requestsThisMonth: 0,
+      runsThisMonth: 0,
     });
   });
 
@@ -408,6 +410,56 @@ describe("GET /plans/{id}/usage", () => {
     expect(answer.week.remaining).toBeCloseTo(1 - 630_000 / 5_400_000, 3);
     expect(answer.week.resetsAt).toBe(new Date(NOW + 7 * DAY).toISOString());
     expect(answer).toMatchObject({ monthMicroUsd: 630_000, requestsThisMonth: 2 });
+  });
+
+  it("reads the current month by default and refuses a malformed month", async () => {
+    const { body: plan } = await open();
+    expect((await usage(plan.planId, "?month=2026-11")).body).toEqual((await usage(plan.planId)).body);
+    for (const month of ["2026-13", "2026-1", "26-11", "2026-11-01", "", "nov"]) {
+      expect((await usage(plan.planId, `?month=${month}`)).status, month).toBe(400);
+    }
+  });
+
+  it("reads a past month's totals and cap, while the window and the week stay the current ones", async () => {
+    const { body: plan } = await open({ tier: "plan-9" });
+    const { body: key } = await issue(plan.planId);
+    const { row } = await planRow(plan.planId);
+    const apiKeyId = fromPublicId("key", key.keyId)!;
+    const october = Date.UTC(2026, 9, 20, 12);
+    // Octubre: el tope se prendió en $3 y hubo dos requests, una pagada por el excedente.
+    clock = october;
+    await cap(plan.planId, 3_000_000);
+    await db.insert(requests).values([
+      { ...charge(row.workspaceId, apiKeyId, 400_000), planMicroUsd: BigInt(400_000), createdAt: new Date(october) },
+      { ...charge(row.workspaceId, apiKeyId, 250_000), creditsMicroUsd: BigInt(250_000), createdAt: new Date(october + 1_000) },
+    ]);
+    await countRun(db, row.workspaceId, "a".repeat(32), october);
+    // Noviembre: otro tope y una request en la ventana actual.
+    clock = NOW;
+    await cap(plan.planId, 5_000_000);
+    await chargeRequest(db, charge(row.workspaceId, apiKeyId, 630_000), NOW);
+    await db.update(requests).set({ createdAt: new Date(NOW) }).where(eq(requests.costMicroUsd, BigInt(630_000)));
+
+    const past = (await usage(plan.planId, "?month=2026-10")).body;
+    const now = (await usage(plan.planId)).body;
+    expect(past).toMatchObject({
+      extra: { spentMicroUsd: 250_000, capMicroUsd: 3_000_000, month: "2026-10" },
+      monthMicroUsd: 650_000, requestsThisMonth: 2, runsThisMonth: 1,
+    });
+    expect(now).toMatchObject({
+      extra: { spentMicroUsd: 0, capMicroUsd: 5_000_000, month: "2026-11" },
+      monthMicroUsd: 630_000, requestsThisMonth: 1, runsThisMonth: 0,
+    });
+    expect(past.window).toEqual(now.window);
+    expect(past.week).toEqual(now.week);
+    expect(now.window.remaining).toBe(0.5);
+    // Antes del primer tope el excedente estaba apagado; un mes sin uso responde ceros.
+    expect((await usage(plan.planId, "?month=2026-09")).body).toMatchObject({
+      extra: { spentMicroUsd: 0, capMicroUsd: null, month: "2026-09" }, monthMicroUsd: 0, requestsThisMonth: 0, runsThisMonth: 0,
+    });
+    // Un plan cerrado sigue mostrando sus meses pasados.
+    await close(plan.planId);
+    expect((await usage(plan.planId, "?month=2026-10")).body).toMatchObject({ monthMicroUsd: 650_000, runsThisMonth: 1 });
   });
 
   it("answers 404 for a plan of nobody", async () => {
@@ -442,6 +494,36 @@ describe("PUT /plans/{id}/extra-cap", () => {
     expect((await cap(plan.planId, "5")).status).toBe(400);
     expect((await cap(plan.planId, 1e15)).status).toBe(400);
     expect((await on(extraCapRoute, "PUT", `/plans/${plan.planId}/extra-cap`, plan.planId, {})).status).toBe(400);
+  });
+});
+
+describe("runs (x-deska-run)", () => {
+  it("reads only a 32-hex digest from the header", () => {
+    const digest = "0123456789abcdef0123456789abcdef";
+    expect(deskaRun(new Headers({ "x-deska-run": digest }))).toBe(digest);
+    expect(deskaRun(new Headers({ "x-deska-run": ` ${digest.toUpperCase()} ` }))).toBe(digest);
+    expect(deskaRun(new Headers())).toBeNull();
+    for (const value of ["", "run-1", digest.slice(1), `${digest}0`, "g".repeat(32)]) {
+      expect(deskaRun(new Headers({ "x-deska-run": value })), value).toBeNull();
+    }
+  });
+
+  it("counts each run once per plan and month, and only on partner plans", async () => {
+    const { body: plan } = await open();
+    const { row } = await planRow(plan.planId);
+    const [a, b] = ["a".repeat(32), "b".repeat(32)];
+    await countRun(db, row.workspaceId, a, NOW);
+    await countRun(db, row.workspaceId, a, NOW + 60_000);
+    await countRun(db, row.workspaceId, b, NOW);
+    await countRun(db, row.workspaceId, a, Date.UTC(2026, 11, 1));
+    expect((await usage(plan.planId)).body.runsThisMonth).toBe(2);
+    expect((await usage(plan.planId, "?month=2026-12")).body.runsThisMonth).toBe(1);
+
+    const someone = await ensureDevWorkspace(db, "not-a-seat");
+    await countRun(db, someone.id, a, NOW);
+    const rows = await db.select().from(partnerRuns);
+    expect(rows).toHaveLength(3);
+    expect(rows.every((run) => run.planId === row.id)).toBe(true);
   });
 });
 

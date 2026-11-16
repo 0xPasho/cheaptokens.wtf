@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { reconcile } from "@/lib/billing/reconcile";
-import { partnerPlans, requests, usageWindows, workspaces } from "@/lib/db/schema";
+import { partnerPlans, partnerRuns, requests, usageWindows, workspaces } from "@/lib/db/schema";
 import {
   changePlanRoute, closePlanRoute, extraCapRoute, issueKeyRoute, openPlanRoute, type PartnerDeps, revokeKeyRoute, usageRoute,
 } from "@/lib/partner/http";
@@ -34,7 +34,7 @@ async function setup(tier: PartnerTier = "plan-9") {
       headers: { authorization: `Bearer ${SECRET}`, "content-type": "application/json", ...(method === "GET" ? {} : { "idempotency-key": `gw-${++seq}` }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    const [, , id, action] = path.split("/");
+    const [, , id, action] = path.split("?")[0].split("/");
     const response = path === "/plans" ? await openPlanRoute(request, deps)
       : path.startsWith("/keys/") ? await revokeKeyRoute(request, deps, path.split("/")[2])
         : action === "close" ? await closePlanRoute(request, deps, id)
@@ -54,10 +54,10 @@ async function setup(tier: PartnerTier = "plan-9") {
 }
 
 /** Llama al gateway real con la key del plan. */
-async function complete(harness: Harness, key: string) {
+async function complete(harness: Harness, key: string, headers: Record<string, string> = {}) {
   const response = await fetch(`${harness.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json", ...headers },
     body: JSON.stringify({ model, messages: [{ role: "user", content: "hi" }] }),
   });
   const body = await response.json() as { error?: { code: string } };
@@ -145,6 +145,27 @@ describe("a partner plan through the gateway", () => {
     expect((await complete(harness, key.key)).status).toBe(200);
     expect((await call("PATCH", `/plans/${plan.planId}`, { tier: "plan-9" })).status).toBe(200);
     expect((await complete(harness, key.key)).status).toBe(429);
+  });
+
+  it("counts distinct x-deska-run digests per plan and month, and nothing without the header", async () => {
+    const { harness, call, plan, issue } = await setup();
+    const key = await issue();
+    const [a, b] = ["0123456789abcdef0123456789abcdef", "fedcba9876543210fedcba9876543210"];
+    const calls: Record<string, string>[] = [{ "x-deska-run": a }, { "x-deska-run": a }, { "x-deska-run": b }, {}, { "x-deska-run": "not-a-digest" }];
+    for (const headers of calls) {
+      expect((await complete(harness, key.key, headers)).status).toBe(200);
+    }
+    const usage = (await call("GET", `/plans/${plan.planId}/usage`)).body;
+    expect(usage).toMatchObject({ requestsThisMonth: 5, runsThisMonth: 2 });
+    expect((await call("GET", `/plans/${plan.planId}/usage?month=2026-01`)).body.runsThisMonth).toBe(0);
+    // El digest se guarda, nunca se loguea.
+    expect(harness.logs.join("\n")).not.toContain(a);
+  });
+
+  it("does not count runs on a key that is not on a partner plan", async () => {
+    const { harness } = await setup();
+    expect((await complete(harness, harness.apiKey, { "x-deska-run": "a".repeat(32) })).status).toBe(200);
+    expect(await harness.db.select().from(partnerRuns)).toEqual([]);
   });
 
   it("holds a key to the plan's models: a hidden model works in the API but not on a plan", async () => {
