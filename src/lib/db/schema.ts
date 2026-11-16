@@ -183,3 +183,29 @@ export const partnerIdempotencyKeys = pgTable("partner_idempotency_keys", {
   primaryKey({ columns: [table.partnerId, table.key] }),
   index("partner_idempotency_keys_created_idx").on(table.createdAt),
 ]);
+
+/**
+ * Corridas de Deska por plan y mes (docs/17): el digest opaco de `x-deska-run` (32 hex), nunca un nombre ni
+ * un prompt. Una fila por corrida distinta en el mes; `runsThisMonth` las cuenta.
+ */
+export const partnerRuns = pgTable("partner_runs", {
+  planId: uuid("plan_id").notNull().references(() => partnerPlans.id),
+  /** Primer día del mes (UTC). */
+  month: date("month").notNull(),
+  run: text("run").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.planId, table.month, table.run] }),
+]);
+
+/**
+ * El tope de excedente de un plan de socio en cada mes en que se cambió (docs/17). El de un mes pasado es la
+ * fila de ese mes o, si no hubo cambios, la última anterior. Null: apagado.
+ */
+export const partnerPlanCaps = pgTable("partner_plan_caps", {
+  planId: uuid("plan_id").notNull().references(() => partnerPlans.id),
+  /** Primer día del mes (UTC). */
+  month: date("month").notNull(),
+  capMicroUsd: bigint("cap_micro_usd", { mode: "bigint" }),
+}, (table) => [
+  primaryKey({ columns: [table.planId, table.month] }),
+]);
