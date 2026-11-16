@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatCount,
-  formatDate,
-  formatDiscount,
-  formatTokens,
-  formatUsd,
-} from "@/lib/format";
+import { formatCount, formatDate, formatDateTime, formatDiscount, formatDuration, formatMilliseconds, formatPercent, formatTokens, formatUsd, totalKind } from "@/lib/format";
 
 // Intl usa espacios no separables (U+00A0, U+202F). Se normalizan para comparar.
 const plain = (text: string) => text.replace(/[  ]/g, " ");
@@ -74,5 +68,26 @@ describe("formatDate", () => {
     expect(formatDate("2026-11-08", "es")).toBe("8 nov 2026");
     // Una hora que en América sería el día anterior sigue siendo el 8 en UTC.
     expect(formatDate("2026-11-08T02:00:00Z", "en")).toBe("Nov 8, 2026");
+  });
+});
+
+describe("formatos del dashboard", () => {
+  it("porcentaje, duración y latencia salen de Intl", () => {
+    expect(formatPercent(0.34, "en")).toBe("34%");
+    expect(plain(formatPercent(0.34, "es"))).toBe("34 %");
+    expect(formatDuration(2 * 3_600_000 + 41 * 60_000, "en")).toBe("2h 41m");
+    expect(formatDuration(3 * 86_400_000 + 4 * 3_600_000, "es")).toBe("3d 4h");
+    expect(formatDuration(30_000, "en")).toBe("1m");
+    expect(formatMilliseconds(1234, "en")).toBe("1,234 ms");
+  });
+
+  it("fecha con hora en UTC para que servidor y navegador coincidan", () => {
+    expect(plain(formatDateTime(new Date(Date.UTC(2026, 10, 15, 15, 20)), "es"))).toBe("15 nov 2026, 15:20 UTC");
+  });
+
+  it("los totales de centavos conservan la precisión de µUSD", () => {
+    expect(totalKind(149)).toBe("cost");
+    expect(totalKind(0)).toBe("balance");
+    expect(totalKind(25_000_000)).toBe("balance");
   });
 });

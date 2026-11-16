@@ -60,6 +60,11 @@ export function formatUsd(
     .replace("-", "−");
 }
 
+/** Totales que pueden ser de centavos: con 2 decimales si pasan de un centavo, con precisión de µUSD si no. */
+export function totalKind(micros: number): MoneyKind {
+  return Math.abs(micros) > 0 && Math.abs(micros) < 10_000 ? "cost" : "balance";
+}
+
 /** Descuento en puntos base como porcentaje negativo: `9000` → `−90%`. */
 export function formatDiscount(discountBps: number, locale: string) {
   return cached(
@@ -102,4 +107,45 @@ export function formatDate(date: Date | string, locale: string) {
     () =>
       new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }),
   ).format(typeof date === "string" ? new Date(date) : date);
+}
+
+/** Fracción como porcentaje: `0.34` → `34%` / `34 %`. Para el uso del plan. */
+export function formatPercent(fraction: number, locale: string, maximumFractionDigits = 0) {
+  return cached(
+    `percent:${locale}:${maximumFractionDigits}`,
+    () => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits }),
+  ).format(fraction);
+}
+
+/** Fecha con hora en UTC (`Nov 15, 2026, 03:20 PM UTC`). Igual en servidor y navegador. */
+export function formatDateTime(date: Date | string, locale: string) {
+  return cached(
+    `datetime:${locale}`,
+    () => new Intl.DateTimeFormat(locale, {
+      day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
+    }),
+  ).format(typeof date === "string" ? new Date(date) : date);
+}
+
+/** Duración hasta un reinicio, con las dos unidades mayores: `2h 41m` / `2h 41min`, `3d 4h`. */
+export function formatDuration(ms: number, locale: string) {
+  const minutes = Math.max(0, Math.ceil(ms / 60_000));
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const rest = minutes % 60;
+  const unit = (value: number, name: "day" | "hour" | "minute") => cached(
+    `duration:${locale}:${name}`,
+    () => new Intl.NumberFormat(locale, { style: "unit", unit: name, unitDisplay: "narrow" }),
+  ).format(value);
+  if (days > 0) return `${unit(days, "day")} ${unit(hours, "hour")}`;
+  if (hours > 0) return `${unit(hours, "hour")} ${unit(rest, "minute")}`;
+  return unit(rest, "minute");
+}
+
+/** Latencia: `1,234 ms` / `1234 ms`. */
+export function formatMilliseconds(ms: number, locale: string) {
+  return cached(
+    `ms:${locale}`,
+    () => new Intl.NumberFormat(locale, { style: "unit", unit: "millisecond", unitDisplay: "short", maximumFractionDigits: 0 }),
+  ).format(ms);
 }

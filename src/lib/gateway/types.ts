@@ -9,6 +9,7 @@
  * - El dinero va en bigint, en µUSD (ADR-0007). Los floats solo aparecen al leer `usage.cost`.
  * - Nada del upstream llega al cliente: ni headers, ni IDs, ni campos fuera de la whitelist (docs/07 › Ocultar el upstream).
  */
+import type { Admission, BillingSource, OverflowSettings, PlanUsage } from "@/lib/billing/limits";
 import type { ModelStatus } from "@/lib/catalog/types";
 import type { Db } from "@/lib/db/types";
 import type { RateLimiter } from "@/lib/rate-limit/types";
@@ -22,12 +23,15 @@ export const GATEWAY_ERROR_STATUS = {
   invalid_request: 400,
   invalid_api_key: 401,
   insufficient_credits: 402,
+  no_active_plan: 402,
   key_limit_exceeded: 403,
   account_suspended: 403,
+  model_not_allowed_for_key: 403,
   model_not_found: 404,
   model_retired: 410,
   request_too_large: 413,
   rate_limit_exceeded: 429,
+  usage_limit_reached: 429,
   upstream_error: 502,
   no_upstream_available: 503,
   upstream_timeout: 504,
@@ -204,19 +208,30 @@ export interface AuthContext {
   spendLimitMicroUsd: MicroUsd | null;
   spentMicroUsd: MicroUsd;
   suspended: boolean;
-  /** Override del workspace. Null = valor global. */
+  /** Override del workspace, o el del plan activo. Null = valor global. */
   rateLimitRpm: number | null;
+  /** De dónde cobra la key (ADR-0049). */
+  billingSource: BillingSource;
+  /** Null: todos los modelos. */
+  allowedModels: readonly string[] | null;
+  /** Plan activo con sus ventanas, leídos en la misma query. Null sin plan. */
+  plan: PlanUsage | null;
+  overflow: OverflowSettings;
 }
 
 export type AuthResult = { ok: true; context: AuthContext } | { ok: false; code: "invalid_api_key" };
 
 /** Header `Authorization` → validación local → una sola query (docs/05-api-keys.md › Usar). */
-export type Authenticate = (authorization: string | null, db: Db) => Promise<AuthResult>;
+export type Authenticate = (authorization: string | null, db: Db, now?: number) => Promise<AuthResult>;
 
-/** Saldo, límite de la key y suspensión (docs/08 › Cobro por request). Null si puede pasar. */
+/** Suspensión, modelos permitidos y límite de la key (docs/08 › Cobro por request). Null si puede pasar. */
 export type CheckAccount = (
   context: AuthContext,
-) => Extract<GatewayErrorCode, "insufficient_credits" | "key_limit_exceeded" | "account_suspended"> | null;
+  modelId: string,
+) => Extract<GatewayErrorCode, "key_limit_exceeded" | "account_suspended" | "model_not_allowed_for_key"> | null;
+
+/** Plan, paquetes y créditos (ADR-0049). Lee el saldo de paquetes solo si el plan no alcanza. */
+export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number) => Promise<Admission>;
 
 // ─── Logger ───────────────────────────────────────────────────────────────────
 

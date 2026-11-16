@@ -31,10 +31,11 @@ export interface RequestRecord {
 }
 
 /**
- * Una sola transacción: inserta en `requests`, descuenta de `workspaces.balance_micro_usd`
- * y suma a `api_keys.spent_micro_usd` y `last_used_at` (docs/08 › Cobro por request).
+ * Una sola transacción (docs/08 › Cobro por request, ADR-0049): reparte el costo plan → paquete → créditos,
+ * actualiza ventanas, paquete y `workspaces.balance_micro_usd` con lo que le toca a cada uno, inserta en
+ * `requests` con el reparto y suma el costo a `api_keys.spent_micro_usd` y `last_used_at`.
  */
-export type ChargeRequest = (db: Db, record: RequestRecord) => Promise<void>;
+export type ChargeRequest = (db: Db, record: RequestRecord, now?: number) => Promise<void>;
 
 /** Ajuste manual de saldo (`credit_transactions.type = 'adjustment'`), con nota obligatoria. */
 export type GrantCredits = (

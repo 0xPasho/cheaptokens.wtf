@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 
-import { apiKeys, creditTransactions, requests, workspaces } from "@/lib/db/schema";
+import { apiKeys, creditTransactions, modelPacks, requests, workspaces } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 
 export async function reconcile(db: Db) {
@@ -10,9 +10,10 @@ export async function reconcile(db: Db) {
       workspaceId: creditTransactions.workspaceId,
       amount: sql`sum(${creditTransactions.amountMicroUsd})`.as("amount"),
     }).from(creditTransactions).groupBy(creditTransactions.workspaceId).as("credits");
+    // Solo la parte de créditos sale del saldo (ADR-0049): el plan y los paquetes tienen su propia cuenta.
     const workspaceCosts = tx.select({
       workspaceId: requests.workspaceId,
-      cost: sql`sum(${requests.costMicroUsd})`.as("cost"),
+      cost: sql`sum(${requests.creditsMicroUsd})`.as("cost"),
     }).from(requests).groupBy(requests.workspaceId).as("workspace_costs");
     const expectedBalance = sql`coalesce(${credits.amount}, 0) - coalesce(${workspaceCosts.cost}, 0)`;
     const balanceMismatches = await tx.select({
@@ -38,6 +39,19 @@ export async function reconcile(db: Db) {
       .where(sql`${apiKeys.spentMicroUsd} <> ${expectedSpend}`)
       .orderBy(apiKeys.id);
 
+    const packSpend = tx.select({
+      packId: requests.packId,
+      spent: sql`sum(${requests.packMicroUsd})`.as("spent"),
+    }).from(requests).groupBy(requests.packId).as("pack_spend");
+    const expectedPack = sql`${modelPacks.grantedMicroUsd} - coalesce(${packSpend.spent}, 0)`;
+    const packMismatches = await tx.select({
+      packId: modelPacks.id,
+      expected: sql`${expectedPack}`.mapWith(BigInt),
+      actual: modelPacks.balanceMicroUsd,
+    }).from(modelPacks).leftJoin(packSpend, eq(modelPacks.id, packSpend.packId))
+      .where(sql`${modelPacks.balanceMicroUsd} <> ${expectedPack}`)
+      .orderBy(modelPacks.id);
+
     const day = sql<string>`to_char(${requests.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`;
     const upstreamDaily = await tx.select({
       upstreamId: requests.upstreamId,
@@ -46,6 +60,6 @@ export async function reconcile(db: Db) {
       requestCount: sql`count(*)`.mapWith(BigInt),
     }).from(requests).groupBy(requests.upstreamId, day).orderBy(day, requests.upstreamId);
 
-    return { balanceMismatches, keySpendMismatches, upstreamDaily };
+    return { balanceMismatches, keySpendMismatches, packMismatches, upstreamDaily };
   }, { isolationLevel: "repeatable read", accessMode: "read only" });
 }

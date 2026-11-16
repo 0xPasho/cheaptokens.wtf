@@ -6,15 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { closeDb, getDb } from "@/lib/db/client";
 import { migrateNodePostgres } from "@/lib/db/migrate";
-import {
-  apiKeys,
-  creditTransactions,
-  modelUpstreams,
-  models,
-  requests,
-  upstreams,
-  workspaces,
-} from "@/lib/db/schema";
+import { apiKeys, creditTransactions, modelUpstreams, models, requests, upstreams, workspaces, subscriptions, usageWindows, modelPacks, payments, partnerPlans, partnerIdempotencyKeys, partnerRuns, partnerPlanCaps } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 import { uuidv7 } from "@/lib/db/uuid";
 
@@ -62,6 +54,7 @@ function requestRecord(workspaceId: string, apiKeyId: string): typeof requests.$
     completionTokens: 20,
     usageEstimated: false,
     costMicroUsd: BigInt(10),
+    creditsMicroUsd: BigInt(10),
     upstreamCostMicroUsd: BigInt(5),
     officialCostMicroUsd: BigInt(50),
     latencyMs: 100,
@@ -84,13 +77,16 @@ describe("Postgres schema and migrations", () => {
     await testDb?.close();
   });
 
-  it("applies the migration independently of cwd with all seven tables and records it", async () => {
+  it("applies the migrations independently of cwd with all fifteen tables and records them", async () => {
     const { db } = testDb;
-    for (const table of [workspaces, apiKeys, models, upstreams, modelUpstreams, requests, creditTransactions]) {
+    for (const table of [
+      workspaces, apiKeys, models, upstreams, modelUpstreams, requests, creditTransactions,
+      subscriptions, usageWindows, modelPacks, payments, partnerPlans, partnerIdempotencyKeys, partnerRuns, partnerPlanCaps,
+    ]) {
       expect(await db.select().from(table)).toEqual([]);
     }
     expect(await db.execute(sql`select count(*)::int as count from drizzle.__drizzle_migrations`))
-      .toMatchObject({ rows: [{ count: 1 }] });
+      .toMatchObject({ rows: [{ count: 4 }] });
   });
 
   it("stores a catalog description without a Spanish translation", async () => {
@@ -354,5 +350,20 @@ describe("UUID v7 (RFC 9562)", () => {
   it.each([-1, 1.5, NaN, Infinity, 2 ** 48])("rejects invalid timestamp %s", async (timestamp) => {
     const { uuidv7: generate } = await import("@/lib/db/uuid");
     expect(() => generate(timestamp)).toThrow(RangeError);
+  });
+});
+
+describe("cost split invariant (ADR-0049)", () => {
+  it("rejects a request whose plan, pack, credits and absorbed parts don't add up to the cost", async () => {
+    const testDb = await createTestDb();
+    try {
+      const { workspace, key } = await insertWorkspaceAndKey(testDb.db);
+      await testDb.db.insert(models).values(model);
+      await expect(testDb.db.insert(requests).values({ ...requestRecord(workspace.id, key.id), creditsMicroUsd: BigInt(9) }))
+        .rejects.toMatchObject({ cause: { code: "23514" } });
+      await testDb.db.insert(requests).values({ ...requestRecord(workspace.id, key.id), creditsMicroUsd: BigInt(4), planMicroUsd: BigInt(6) });
+    } finally {
+      await testDb.close();
+    }
   });
 });

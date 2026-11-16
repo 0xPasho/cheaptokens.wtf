@@ -30,12 +30,27 @@ export const requestStatus = pgEnum("request_status", [
   "invalid_request",
 ]);
 export const creditTransactionType = pgEnum("credit_transaction_type", ["topup", "refund", "adjustment"]);
+/** De dónde cobra una key (ADR-0049): el plan con prepago de respaldo, solo el plan o solo el prepago. */
+export const billingSource = pgEnum("billing_source", ["plan_then_prepaid", "plan_only", "prepaid_only"]);
+/** Qué pasa al agotar el límite del plan: seguir con paquetes y créditos, o detenerse con 429. */
+export const overflowMode = pgEnum("overflow_mode", ["continue", "stop"]);
+export const usageWindowKind = pgEnum("usage_window_kind", ["five_hour", "week"]);
+export const subscriptionStatus = pgEnum("subscription_status", ["active", "past_due", "canceled"]);
+export const paymentKind = pgEnum("payment_kind", ["topup", "subscription", "pack"]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
   clerkUserId: text("clerk_user_id").notNull().unique(),
   balanceMicroUsd: bigint("balance_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
   rateLimitRpm: integer("rate_limit_rpm"),
+  overflowMode: overflowMode("overflow_mode").notNull().default("continue"),
+  overflowPacks: boolean("overflow_packs").notNull().default(true),
+  overflowCredits: boolean("overflow_credits").notNull().default(true),
+  /** Tope mensual de créditos usados al pasar el límite del plan. */
+  overflowCapMicroUsd: bigint("overflow_cap_micro_usd", { mode: "bigint" }).notNull().default(sql`25000000`),
+  /** Primer día del mes al que corresponde `overflow_spent_micro_usd`. */
+  overflowMonth: date("overflow_month"),
+  overflowSpentMicroUsd: bigint("overflow_spent_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
   suspendedAt: timestamp("suspended_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -51,6 +66,11 @@ export const apiKeys = pgTable("api_keys", {
   spendLimitMicroUsd: bigint("spend_limit_micro_usd", { mode: "bigint" }),
   spentMicroUsd: bigint("spent_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  billingSource: billingSource("billing_source").notNull().default("plan_then_prepaid"),
+  /** Null: todos los modelos. */
+  allowedModels: text("allowed_models").array(),
+  /** Fin del periodo de gracia de una key rotada. Null: no vence. */
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
 }, (table) => [
@@ -124,6 +144,12 @@ export const requests = pgTable("requests", {
   cachedTokens: integer("cached_tokens"),
   usageEstimated: boolean("usage_estimated").notNull(),
   costMicroUsd: bigint("cost_micro_usd", { mode: "bigint" }).notNull(),
+  /** Reparto de `cost_micro_usd` (ADR-0049). Siempre suman el costo. */
+  planMicroUsd: bigint("plan_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+  packMicroUsd: bigint("pack_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+  creditsMicroUsd: bigint("credits_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+  absorbedMicroUsd: bigint("absorbed_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+  packId: uuid("pack_id").references(() => modelPacks.id),
   upstreamCostMicroUsd: bigint("upstream_cost_micro_usd", { mode: "bigint" }).notNull(),
   officialCostMicroUsd: bigint("official_cost_micro_usd", { mode: "bigint" }).notNull(),
   ttfbMs: integer("ttfb_ms"),
@@ -133,6 +159,7 @@ export const requests = pgTable("requests", {
   index("requests_workspace_created_idx").on(table.workspaceId, table.createdAt.desc()),
   index("requests_api_key_created_idx").on(table.apiKeyId, table.createdAt.desc()),
   index("requests_upstream_created_idx").on(table.upstreamId, table.createdAt),
+  check("requests_cost_split_check", sql`${table.planMicroUsd} + ${table.packMicroUsd} + ${table.creditsMicroUsd} + ${table.absorbedMicroUsd} = ${table.costMicroUsd}`),
 ]);
 
 export const creditTransactions = pgTable("credit_transactions", {
@@ -146,6 +173,68 @@ export const creditTransactions = pgTable("credit_transactions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("credit_transactions_external_id_unique").on(table.externalId),
+]);
+
+/** Suscripción vigente de un workspace (ADR-0049). Una fila por workspace; los cobros quedan en `payments`. */
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id).unique(),
+  planId: text("plan_id").notNull(),
+  status: subscriptionStatus("status").notNull(),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  /** Plan que entra al renovar (bajar de plan). Null: el mismo. */
+  nextPlanId: text("next_plan_id"),
+  paymentProvider: text("payment_provider").notNull(),
+  externalId: text("external_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("subscriptions_external_id_unique").on(table.externalId),
+]);
+
+/** Ventana de 5 horas y semana del plan. Empiezan con el primer request y se reinician al vencer. */
+export const usageWindows = pgTable("usage_windows", {
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  kind: usageWindowKind("kind").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  resetsAt: timestamp("resets_at", { withTimezone: true }).notNull(),
+  usedMicroUsd: bigint("used_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+}, (table) => [
+  primaryKey({ columns: [table.workspaceId, table.kind] }),
+]);
+
+/** Uso prepagado de un modelo concreto, con bono y vencimiento. */
+export const modelPacks = pgTable("model_packs", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  modelId: text("model_id").notNull().references(() => models.id),
+  paidMicroUsd: bigint("paid_micro_usd", { mode: "bigint" }).notNull(),
+  grantedMicroUsd: bigint("granted_micro_usd", { mode: "bigint" }).notNull(),
+  balanceMicroUsd: bigint("balance_micro_usd", { mode: "bigint" }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("model_packs_workspace_model_idx").on(table.workspaceId, table.modelId, table.expiresAt),
+  check("model_packs_balance_check", sql`${table.balanceMicroUsd} between 0 and ${table.grantedMicroUsd}`),
+]);
+
+/** Cada cobro del Merchant of Record: recargas, suscripciones y paquetes. El saldo vive en `credit_transactions`. */
+export const payments = pgTable("payments", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  kind: paymentKind("kind").notNull(),
+  amountMicroUsd: bigint("amount_micro_usd", { mode: "bigint" }).notNull(),
+  /** `planId` en suscripciones, `modelId` en paquetes. */
+  item: text("item"),
+  paymentProvider: text("payment_provider").notNull(),
+  externalId: text("external_id").notNull(),
+  receiptUrl: text("receipt_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("payments_external_id_unique").on(table.externalId),
+  index("payments_workspace_created_idx").on(table.workspaceId, table.createdAt.desc()),
 ]);
 
 /**

@@ -19,11 +19,15 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<numb
     for (const row of result.keySpendMismatches) {
       console.log(`API key ${row.apiKeyId}: expected ${row.expected}, actual ${row.actual} micro USD`);
     }
+    console.log(`Model pack invariant: ${result.packMismatches.length} mismatches`);
+    for (const row of result.packMismatches) {
+      console.log(`Pack ${row.packId}: expected ${row.expected}, actual ${row.actual} micro USD`);
+    }
     console.log("Upstream spend by UTC day (micro USD):");
     for (const row of result.upstreamDaily) {
       console.log(`${row.day} | ${row.upstreamId ?? "(no upstream)"} | ${row.requestCount} requests | ${row.upstreamCostMicroUsd}`);
     }
-    return result.balanceMismatches.length || result.keySpendMismatches.length ? 1 : 0;
+    return result.balanceMismatches.length || result.keySpendMismatches.length || result.packMismatches.length ? 1 : 0;
   } finally {
     await closeDb();
   }

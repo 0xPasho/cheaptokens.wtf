@@ -2,7 +2,9 @@ import { chargeRequest } from "@/lib/billing/ledger";
 import type { RequestRecord, RequestStatus } from "@/lib/billing/types";
 import { countRun, deskaRun } from "@/lib/partner/runs";
 
-import { authenticate, checkAccount } from "./authenticate";
+import { planUsageHeaders } from "@/lib/billing/headers";
+
+import { admitUsage, authenticate, checkAccount } from "./authenticate";
 import { errorResponse, streamErrorChunk } from "./errors";
 import { computeRequestCosts, createUsageAccumulator, estimateTokens } from "./metering";
 import { buildUsageChunk, sanitizeChunk, sanitizeCompletion } from "./sanitize";
@@ -84,7 +86,7 @@ async function readBody(request: Request): Promise<string | null> {
 
 async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId: string): Promise<void> {
   try {
-    await chargeRequest(deps.db, record);
+    await chargeRequest(deps.db, record, deps.now());
   } catch {
     deps.log.error("charge_failed", { requestId });
   }
@@ -125,7 +127,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   }
   if (rawBody === null) return reject("request_too_large");
 
-  const auth = await authenticate(request.headers.get("authorization"), deps.db);
+  const auth = await authenticate(request.headers.get("authorization"), deps.db, deps.now());
   if (!auth.ok) return reject(auth.code);
   const { context } = auth;
   const rate = await deps.rateLimiter.limit(context.workspaceId, context.rateLimitRpm ?? deps.env.rateLimitRpm);
@@ -143,8 +145,18 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   const model = (await deps.catalog()).getModel(validated.model);
   if (!model) return reject("model_not_found");
   if (model.status === "retired") return reject("model_retired");
-  const accountError = checkAccount(context);
+  const accountError = checkAccount(context, model.id);
   if (accountError) return reject(accountError);
+  const admissionNow = deps.now();
+  const admission = await admitUsage(context, model.id, deps.db, admissionNow);
+  if (!admission.ok) {
+    return errorResponse(admission.code, {
+      requestId,
+      retryAfterSeconds: admission.retryAt === null ? undefined : (admission.retryAt - admissionNow) / 1000,
+    });
+  }
+  // Lo que queda del plan antes de este request (ADR-0049). Sin plan, sin headers.
+  const usageHeaders = context.billingSource === "prepaid_only" ? {} : planUsageHeaders(context.plan, admissionNow);
 
   const responseContext = { id: `chatcmpl-${requestId}`, model: model.id, created: Math.floor(startedAt / 1000) };
   const abort = new AbortController();
@@ -225,7 +237,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
     try {
       accumulator.observe(result.body);
       outputChars = measureOutput(result.body, "message").characters;
-      response = Response.json(sanitizeCompletion(result.body, responseContext), { headers: { "x-request-id": requestId } });
+      response = Response.json(sanitizeCompletion(result.body, responseContext), { headers: { ...usageHeaders, "x-request-id": requestId } });
     } catch {
       status = "upstream_error";
       response = reject("upstream_error");
@@ -295,6 +307,6 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
     }
   });
   return new Response(stream, { headers: {
-    "content-type": "text/event-stream", "cache-control": "no-cache", "x-request-id": requestId,
+    ...usageHeaders, "content-type": "text/event-stream", "cache-control": "no-cache", "x-request-id": requestId,
   } });
 }

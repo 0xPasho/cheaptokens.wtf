@@ -221,7 +221,7 @@ describe("billing ledger, workspaces and reconciliation", () => {
   it("returns no mismatches for empty accounts and detects both corrupted invariants", async () => {
     const { db } = testDb;
     await ensureDevWorkspace(db, "unused");
-    expect(await reconcile(db)).toEqual({ balanceMismatches: [], keySpendMismatches: [], upstreamDaily: [] });
+    expect(await reconcile(db)).toEqual({ balanceMismatches: [], keySpendMismatches: [], packMismatches: [], upstreamDaily: [] });
     await grantCredits(db, { workspaceId: fixture.workspace.id, amountMicroUsd: BigInt(200), note: "Test" });
     await chargeRequest(db, record(fixture));
     await chargeRequest(db, record(fixture));
@@ -253,7 +253,7 @@ describe("billing ledger, workspaces and reconciliation", () => {
     await grantCredits(db, { workspaceId: fixture.workspace.id, amountMicroUsd: BigInt(500), note: "First" });
     await grantCredits(db, { workspaceId: fixture.workspace.id, amountMicroUsd: BigInt(-10), note: "Second" });
     expect(await reconcile(db)).toEqual({
-      balanceMismatches: [], keySpendMismatches: [],
+      balanceMismatches: [], keySpendMismatches: [], packMismatches: [],
       upstreamDaily: [
         { upstreamId: "mock", day: "2026-11-10", requestCount: BigInt(1), upstreamCostMicroUsd: BigInt("9007199254740993") },
         { upstreamId: "mock", day: "2026-11-11", requestCount: BigInt(2), upstreamCostMicroUsd: BigInt(20) },

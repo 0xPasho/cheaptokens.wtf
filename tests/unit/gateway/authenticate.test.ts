@@ -3,9 +3,10 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generateKey } from "@/lib/api-keys";
-import { apiKeys, workspaces } from "@/lib/db/schema";
+import { apiKeys, subscriptions, usageWindows, workspaces } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
-import { authenticate, checkAccount } from "@/lib/gateway/authenticate";
+import { PLANS } from "@/lib/billing/plans";
+import { admitUsage, authenticate, checkAccount } from "@/lib/gateway/authenticate";
 import type { AuthContext } from "@/lib/gateway/types";
 
 import { createTestDb } from "../../helpers/db";
@@ -92,6 +93,10 @@ describe("authenticate: database lookup", () => {
         spentMicroUsd: key.spentMicroUsd,
         suspended: false,
         rateLimitRpm: 120,
+        billingSource: "plan_then_prepaid",
+        allowedModels: null,
+        plan: null,
+        overflow: { mode: "continue", packs: true, credits: true, capMicroUsd: BigInt(25_000_000), spentThisMonthMicroUsd: BigInt(0) },
       },
     });
     expect(select).toHaveBeenCalledTimes(1);
@@ -132,6 +137,59 @@ describe("authenticate: database lookup", () => {
     await expect(authenticate(`Bearer ${generated.key}`, testDb.db)).resolves.toEqual(invalidKey);
   });
 
+  it("reads the active plan and its windows in the same lookup", async () => {
+    const now = Date.UTC(2026, 10, 15, 15);
+    const { generated, workspace } = await seed({ rateLimitRpm: null });
+    await testDb.db.insert(subscriptions).values({
+      workspaceId: workspace.id, planId: "pro", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - 86_400_000), currentPeriodEnd: new Date(now + 86_400_000),
+    });
+    await testDb.db.insert(usageWindows).values([
+      { workspaceId: workspace.id, kind: "five_hour", startedAt: new Date(now - 3_600_000), resetsAt: new Date(now + 3_600_000), usedMicroUsd: BigInt(1_000) },
+      { workspaceId: workspace.id, kind: "week", startedAt: new Date(now - 86_400_000), resetsAt: new Date(now + 86_400_000), usedMicroUsd: BigInt(5_000) },
+    ]);
+    const select = vi.spyOn(testDb.db, "select");
+    const result = await authenticate(`Bearer ${generated.key}`, testDb.db, now);
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      ok: true,
+      context: {
+        rateLimitRpm: PLANS.pro.rateLimitRpm,
+        plan: {
+          plan: PLANS.pro,
+          fiveHour: { usedMicroUsd: BigInt(1_000), resetsAt: now + 3_600_000 },
+          week: { usedMicroUsd: BigInt(5_000), resetsAt: now + 86_400_000 },
+        },
+      },
+    });
+  });
+
+  it("ignores an expired or canceled subscription", async () => {
+    const now = Date.UTC(2026, 10, 15, 15);
+    const { generated, workspace } = await seed();
+    await testDb.db.insert(subscriptions).values({
+      workspaceId: workspace.id, planId: "pro", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - 2 * 86_400_000), currentPeriodEnd: new Date(now - 1),
+    });
+    await expect(authenticate(`Bearer ${generated.key}`, testDb.db, now)).resolves.toMatchObject({ ok: true, context: { plan: null } });
+  });
+
+  it("rejects a rotated key once its grace period ends", async () => {
+    const now = Date.UTC(2026, 10, 15, 15);
+    const { generated } = await seed({}, { expiresAt: new Date(now + 1_000) });
+    await expect(authenticate(`Bearer ${generated.key}`, testDb.db, now)).resolves.toMatchObject({ ok: true });
+    await expect(authenticate(`Bearer ${generated.key}`, testDb.db, now + 1_000)).resolves.toEqual(invalidKey);
+  });
+
+  it("checks pack balance only when the plan does not cover the request", async () => {
+    const now = Date.UTC(2026, 10, 15, 15);
+    const { generated } = await seed({ balanceMicroUsd: BigInt(0) }, { billingSource: "prepaid_only" });
+    const result = await authenticate(`Bearer ${generated.key}`, testDb.db, now);
+    if (!result.ok) throw new Error("Expected valid credentials");
+    await expect(admitUsage(result.context, "anthropic/claude-opus-5.5", testDb.db, now))
+      .resolves.toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
+  });
+
   it("leaves suspension, balance and spend checks to checkAccount", async () => {
     const { generated } = await seed(
       { suspendedAt: new Date(), balanceMicroUsd: BigInt(-1) },
@@ -140,7 +198,7 @@ describe("authenticate: database lookup", () => {
     const result = await authenticate(`Bearer ${generated.key}`, testDb.db);
     expect(result).toMatchObject({ ok: true, context: { suspended: true, balanceMicroUsd: BigInt(-1) } });
     if (!result.ok) throw new Error("Expected valid credentials");
-    expect(checkAccount(result.context)).toBe("account_suspended");
+    expect(checkAccount(result.context, "any/model")).toBe("account_suspended");
   });
 
   it("rejects the very next call after revocation", async () => {
@@ -163,14 +221,19 @@ describe("checkAccount", () => {
     spentMicroUsd: BigInt(0),
     suspended: false,
     rateLimitRpm: null,
+    billingSource: "plan_then_prepaid",
+    allowedModels: null,
+    plan: null,
+    overflow: { mode: "continue", packs: true, credits: true, capMicroUsd: BigInt(0), spentThisMonthMicroUsd: BigInt(0) },
   };
 
   it("rejects a suspended workspace", () => {
-    expect(checkAccount({ ...context, suspended: true })).toBe("account_suspended");
+    expect(checkAccount({ ...context, suspended: true }, "any/model")).toBe("account_suspended");
   });
 
-  it.each([BigInt(0), BigInt(-1)])("rejects a nonpositive balance (%s)", (balanceMicroUsd) => {
-    expect(checkAccount({ ...context, balanceMicroUsd })).toBe("insufficient_credits");
+  it("rejects a model outside the key's allowed list", () => {
+    expect(checkAccount({ ...context, allowedModels: ["a/one"] }, "a/two")).toBe("model_not_allowed_for_key");
+    expect(checkAccount({ ...context, allowedModels: ["a/one"] }, "a/one")).toBeNull();
   });
 
   it.each([
@@ -179,27 +242,26 @@ describe("checkAccount", () => {
     [BigInt(11), BigInt(10)],
     [BigInt("9007199254740993"), BigInt("9007199254740993")],
   ])("rejects spent %s at or above limit %s", (spentMicroUsd, spendLimitMicroUsd) => {
-    expect(checkAccount({ ...context, spentMicroUsd, spendLimitMicroUsd })).toBe("key_limit_exceeded");
+    expect(checkAccount({ ...context, spentMicroUsd, spendLimitMicroUsd }, "any/model")).toBe("key_limit_exceeded");
   });
 
   it("checks suspension before balance and spend limit", () => {
     expect(checkAccount({
       ...context, suspended: true, balanceMicroUsd: BigInt(0), spendLimitMicroUsd: BigInt(0),
-    })).toBe("account_suspended");
+    }, "any/model")).toBe("account_suspended");
   });
 
-  it("checks balance before spend limit", () => {
-    expect(checkAccount({ ...context, balanceMicroUsd: BigInt(0), spendLimitMicroUsd: BigInt(0) }))
-      .toBe("insufficient_credits");
+  it("leaves the balance to the usage admission", () => {
+    expect(checkAccount({ ...context, balanceMicroUsd: BigInt(0) }, "any/model")).toBeNull();
   });
 
   it("allows a positive balance without a key limit, regardless of spend", () => {
-    expect(checkAccount({ ...context, spentMicroUsd: BigInt("9223372036854775807") })).toBeNull();
+    expect(checkAccount({ ...context, spentMicroUsd: BigInt("9223372036854775807") }, "any/model")).toBeNull();
   });
 
   it("allows spend one micro-dollar below a large limit without losing precision", () => {
     expect(checkAccount({
       ...context, spentMicroUsd: BigInt("9007199254740992"), spendLimitMicroUsd: BigInt("9007199254740993"),
-    })).toBeNull();
+    }, "any/model")).toBeNull();
   });
 });
