@@ -20,7 +20,7 @@ Base: `https://<host>/partner/v1`. JSON en los dos sentidos, dinero en µUSD ent
 
 | Método y ruta | Body | Respuesta | Qué hace |
 |---|---|---|---|
-| `POST /plans` | `{ externalRef, tier, paidThrough }` | `200` Plan | Abre un plan con el excedente apagado. Si ya hay uno **abierto** con ese `externalRef`, lo contesta otra vez |
+| `POST /plans` | `{ externalRef, tier, paidThrough }` | `200` Plan | Abre un plan con el excedente apagado. En Deska, `externalRef` puede ser `deska:team:<teamId>:user:<userId>` para un asiento de equipo o `deska:solo:<userId>` para el plan personal. Si ya hay uno **abierto** con esa referencia, lo contesta otra vez |
 | `PATCH /plans/{planId}` | `{ tier?, paidThrough? }` | `200` Plan | El plan nuevo aplica desde el siguiente request, al subir y al bajar. Lo usado cuenta sobre el límite nuevo |
 | `POST /plans/{planId}/close` | `{}` | `204` | Cierra el plan y revoca todas sus keys en la misma transacción. Idempotente |
 | `POST /plans/{planId}/keys` | `{ expiresAt }` | `200` Key | La única respuesta con una key en claro. `expires_at` = `expiresAt` |
@@ -60,7 +60,7 @@ Cada escritura exige `Idempotency-Key` (hasta 255 caracteres imprimibles). La mi
 
 - **Todo pasa en una transacción** (`src/lib/partner/idempotency.ts`). La fila de la key se inserta primero, así que un reintento simultáneo espera al primero y después lee su respuesta. Si la operación falla, se deshace y la key queda libre: solo se guardan respuestas 2xx.
 - **Las respuestas se guardan cifradas** (AES-256-GCM, con una clave derivada del secreto del socio) y se borran a las 24 horas. La de `POST /keys` lleva la key: es la única forma de contestarle la misma key a un reintento sin emitir otra.
-- **Abrir un plan es la excepción:** su idempotencia es por `externalRef`, como dice el contrato. Deska manda `open:<externalRef>` como key durante toda la vida del asiento, con otro `paidThrough` en cada apertura. Si se guardara la respuesta, reabrir un asiento después de cerrarlo contestaría el plan cerrado o un `422`.
+- **Abrir un plan es la excepción:** su idempotencia es por `externalRef`, como dice el contrato. Deska manda `open:<externalRef>` como key durante toda la vida del asiento o plan personal, con otro `paidThrough` en cada apertura. Si se guardara la respuesta, reabrir un asiento después de cerrarlo contestaría el plan cerrado o un `422`.
 
 ## Planes de socio
 

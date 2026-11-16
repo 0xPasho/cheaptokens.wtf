@@ -244,7 +244,7 @@ export const payments = pgTable("payments", {
 export const partnerPlans = pgTable("partner_plans", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
   partnerId: text("partner_id").notNull(),
-  /** La referencia del socio (en Deska, `deska:team:<teamId>:user:<userId>`). */
+  /** La referencia del socio (en Deska, `deska:team:<teamId>:user:<userId>` o `deska:solo:<userId>`). */
   externalRef: text("external_ref").notNull(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id).unique(),
   /** Fin del periodo que pagó el socio. La suscripción vale unos días más (docs/17 › Decisiones). */

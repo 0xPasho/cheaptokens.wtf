@@ -218,6 +218,17 @@ describe("POST /plans", () => {
     expect(reopened.body.status).toBe("open");
   });
 
+  it("opens a solo Deska plan and reuses it by externalRef", async () => {
+    const externalRef = "deska:solo:user-1";
+    const first = await open({ externalRef, tier: "plan-3" }, { "idempotency-key": `open:${externalRef}` });
+    const retry = await open({ externalRef, tier: "plan-3", paidThrough: new Date(NOW + 60 * DAY).toISOString() }, { "idempotency-key": `open:${externalRef}` });
+
+    expect(first.status).toBe(200);
+    expect(retry.body).toEqual(first.body);
+    expect((await planRow(first.body.planId)).row.externalRef).toBe(externalRef);
+    expect(await db.select().from(partnerPlans)).toHaveLength(1);
+  });
+
   it("uses the API host for the inference base when there is one", async () => {
     const answer = await read(await openPlanRoute(
       request("POST", "/plans", { externalRef: REF, tier: "plan-9", paidThrough: PAID_THROUGH }),
