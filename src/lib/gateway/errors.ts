@@ -4,7 +4,7 @@ import type { GatewayErrorBody, GatewayErrorCode, ResponseContext } from "./type
 const DEFAULT_MESSAGES: Record<GatewayErrorCode, string> = {
   invalid_request: "The request is invalid.",
   invalid_api_key: "The API key is missing or invalid.",
-  insufficient_credits: "Insufficient credits. Top up at https://cheaptokens.wtf/dashboard/credits",
+  insufficient_credits: "Insufficient credits. Top up at https://cheapllm.wtf/dashboard/credits",
   no_active_plan: "This API key only uses a plan and the account has no active plan.",
   key_limit_exceeded: "The API key has reached its spending limit.",
   account_suspended: "The account is suspended.",
@@ -13,7 +13,7 @@ const DEFAULT_MESSAGES: Record<GatewayErrorCode, string> = {
   model_retired: "The requested model has been retired.",
   request_too_large: "The request body is too large.",
   rate_limit_exceeded: "The request rate limit has been exceeded.",
-  usage_limit_reached: "You reached your plan usage limit. Retry after the reset or turn on overflow at https://cheaptokens.wtf/dashboard/plan",
+  usage_limit_reached: "You reached your plan usage limit. Retry after the reset or turn on overflow at https://cheapllm.wtf/dashboard/plan",
   upstream_error: "The model failed while processing the request.",
   no_upstream_available: "The requested model is temporarily unavailable.",
   upstream_timeout: "The model timed out while processing the request.",

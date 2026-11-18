@@ -14,7 +14,7 @@ import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getCatalog } from "@/lib/catalog/queries";
+import { getLiveCatalog } from "@/lib/catalog/live";
 import { formatCount, formatUsd } from "@/lib/format";
 import { errorBody, streamErrorChunk } from "@/lib/gateway/errors";
 import { MIN_CHARGE_MICRO_USD } from "@/lib/gateway/metering";
@@ -86,7 +86,7 @@ export default async function DocsPage() {
   const [locale, dict] = await getLocaleAndDictionary();
   const d = dict.docs;
   const copy = { copyLabel: dict.copy.copy, copiedLabel: dict.copy.copied };
-  const catalog = getCatalog();
+  const catalog = await getLiveCatalog();
   const model = (catalog.find((entry) => entry.id === EXAMPLE_MODEL_ID) ?? catalog[0])?.id ?? EXAMPLE_MODEL_ID;
   const examples = streamExamples(model);
   // formatUsd recibe number; 10 µUSD caben exactos, y es solo para mostrarlo.

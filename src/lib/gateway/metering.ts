@@ -1,3 +1,5 @@
+import { MIN_MARGIN_BPS } from "@/lib/catalog/validate";
+
 import type { GatewayModel, UpstreamTarget, Usage, UsageAccumulator } from "./types";
 
 // BigInt() permite mantener el target ES2017 del proyecto sin perder precisión.
@@ -65,6 +67,21 @@ export function chargeForTokens(
   if (minCharge < ZERO) throw new RangeError("Minimum charge must not be negative");
   const cost = costForTokens(tokens, pricesPer1M);
   return tokens.completionTokens > 0 && cost < minCharge ? minCharge : cost;
+}
+
+/**
+ * Cobro a partir de lo que el upstream cobró de verdad: costo × (1 + MIN_MARGIN), hacia arriba (ADR-0054).
+ * El precio del catálogo es una referencia; se usa solo cuando el upstream no reporta su costo.
+ */
+export function chargeForUpstreamCost(
+  upstreamCostMicroUsd: bigint,
+  completionTokens: number,
+  minCharge: bigint = MIN_CHARGE_MICRO_USD,
+): bigint {
+  if (upstreamCostMicroUsd < ZERO) throw new RangeError("Upstream cost must not be negative");
+  const bps = BigInt(10_000);
+  const cost = (upstreamCostMicroUsd * (bps + BigInt(MIN_MARGIN_BPS)) + bps - BigInt(1)) / bps;
+  return completionTokens > 0 && cost < minCharge ? minCharge : cost;
 }
 
 export function estimateTokens(chars: number): number {
@@ -142,7 +159,9 @@ export function computeRequestCosts(input: {
   const { usage, model, target } = input;
 
   return {
-    costMicroUsd: chargeForTokens(usage, { input: model.inputPricePer1M, output: model.outputPricePer1M }),
+    costMicroUsd: usage.upstreamCostMicroUsd === null
+      ? chargeForTokens(usage, { input: model.inputPricePer1M, output: model.outputPricePer1M })
+      : chargeForUpstreamCost(usage.upstreamCostMicroUsd, usage.completionTokens),
     upstreamCostMicroUsd: usage.upstreamCostMicroUsd ?? (target === null ? ZERO : costForTokens(usage, {
       input: target.costInputPer1M,
       output: target.costOutputPer1M,

@@ -21,7 +21,7 @@ Plan para construir las tres páginas públicas con el [sistema de diseño](./13
    - Diccionarios tipados en `src/lib/i18n/`.
    - `proxy.ts` que redirige `/` → `/{idioma}` según la cookie `NEXT_LOCALE` y luego `Accept-Language`.
    - `/design-system` se mueve a `/[lang]/design-system`.
-2. **Catálogo en el repo** ([ADR-0012](./adr/0012-catalogo-en-repo.md)): `catalog/models.ts`, tipado, con el precio cheaptokens.wtf derivado (`applyDiscount`).
+2. **Catálogo en el repo** ([ADR-0012](./adr/0012-catalogo-en-repo.md)): `catalog/models.ts`, tipado, con el precio cheapllm.wtf derivado (`applyDiscount`).
    - Una prueba valida las reglas de [06](./06-catalogo-y-precios.md): IDs únicos y permanentes, el autor coincide con el prefijo del ID, solo tags de la lista y tags calculados correctos (`long-context`, `cheap`).
    - **Los precios son de ejemplo** hasta definir el catálogo de lanzamiento ([12 · Preguntas abiertas #1](./12-preguntas-abiertas.md#1-elegir-los-upstreams-de-producción)). Las páginas lo dicen.
 3. **Marco del sitio:**
@@ -68,7 +68,7 @@ En orden, de arriba hacia abajo. La referencia de cada bloque va entre paréntes
   - Input y output por 1M con el oficial tachado, y `DiscountBadge`.
   - El precio por token en tooltip.
   - Origen y fecha del precio oficial.
-- **Ejemplo de costo:** un request típico de 2,000 tokens de entrada y 500 de salida ([06](./06-catalogo-y-precios.md#costo-de-un-request)), con el costo cheaptokens.wtf, el costo oficial y el ahorro en `success`.
+- **Ejemplo de costo:** un request típico de 2,000 tokens de entrada y 500 de salida ([06](./06-catalogo-y-precios.md#costo-de-un-request)), con el costo cheapllm.wtf, el costo oficial y el ahorro en `success`.
 - **"Úsalo":** `QuickstartSnippet` con el ID del modelo ya puesto.
 - **Especificaciones:** contexto, estado, fecha de retiro si aplica.
 - **Modelos parecidos:** los que comparten más tags.

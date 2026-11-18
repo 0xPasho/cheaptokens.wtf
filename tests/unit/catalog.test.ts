@@ -28,6 +28,7 @@ vi.mock("@catalog/upstreams", () => import("../fixtures/catalog-upstreams"));
 vi.mock("@catalog/models", () => import("../fixtures/catalog-models"));
 
 vi.mock("next/root-params", () => ({ lang: async () => "en" }));
+vi.mock("next/cache", () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }));
 
 const ENVIRONMENTS: UpstreamEnvironment[] = ["development", "preview", "production"];
 
@@ -86,23 +87,23 @@ describe("catalog/models.ts", () => {
 });
 
 describe("catálogo de pruebas (ADR-0029)", () => {
-  it("Claude Haiku 4.5 baja a 78%: $0.22 / $1.10 por 1M, y deja de ser cheap", () => {
+  it("Claude Haiku 4.5 queda en 70%: $0.30 / $1.50 por 1M, y deja de ser cheap", () => {
     const haiku = toModel(catalogEntry("anthropic/claude-haiku-4.5"));
-    expect(haiku.discountBps).toBe(7800);
+    expect(haiku.discountBps).toBe(7000);
     expect(haiku.status).toBe("active");
-    expect([haiku.discountedInput, haiku.discountedOutput]).toEqual([220_000, 1_100_000]);
+    expect([haiku.discountedInput, haiku.discountedOutput]).toEqual([300_000, 1_500_000]);
     expect(haiku.allTags).toEqual(["fast", "vision", "tools", "long-context"]);
   });
 
   it.each([
-    ["qwen/qwen3.8-flash", 150_000, 470_000, ["fast", "vision"]],
-    ["deepseek/deepseek-v4.1-flash", 150_000, 600_000, ["fast", "reasoning", "vision", "tools"]],
-    ["z-ai/glm-5.3-flash", 150_000, 500_000, ["fast", "reasoning", "vision"]],
-  ])("%s es hidden, con 85%%, su precio oficial y sus tags", (id, officialInput, officialOutput, tags) => {
+    ["qwen/qwen3.8-flash", 8200, 150_000, 470_000, ["fast", "vision"]],
+    ["deepseek/deepseek-v4.1-flash", 8200, 150_000, 600_000, ["fast", "reasoning", "vision", "tools"]],
+    ["z-ai/glm-5.3-flash", 8500, 150_000, 500_000, ["fast", "reasoning", "vision"]],
+  ])("%s es hidden, con su descuento (%i bps), su precio oficial y sus tags", (id, discountBps, officialInput, officialOutput, tags) => {
     const entry = catalogEntry(id);
     expect(entry).toMatchObject({
       status: "hidden",
-      discountBps: 8500,
+      discountBps,
       officialInput,
       officialOutput,
       contextLength: 1_000_000,
@@ -119,7 +120,7 @@ describe("catálogo de pruebas (ADR-0029)", () => {
     for (const id of HIDDEN_MODELS) expect(visible).not.toContain(id);
 
     const { generateStaticParams } = await import("@/app/[lang]/(site)/models/[author]/[model]/page");
-    const params = generateStaticParams().map(({ author, model }) => `${author}/${model}`);
+    const params = (await generateStaticParams()).map(({ author, model }) => `${author}/${model}`);
     expect(params).toEqual(visible);
     for (const id of HIDDEN_MODELS) {
       const { author, slug } = toModel(catalogEntry(id));
@@ -196,7 +197,7 @@ const entry = (overrides: Partial<CatalogEntry>): CatalogEntry => ({
   ...overrides,
 });
 
-/** Con el `entry` de arriba (precio $0.50 / $5.00), este costo deja de sobra el 10% de margen. */
+/** Con el `entry` de arriba (precio $0.50 / $5.00), este costo deja de sobra el 30% de margen. */
 const mapping = (overrides: Partial<UpstreamModelMapping> = {}): UpstreamModelMapping => ({
   model: "acme/model",
   upstreamModel: "acme/model-v1",
@@ -357,28 +358,28 @@ describe("validateCatalog", () => {
   });
 
   describe("margen mínimo (docs/06)", () => {
-    it("MIN_MARGIN es 10%, en bps", () => {
-      expect(MIN_MARGIN_BPS).toBe(1_000);
+    it("MIN_MARGIN es 30%, en bps", () => {
+      expect(MIN_MARGIN_BPS).toBe(3_000);
     });
 
-    // Precio $1.10 / $1.10 por 1M: con costo $1.00 el margen es justo 10%.
-    const tight = entry({ officialInput: 2_200_000, officialOutput: 2_200_000, discountBps: 5000 });
+    // Precio $1.30 / $1.30 por 1M: con costo $1.00 el margen es justo 30%.
+    const tight = entry({ officialInput: 2_600_000, officialOutput: 2_600_000, discountBps: 5000 });
     const at = (costInputPer1M: number, costOutputPer1M: number, overrides: Partial<UpstreamDefinition> = {}) =>
       upstream({ models: [mapping({ costInputPer1M, costOutputPer1M })], ...overrides });
 
-    it("acepta un precio que es exactamente el costo + 10%", () => {
+    it("acepta un precio que es exactamente el costo + 30%", () => {
       expect(validate({ models: [tight], upstreams: [at(1_000_000, 1_000_000)] })).toEqual({ errors: [], warnings: [] });
     });
 
     it("en producción, 1 µUSD por debajo es error, por separado en input y output", () => {
       expect(validate({ models: [tight], upstreams: [at(1_000_001, 1_000_000)] })).toEqual({
         errors: [
-          "upstream acme-cloud → acme/model: input price 1100000 µUSD/1M is below cost 1000001 + 10% margin (needs ≥ 1100002)",
+          "upstream acme-cloud → acme/model: input price 1300000 µUSD/1M is below cost 1000001 + 30% margin (needs ≥ 1300002)",
         ],
         warnings: [],
       });
       expect(validate({ models: [tight], upstreams: [at(1_000_000, 2_000_000)] }).errors).toEqual([
-        "upstream acme-cloud → acme/model: output price 1100000 µUSD/1M is below cost 2000000 + 10% margin (needs ≥ 2200000)",
+        "upstream acme-cloud → acme/model: output price 1300000 µUSD/1M is below cost 2000000 + 30% margin (needs ≥ 2600000)",
       ]);
     });
 
@@ -391,7 +392,7 @@ describe("validateCatalog", () => {
     });
 
     it("usa el precio con descuento, no el oficial", () => {
-      // Oficial $2.20, pero con 90% de descuento el precio es $0.22: no cubre un costo de $1.00.
+      // Oficial $2.60, pero con 90% de descuento el precio es $0.26: no cubre un costo de $1.00.
       const deep = entry({ ...tight, discountBps: 9000 });
       expect(validate({ models: [deep], upstreams: [at(1_000_000, 1_000_000)] }).errors).toHaveLength(2);
     });
@@ -415,7 +416,7 @@ describe("tags calculados", () => {
     expect(computedTags(entry({ contextLength: LONG_CONTEXT_MIN - 1 }))).not.toContain("long-context");
   });
 
-  it("cheap si el precio cheaptokens.wtf de output es ≤ $1.00 por 1M", () => {
+  it("cheap si el precio cheapllm.wtf de output es ≤ $1.00 por 1M", () => {
     expect(computedTags(entry({ officialOutput: 2_000_000, discountBps: 5000 }))).toContain("cheap");
     expect(CHEAP_OUTPUT_MAX).toBe(1_000_000);
     expect(computedTags(entry({ officialOutput: 2_000_002, discountBps: 5000 }))).not.toContain("cheap");

@@ -29,7 +29,8 @@ export const requestStatus = pgEnum("request_status", [
   "upstream_timeout",
   "invalid_request",
 ]);
-export const creditTransactionType = pgEnum("credit_transaction_type", ["topup", "refund", "adjustment"]);
+/** `purchase`: un plan o un paquete pagado con el saldo; va en negativo (ADR-0058). */
+export const creditTransactionType = pgEnum("credit_transaction_type", ["topup", "refund", "adjustment", "purchase"]);
 /** De dónde cobra una key (ADR-0049): el plan con prepago de respaldo, solo el plan o solo el prepago. */
 export const billingSource = pgEnum("billing_source", ["plan_then_prepaid", "plan_only", "prepaid_only"]);
 /** Qué pasa al agotar el límite del plan: seguir con paquetes y créditos, o detenerse con 429. */
@@ -37,6 +38,8 @@ export const overflowMode = pgEnum("overflow_mode", ["continue", "stop"]);
 export const usageWindowKind = pgEnum("usage_window_kind", ["five_hour", "week"]);
 export const subscriptionStatus = pgEnum("subscription_status", ["active", "past_due", "canceled"]);
 export const paymentKind = pgEnum("payment_kind", ["topup", "subscription", "pack"]);
+/** Un barrido se acredita solo cuando su transacción queda confirmada en la cadena (ADR-0058). */
+export const sweepStatus = pgEnum("sweep_status", ["pending", "confirmed", "failed"]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
@@ -220,7 +223,7 @@ export const modelPacks = pgTable("model_packs", {
   check("model_packs_balance_check", sql`${table.balanceMicroUsd} between 0 and ${table.grantedMicroUsd}`),
 ]);
 
-/** Cada cobro del Merchant of Record: recargas, suscripciones y paquetes. El saldo vive en `credit_transactions`. */
+/** Cada cobro confirmado: recargas, suscripciones y paquetes. El saldo vive en `credit_transactions`. */
 export const payments = pgTable("payments", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
@@ -236,6 +239,70 @@ export const payments = pgTable("payments", {
   uniqueIndex("payments_external_id_unique").on(table.externalId),
   index("payments_workspace_created_idx").on(table.workspaceId, table.createdAt.desc()),
 ]);
+
+/**
+ * La dirección de depósito de un workspace en una red (ADR-0058). Es solo suya y no cambia: su llave sale de
+ * `CRYPTO_DEPOSIT_SEED` y del id del workspace, así que aquí no se guarda ningún secreto.
+ */
+export const depositAddresses = pgTable("deposit_addresses", {
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  /** `solana` o `base`. */
+  network: text("network").notNull(),
+  address: text("address").notNull(),
+  /** USDC que había en la dirección sin barrer la última vez que se miró. */
+  unsweptMicroUsd: bigint("unswept_micro_usd", { mode: "bigint" }).notNull().default(sql`0`),
+  /** Mientras no pase, la dirección se revisa en cada barrido: su dueño abrió el depósito hace poco. */
+  watchUntil: timestamp("watch_until", { withTimezone: true }),
+  /** La última vez que se leyó su saldo en la cadena. Las demás direcciones se revisan por turnos, de la más vieja a la más nueva. */
+  checkedAt: timestamp("checked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.workspaceId, table.network] }),
+  uniqueIndex("deposit_addresses_network_address_unique").on(table.network, table.address),
+  index("deposit_addresses_network_checked_idx").on(table.network, table.checkedAt.asc().nullsFirst()),
+  index("deposit_addresses_network_watch_idx").on(table.network, table.watchUntil),
+  check("deposit_addresses_unswept_check", sql`${table.unsweptMicroUsd} >= 0`),
+]);
+
+/**
+ * Un barrido: la transacción que mueve el USDC de una dirección de depósito a la wallet principal (ADR-0058).
+ * Se guarda antes de enviarla y el saldo se acredita cuando queda confirmada: lo acreditado es siempre lo que
+ * llegó a la wallet principal. USDC tiene 6 decimales: 1 unidad = 1 µUSD.
+ */
+export const depositSweeps = pgTable("deposit_sweeps", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  /** `solana`, `base` o `dev` (el depósito simulado de desarrollo local). */
+  network: text("network").notNull(),
+  address: text("address").notNull(),
+  amountMicroUsd: bigint("amount_micro_usd", { mode: "bigint" }).notNull(),
+  /** La firma en Solana o el hash en Base. `<red>:<tx_id>` es el `external_id` del pago. */
+  txId: text("tx_id").notNull(),
+  status: sweepStatus("status").notNull().default("pending"),
+  /** Hasta cuándo puede entrar: en Solana, la última altura de bloque válida; en Base, el `validBefore` de la autorización (segundos). */
+  lastValid: bigint("last_valid", { mode: "bigint" }).notNull(),
+  /** Base: el nonce de la autorización EIP-3009. */
+  authNonce: text("auth_nonce"),
+  /** Por qué falló: `expired`, `reverted` o el error del RPC al enviarla. */
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("deposit_sweeps_network_tx_unique").on(table.network, table.txId),
+  // Un solo barrido en vuelo por dirección: dos procesos no mandan el mismo saldo dos veces.
+  uniqueIndex("deposit_sweeps_pending_address_unique").on(table.network, table.address).where(sql`${table.status} = 'pending'`),
+  index("deposit_sweeps_workspace_created_idx").on(table.workspaceId, table.createdAt.desc()),
+  index("deposit_sweeps_open_idx").on(table.network, table.settledAt.desc()).where(sql`${table.status} <> 'confirmed'`),
+  check("deposit_sweeps_amount_check", sql`${table.amountMicroUsd} > 0`),
+]);
+
+/** Quién está barriendo cada red: un solo proceso a la vez, para no cruzar los nonces del relayer de Base. */
+export const depositScans = pgTable("deposit_scans", {
+  network: text("network").primaryKey(),
+  leasedUntil: timestamp("leased_until", { withTimezone: true }).notNull(),
+  /** La última vez que el cron revisó los fondos de la wallet de comisiones. */
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
 
 /**
  * Un plan abierto por un socio por la puerta de socios (docs/17): un workspace propio con su suscripción.

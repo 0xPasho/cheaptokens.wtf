@@ -6,7 +6,7 @@ import type { CatalogEntry, CatalogModel } from "./types";
 
 /** `long-context`: contexto ≥ 200,000 tokens (docs/06 › Tags). */
 export const LONG_CONTEXT_MIN = 200_000;
-/** `cheap`: precio cheaptokens.wtf de output ≤ $1.00 por 1M. */
+/** `cheap`: precio cheapllm.wtf de output ≤ $1.00 por 1M. */
 export const CHEAP_OUTPUT_MAX = 1_000_000;
 
 export function computedTags(entry: CatalogEntry): ModelTag[] {

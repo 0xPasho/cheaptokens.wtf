@@ -30,7 +30,7 @@ export default function DesignSystemPage() {
             title="Sistema de diseño"
             description={
               <>
-                La referencia viva del estándar visual de cheaptokens.wtf. Las
+                La referencia viva del estándar visual de cheapllm.wtf. Las
                 reglas están en{" "}
                 <code className="font-mono text-xs">
                   docs/13-sistema-de-diseno.md

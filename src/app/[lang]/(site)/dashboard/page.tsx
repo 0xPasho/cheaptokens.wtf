@@ -14,12 +14,12 @@ import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Stat } from "@/components/stat";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { planRemaining } from "@/lib/billing/limits";
 import { PLANS, REFERENCE_MODEL_ID } from "@/lib/billing/plans";
 import { typicalRequestsIn } from "@/lib/billing/typical";
-import { getCatalog } from "@/lib/catalog/queries";
+import { getLiveCatalog } from "@/lib/catalog/live";
 import { getAccount, getPlanUsageByModel, getUsageSummary, hasAnyRequest, listPacks } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
@@ -62,7 +62,7 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
     hasAnyRequest(db, workspaceId),
   ]);
   const d = dict.dashboard.overview;
-  const catalog = getCatalog();
+  const catalog = await getLiveCatalog();
   const names = new Map(catalog.map((model) => [model.id, model.name]));
   const reference = catalog.find((model) => model.id === REFERENCE_MODEL_ID);
   const activePacks = packs.filter((pack) => pack.expiresAt.getTime() > now && pack.balanceMicroUsd > BigInt(0));
@@ -148,12 +148,12 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
               <Link href={`${base}/credits`} className={buttonVariants({ className: "w-full" })}>{d.topUp}</Link>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>{d.packsTitle}</CardTitle>
-              {activePacks.length === 0 ? <CardDescription>{d.noPacks}</CardDescription> : null}
-            </CardHeader>
-            {activePacks.length ? (
+          {/* Los paquetes por modelo ya no se venden (ADR-0058): solo se muestran los que queden. */}
+          {activePacks.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{d.packsTitle}</CardTitle>
+              </CardHeader>
               <CardContent className="flex flex-col gap-5">
                 {activePacks.map((pack) => (
                   <div key={pack.id} className="flex flex-col gap-2">
@@ -167,8 +167,8 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   </div>
                 ))}
               </CardContent>
-            ) : null}
-          </Card>
+            </Card>
+          ) : null}
         </div>
       </div>
 

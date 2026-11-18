@@ -1,8 +1,8 @@
-# Documentación de cheaptokens.wtf
+# Documentación de cheapllm.wtf
 
-cheaptokens.wtf es **un solo endpoint, compatible con la API de OpenAI, para usar los principales LLMs pagando bastante menos que el precio oficial**. El usuario cambia `base_url`, pone su API key de cheaptokens.wtf y elige el modelo con un ID como `anthropic/claude-haiku-4.5`. Un modelo que oficialmente cuesta $3.00 por millón de tokens aquí puede costar $0.30.
+cheapllm.wtf es **un solo endpoint, compatible con la API de OpenAI, para usar los principales LLMs pagando bastante menos que el precio oficial**. El usuario cambia `base_url`, pone su API key de cheapllm.wtf y elige el modelo con un ID como `anthropic/claude-haiku-4.5`. Un modelo que oficialmente cuesta $3.00 por millón de tokens aquí puede costar $0.30.
 
-Web: `cheaptokens.wtf` · API: `https://api.cheaptokens.wtf/v1`. Fecha de esta versión: 2026-11-10.
+Web: `cheapllm.wtf` · API: `https://api.cheapllm.wtf/v1`. Fecha de esta versión: 2026-11-10.
 
 ## Índice
 
@@ -25,6 +25,7 @@ Web: `cheaptokens.wtf` · API: `https://api.cheaptokens.wtf/v1`. Fecha de esta v
 | 15 | [Plan: gateway con InferHub](./15-plan-gateway.md) | Prerrequisitos, decisiones y paquetes de trabajo para construir el gateway con orquestación |
 | 16 | [Plan: sitemap e indexación](./16-plan-sitemap.md) | Sitemap copiado de Deska, metadata por página y las páginas de autor, tag y comparación |
 | 17 | [Puerta de socios](./17-puerta-de-socios.md) | `/partner/v1`: un socio (Deska) abre un plan por asiento, con su key, su uso y su excedente pospago |
+| 18 | [Deploy](./18-deploy.md) | Cómo se publica en el servidor propio: pm2, nginx, cron y cómo volver atrás |
 | — | [ADRs](./adr/README.md) | Registro de decisiones, con alternativas descartadas |
 
 ## Decisiones clave en una línea
@@ -32,13 +33,13 @@ Web: `cheaptokens.wtf` · API: `https://api.cheaptokens.wtf/v1`. Fecha de esta v
 - **El descuento sale de comprar tokens a plataformas agregadoras** (upstreams) con una URL única. Nosotros las ponemos detrás de nuestro endpoint. → [ADR-0001](./adr/0001-upstreams-agregadores.md)
 - **La API es compatible con OpenAI Chat Completions.** Solo hay que cambiar `base_url`. → [ADR-0002](./adr/0002-api-compatible-openai.md)
 - **Clerk solo protege el dashboard; las API keys son nuestras.** El endpoint `/v1/*` nunca llama a Clerk. Sin las claves de Clerk, solo en desarrollo se entra con un nombre. → [ADR-0003](./adr/0003-clerk-solo-dashboard.md), [ADR-0027](./adr/0027-formato-api-keys-wtf.md), [ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)
-- **La marca es `cheaptokens.wtf`**, escrita completa y en minúsculas: es el nombre, el wordmark y el dominio. La API vive en `api.cheaptokens.wtf` y las keys empiezan con `wtf_`. → [ADR-0026](./adr/0026-marca-cheaptokens-wtf.md), [ADR-0027](./adr/0027-formato-api-keys-wtf.md)
-- **Todo vive en una app de Next.js en Vercel**, con el gateway aislado para poder sacarlo después y la API en su propio host. El gateway es una función con sus dependencias inyectadas. → [ADR-0005](./adr/0005-gateway-en-nextjs-vercel.md), [ADR-0026](./adr/0026-marca-cheaptokens-wtf.md), [ADR-0033](./adr/0033-gateway-con-dependencias-inyectadas.md)
-- **Se cobra con un plan mensual con límites cada 5 horas y cada semana, con paquetes por modelo y créditos prepagados de respaldo.** Los límites se miden en dólares a precio cheaptokens.wtf, y el dinero se guarda como micro-dólares enteros. → [ADR-0007](./adr/0007-dinero-en-micro-dolares.md), [ADR-0049](./adr/0049-suscripcion-con-limites.md)
+- **La marca es `cheapllm.wtf`**, escrita completa y en minúsculas: es el nombre, el wordmark y el dominio. La API vive en `api.cheapllm.wtf` y las keys empiezan con `wtf_`. → [ADR-0051](./adr/0051-marca-cheapllm-wtf.md), [ADR-0027](./adr/0027-formato-api-keys-wtf.md)
+- **Todo vive en una app de Next.js en Vercel**, con el gateway aislado para poder sacarlo después y la API en su propio host. El gateway es una función con sus dependencias inyectadas. → [ADR-0005](./adr/0005-gateway-en-nextjs-vercel.md), [ADR-0051](./adr/0051-marca-cheapllm-wtf.md), [ADR-0033](./adr/0033-gateway-con-dependencias-inyectadas.md)
+- **Se cobra con un plan mensual con límites cada 5 horas y cada semana, con paquetes por modelo y créditos prepagados de respaldo.** Los límites se miden en dólares a precio cheapllm.wtf, y el dinero se guarda como micro-dólares enteros. → [ADR-0007](./adr/0007-dinero-en-micro-dolares.md), [ADR-0049](./adr/0049-suscripcion-con-limites.md)
 - **Planes, paquetes y recargas se cobran con un Merchant of Record** (Polar, luego Paddle), con aprobación por escrito antes de integrar. Hasta entonces solo hay un proveedor de pagos de desarrollo. → [ADR-0019](./adr/0019-merchant-of-record.md), [ADR-0049](./adr/0049-suscripcion-con-limites.md)
 - **Somos intermediarios, con entidad legal en México.** → [ADR-0020](./adr/0020-intermediario-entidad-mexico.md)
 - **En la fase de pruebas el upstream es InferHub**, con una key propia, tope de precio por request y un upstream simulado para los tests automáticos. → [ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)
-- **El precio cheaptokens.wtf es el precio oficial menos un descuento por modelo**, con un margen mínimo validado sobre el costo upstream y un cobro mínimo de $0.00001 por request con salida. → [ADR-0010](./adr/0010-precio-por-descuento.md), [ADR-0030](./adr/0030-cobro-minimo-por-request.md)
+- **El precio cheapllm.wtf es el precio oficial menos un descuento por modelo**, con un margen mínimo validado sobre el costo upstream y un cobro mínimo de $0.00001 por request con salida. → [ADR-0010](./adr/0010-precio-por-descuento.md), [ADR-0030](./adr/0030-cobro-minimo-por-request.md)
 - **Nunca guardamos prompts ni respuestas.** → [ADR-0014](./adr/0014-no-guardar-contenido.md)
 - **El gateway se construye por olas,** con planificador, ejecutores en paralelo y revisores que solo ven el diff. → [ADR-0034](./adr/0034-construccion-por-olas.md)
 - **Producto global con i18n desde el día uno** (en, es). → [ADR-0015](./adr/0015-i18n-nativo.md)
@@ -49,9 +50,9 @@ Web: `cheaptokens.wtf` · API: `https://api.cheaptokens.wtf/v1`. Fecha de esta v
 
 - **Upstream:** plataforma externa a la que le compramos tokens y a la que reenviamos los requests. El cliente nunca la ve.
 - **Precio oficial:** lo que cobra el creador del modelo (Anthropic, OpenAI, Google…) por 1M de tokens. Es el "precio real" que mostramos tachado.
-- **Precio cheaptokens.wtf:** lo que cobramos nosotros por 1M de tokens.
+- **Precio cheapllm.wtf:** lo que cobramos nosotros por 1M de tokens.
 - **Costo upstream:** lo que nos cobra el upstream por 1M de tokens.
-- **Margen:** precio cheaptokens.wtf − costo upstream.
+- **Margen:** precio cheapllm.wtf − costo upstream.
 - **Workspace:** dueño del plan, del saldo y de las API keys. En el MVP hay uno por usuario.
 - **Plan:** suscripción mensual con dos límites de valor de uso: una ventana de 5 horas y una semana.
 - **Paquete:** uso prepagado de un solo modelo, con 20 % extra y vencimiento a los 90 días.

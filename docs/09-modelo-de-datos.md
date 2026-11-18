@@ -16,6 +16,8 @@ erDiagram
   workspaces ||--o{ usage_windows : "gasta en"
   workspaces ||--o{ model_packs : compra
   workspaces ||--o{ payments : paga
+  workspaces ||--o{ deposit_addresses : "deposita en"
+  workspaces ||--o{ deposit_sweeps : "recibe"
   model_packs ||--o{ requests : paga
   models ||--o{ model_packs : "es de"
   api_keys ||--o{ requests : autentica
@@ -90,7 +92,7 @@ Es el dueño del plan, del saldo y de las keys. En el MVP hay uno por usuario de
 | `deprecated_at`, `retires_at` | date, null | |
 | `created_at`, `updated_at` | timestamptz | |
 
-El precio cheaptokens.wtf se guarda derivado para que el gateway no tenga que recalcularlo y para que sea consultable en SQL. La única fuente es la fórmula, que se aplica al sincronizar.
+El precio cheapllm.wtf se guarda derivado para que el gateway no tenga que recalcularlo y para que sea consultable en SQL. La única fuente es la fórmula, que se aplica al sincronizar.
 
 ## `upstreams`
 
@@ -139,7 +141,7 @@ Una fila por cada request que llegó a la etapa de elegir upstream. Los rechazos
 | `completion_tokens` | int | |
 | `cached_tokens` | int, null | Se guarda desde ya, aunque en el MVP no cambie el precio |
 | `usage_estimated` | boolean | True si el upstream no reportó `usage` |
-| `cost_micro_usd` | bigint | **Lo que se cobró**: el valor de uso a precio cheaptokens.wtf |
+| `cost_micro_usd` | bigint | **Lo que se cobró**: el valor de uso a precio cheapllm.wtf |
 | `plan_micro_usd` | bigint, default 0 | Parte que pagó el plan |
 | `pack_micro_usd` | bigint, default 0 | Parte que pagó un paquete |
 | `credits_micro_usd` | bigint, default 0 | Parte que pagaron los créditos. Es lo único que baja el saldo |
@@ -165,7 +167,7 @@ Entradas de dinero y ajustes.
 |---|---|---|
 | `id` | uuid PK | |
 | `workspace_id` | uuid FK | |
-| `type` | enum `topup \| refund \| adjustment` | |
+| `type` | enum `topup \| refund \| adjustment \| purchase` | `purchase`: un plan pagado con el saldo, en negativo ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)) |
 | `amount_micro_usd` | bigint | Positivo en recargas, negativo en reembolsos y en algunos ajustes |
 | `payment_provider` | text, null | `polar`, `paddle` o `stripe`. Null en ajustes manuales |
 | `external_id` | text, único, null | ID del pago o del reembolso en el MoR, con prefijo del proveedor (`polar:…`). **Clave de idempotencia** |
@@ -183,10 +185,10 @@ El plan vigente del workspace ([ADR-0049](./adr/0049-suscripcion-con-limites.md)
 | `plan_id` | text | `plus`, `pro` o `max` (`src/lib/billing/plans.ts`) |
 | `status` | enum `active \| past_due \| canceled` | Solo `active` da límites |
 | `current_period_start`, `current_period_end` | timestamptz | El plan vale hasta `current_period_end` |
-| `cancel_at_period_end` | boolean, default false | Cancelado: termina al fin del periodo |
-| `next_plan_id` | text, null | Plan que entra al renovar (bajar de plan) |
-| `payment_provider` | text | |
-| `external_id` | text, único, null | ID de la suscripción en el MoR |
+| `cancel_at_period_end` | boolean, default false | Sin uso con pago por adelantado ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)) |
+| `next_plan_id` | text, null | Sin uso con pago por adelantado |
+| `payment_provider` | text | El del último pago |
+| `external_id` | text, único, null | El del último pago |
 | `created_at`, `updated_at` | timestamptz | |
 
 ## `usage_windows`
@@ -220,7 +222,7 @@ Uso prepagado de un modelo, con bono y vencimiento.
 
 ## `payments`
 
-Cada cobro: recargas, planes y paquetes. El saldo sigue saliendo de `credit_transactions`.
+Cada cobro: depósitos y planes (y los paquetes de cuando se vendían). El saldo sigue saliendo de `credit_transactions`. **El dinero que entra son solo los depósitos:** un plan pagado con saldo (`payment_provider = balance`) reparte dinero que ya había entrado.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -229,12 +231,52 @@ Cada cobro: recargas, planes y paquetes. El saldo sigue saliendo de `credit_tran
 | `kind` | enum `topup \| subscription \| pack` | |
 | `amount_micro_usd` | bigint | |
 | `item` | text, null | `plan_id` en planes, `model_id` en paquetes |
-| `payment_provider` | text | `dev` mientras no haya MoR |
-| `external_id` | text, único | **Clave de idempotencia** de todas las compras |
-| `receipt_url` | text, null | Recibo del MoR |
+| `payment_provider` | text | `usdc-solana`, `usdc-base` o `usdc-dev` en un depósito; `balance` en un plan pagado con saldo ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)) |
+| `external_id` | text, único | **Clave de idempotencia.** En un depósito, `<red>:<transacción del barrido>`; en una compra con saldo, `balance:<uuid>` |
+| `receipt_url` | text, null | La transacción del barrido en Solscan o Basescan |
 | `created_at` | timestamptz | |
 
 Índices: único en `external_id`; `(workspace_id, created_at DESC)`.
+
+## `deposit_addresses`
+
+La dirección de depósito de un workspace en cada red ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). No guarda ningún secreto: la llave sale de `CRYPTO_DEPOSIT_SEED` y del id del workspace.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `workspace_id` | uuid FK | PK compuesta |
+| `network` | text | PK compuesta. `solana` o `base` |
+| `address` | text | Única por red |
+| `unswept_micro_usd` | bigint, default 0, check ≥ 0 | USDC que había sin barrer la última vez que se miró |
+| `watch_until` | timestamptz, null | Mientras no pase, el cron la revisa en cada corrida: su dueño abrió el depósito hace poco |
+| `checked_at` | timestamptz, null | La última vez que se leyó su saldo en la cadena. Las demás se revisan por turnos, de la más vieja a la más nueva |
+| `created_at` | timestamptz | |
+
+Índices: único en `(network, address)`; `(network, checked_at NULLS FIRST)`; `(network, watch_until)`.
+
+## `deposit_sweeps`
+
+Un barrido: la transacción que mueve el USDC de una dirección de depósito a la wallet principal. Se guarda antes de enviarla y el saldo se acredita cuando queda confirmada. USDC tiene 6 decimales: 1 unidad = 1 µUSD.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `network` | text | `solana`, `base` o `dev` (el depósito simulado de desarrollo local) |
+| `address` | text | La dirección de depósito barrida |
+| `amount_micro_usd` | bigint, check > 0 | Lo que mueve, y lo que se acredita |
+| `tx_id` | text | La firma en Solana o el hash en Base |
+| `status` | enum `pending \| confirmed \| failed` | |
+| `last_valid` | bigint | Hasta cuándo puede entrar: en Solana, la última altura de bloque válida; en Base, el `validBefore` de la autorización (segundos) |
+| `auth_nonce` | text, null | Base: el nonce de la autorización EIP-3009 |
+| `error` | text, null | `expired`, `reverted` o el error del RPC al enviarla |
+| `created_at`, `settled_at` | timestamptz | |
+
+Índices: único en `(network, tx_id)`; único en `(network, address)` entre los `pending` (un solo barrido en vuelo por dirección); `(workspace_id, created_at DESC)`; los que no están `confirmed`, por `(network, settled_at DESC)`.
+
+## `deposit_scans`
+
+Quién está barriendo cada red: una fila por red con `leased_until`. Un solo proceso a la vez, para no cruzar los nonces del relayer de Base.
 
 ## Invariantes
 
@@ -244,5 +286,5 @@ Cada cobro: recargas, planes y paquetes. El saldo sigue saliendo de `credit_tran
 2. **Gasto de la key:** `api_keys.spent_micro_usd = Σ requests.cost_micro_usd` de esa key.
 3. **Paquetes:** para cada paquete, `model_packs.balance_micro_usd = granted_micro_usd − Σ requests.pack_micro_usd` de ese paquete. Lo verifica la misma conciliación.
 4. **Reparto:** en cada request, `plan + pack + credits + absorbed = cost`. Lo garantiza un CHECK.
-5. **Margen:** para todo `model_upstreams` habilitado, el precio cheaptokens.wtf ≥ costo × (1 + `MIN_MARGIN`). Lo garantiza la sincronización ([06](./06-catalogo-y-precios.md#margen-mínimo)).
+5. **Margen:** para todo `model_upstreams` habilitado, el precio cheapllm.wtf ≥ costo × (1 + `MIN_MARGIN`). Lo garantiza la sincronización ([06](./06-catalogo-y-precios.md#margen-mínimo)).
 6. **Movimientos atómicos:** todo cambio de saldo, de paquete o de ventana ocurre en la misma transacción que la fila (`requests`, `credit_transactions` o `payments`) que lo justifica.

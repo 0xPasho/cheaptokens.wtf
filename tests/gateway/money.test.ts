@@ -119,19 +119,19 @@ describe("gateway money under load", () => {
     const byRequestId = new Map(records.map((record) => [`req_${record.id.replaceAll("-", "")}`, record]));
     for (const result of results) {
       const record = byRequestId.get(result.requestId!);
-      // 1000 tokens de entrada y 34 de salida a precios Haiku: ceil(220 + 37.4) = 258 µUSD.
+      // El mock reporta 10 µUSD de costo: se cobra ceil(10 × 1.3) = 13 µUSD (ADR-0054).
       expect(record).toMatchObject({
         status: result.cancelled ? "client_cancelled" : "success",
         stream: result.stream, httpStatus: 200, attempts: 1, upstreamId: "mock",
         promptTokens: 1_000, completionTokens: 34, usageEstimated: false,
-        costMicroUsd: BigInt(258), upstreamCostMicroUsd: BigInt(10),
+        costMicroUsd: BigInt(13), upstreamCostMicroUsd: BigInt(10),
       });
     }
     expect(harness.mock.requests).toHaveLength(50);
     expect(harness.mock.requests.every((request) => !request.clientAborted)).toBe(true);
     const total = records.reduce((sum, record) => sum + record.costMicroUsd, BigInt(0));
     const after = await account(harness);
-    expect(total).toBe(BigInt(12_900));
+    expect(total).toBe(BigInt(650));
     expect(before.balance - after.balance).toBe(total);
     expect(after.spent - before.spent).toBe(total);
     await expectReconciled(harness);
@@ -161,7 +161,7 @@ describe("gateway money under load", () => {
       expect(await response.text()).toContain("data: [DONE]");
     }));
     await harness.flushAfter();
-    const overdrawn = { balance: BigInt(-20), spent: BigInt(120) };
+    const overdrawn = { balance: BigInt(-56), spent: BigInt(156) };
     expect(await account(harness)).toEqual(overdrawn);
     expect(await harness.db.select().from(requests)).toHaveLength(12);
     await expectReconciled(harness);
@@ -177,12 +177,12 @@ describe("gateway money under load", () => {
     await grantCredits(harness.db, {
       workspaceId: harness.workspaceId, amountMicroUsd: BigInt(100), note: "Cover overdraft and restore access",
     });
-    expect(await account(harness)).toEqual({ balance: BigInt(80), spent: BigInt(120) });
+    expect(await account(harness)).toEqual({ balance: BigInt(44), spent: BigInt(156) });
     const response = await post(harness);
     expect(response.status).toBe(200);
     await response.text();
     await harness.flushAfter();
-    expect(await account(harness)).toEqual({ balance: BigInt(70), spent: BigInt(130) });
+    expect(await account(harness)).toEqual({ balance: BigInt(31), spent: BigInt(169) });
     expect(await harness.db.select().from(requests)).toHaveLength(13);
     const credits = await harness.db.select().from(creditTransactions);
     expect(credits).toHaveLength(2);
@@ -210,7 +210,7 @@ describe("gateway money under load", () => {
   it("returns 403 as soon as actual charges reach the key spending limit", async () => {
     const harness = await start();
     await harness.db.update(apiKeys).set({ spendLimitMicroUsd: BigInt(20) }).where(eq(apiKeys.id, harness.apiKeyId));
-    for (const spent of [BigInt(10), BigInt(20)]) {
+    for (const spent of [BigInt(13), BigInt(26)]) {
       const response = await post(harness);
       expect(response.status).toBe(200);
       await response.text();
@@ -250,7 +250,7 @@ describe("gateway money under load", () => {
     await expectReconciled(harness);
   });
 
-  it.each([false, true])("charges exactly 10 micro USD for a minimal hi request; stream=%s", async (stream) => {
+  it.each([false, true])("charges cost plus margin (13 micro USD) for a minimal hi request; stream=%s", async (stream) => {
     const harness = await start();
     const before = await account(harness);
     const response = await post(harness, { ...basicBody, stream });
@@ -261,11 +261,11 @@ describe("gateway money under load", () => {
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({
       status: "success", stream, promptTokens: 1, completionTokens: 14, usageEstimated: false,
-      costMicroUsd: BigInt(10), officialCostMicroUsd: BigInt(7),
+      costMicroUsd: BigInt(13), officialCostMicroUsd: BigInt(7),
     });
     const after = await account(harness);
-    expect(before.balance - after.balance).toBe(BigInt(10));
-    expect(after.spent - before.spent).toBe(BigInt(10));
+    expect(before.balance - after.balance).toBe(BigInt(13));
+    expect(after.spent - before.spent).toBe(BigInt(13));
     await expectReconciled(harness);
   });
 
@@ -282,16 +282,16 @@ describe("gateway money under load", () => {
     const records = await harness.db.select().from(requests);
     expect(records).toHaveLength(1);
     // 8000 caracteres de entrada y 89 de salida (incluido reasoning): 2000 y 23 tokens.
-    // Qwen cobra ceil(45 + 1.5525) = 47 µUSD, por encima del mínimo.
+    // Qwen cobra ceil(54 + 1.863) = 56 µUSD, por encima del mínimo.
     expect(records[0]).toMatchObject({
       status: "success", stream, usageEstimated: true, promptTokens: 2_000, completionTokens: 23,
-      costMicroUsd: BigInt(47), upstreamCostMicroUsd: BigInt(19), officialCostMicroUsd: BigInt(311),
+      costMicroUsd: BigInt(56), upstreamCostMicroUsd: BigInt(19), officialCostMicroUsd: BigInt(311),
     });
     expect(harness.mock.requests).toHaveLength(1);
     expect(harness.mock.requests[0].body).toHaveProperty("x_mock.scenario", "no-usage");
     const after = await account(harness);
-    expect(before.balance - after.balance).toBe(BigInt(47));
-    expect(after.spent - before.spent).toBe(BigInt(47));
+    expect(before.balance - after.balance).toBe(BigInt(56));
+    expect(after.spent - before.spent).toBe(BigInt(56));
     await expectReconciled(harness);
   });
 });

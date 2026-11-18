@@ -84,4 +84,4 @@ export const SAMPLE_MODELS: SampleModel[] = [
 
 export const SAMPLE_API_KEY = "wtf_Ab3xR9t2Lm8Qp4Vw7Zc1Ny6Hs0Kd5Fg9kQz";
 /** Base URL de la API (ADR-0026). */
-export const SAMPLE_BASE_URL = "https://api.cheaptokens.wtf/v1";
+export const SAMPLE_BASE_URL = "https://api.cheapllm.wtf/v1";

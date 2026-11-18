@@ -5,7 +5,7 @@ import type { ModelTag } from "./tags";
 /** Estados de un modelo (docs/06-catalogo-y-precios.md › Estados). */
 export type ModelStatus = "active" | "hidden" | "deprecated" | "retired";
 
-/** Un modelo como se escribe en catalog/models.ts. El precio cheaptokens.wtf no se escribe: se deriva. */
+/** Un modelo como se escribe en catalog/models.ts. El precio cheapllm.wtf no se escribe: se deriva. */
 export type CatalogEntry = {
   /** `autor/modelo`, permanente. */
   id: string;
@@ -26,7 +26,7 @@ export type CatalogEntry = {
   retiresOn?: string;
 };
 
-/** Un modelo listo para mostrar: con precio cheaptokens.wtf y tags calculados. */
+/** Un modelo listo para mostrar: con precio cheapllm.wtf y tags calculados. */
 export type CatalogModel = CatalogEntry & {
   discountedInput: number;
   discountedOutput: number;
@@ -41,7 +41,7 @@ export type UpstreamEnvironment = "development" | "preview" | "production";
 
 /** Un modelo mapeado a un upstream, como se escribe en catalog/upstreams.ts (docs/07 › Configuración). */
 export type UpstreamModelMapping = {
-  /** ID de cheaptokens.wtf (`autor/modelo`). */
+  /** ID de cheapllm.wtf (`autor/modelo`). */
   model: string;
   /** ID en el upstream. En InferHub, siempre `prefijo/modelo`, nunca un alias (ADR-0028). */
   upstreamModel: string;

@@ -8,9 +8,14 @@ import { startMockUpstream } from "../../helpers/mock-upstream";
 
 let mock: Awaited<ReturnType<typeof startMockUpstream>>;
 
+/** Un intento con la key de la cuenta, como lo hace `callUpstream`. */
+function attempt(input: CallUpstreamOptions, to: UpstreamTarget, apiKey: string | null = to.apiKeys[0] ?? null) {
+  return fetchUpstream(input, to, apiKey);
+}
+
 function target(overrides: Partial<UpstreamTarget> = {}): UpstreamTarget {
   return {
-    upstreamId: "mock", baseUrl: mock.baseUrl, apiKey: "upstream-secret", upstreamModel: "mock/ok",
+    upstreamId: "mock", baseUrl: mock.baseUrl, apiKeys: ["upstream-secret"], upstreamModel: "mock/ok",
     costInputPer1M: BigInt(17_550), costOutputPer1M: BigInt(199_000), priority: 1, sendsPriceCap: true,
     ...overrides,
   };
@@ -41,7 +46,7 @@ describe.each([false, true])("request (stream=%s)", (stream) => {
       tools: [{ type: "function", function: { name: "weather" } }],
     });
     const original = JSON.stringify(body);
-    const result = await fetchUpstream(options(stream, { body }), target());
+    const result = await attempt(options(stream, { body }), target());
     expect(result).toMatchObject({ ok: true, stream });
     if (result.ok && result.stream) for await (const event of result.events) expect(event).toBeDefined();
     expect(JSON.stringify(body)).toBe(original);
@@ -59,8 +64,8 @@ describe.each([false, true])("request (stream=%s)", (stream) => {
     expect(mock.requests[0].headers).not.toHaveProperty("cookie");
   });
 
-  it("omite Authorization con key vacía y los topes cuando no corresponden", async () => {
-    const result = await fetchUpstream(options(stream), target({ apiKey: "", sendsPriceCap: false }));
+  it("omite Authorization sin key y los topes cuando no corresponden", async () => {
+    const result = await attempt(options(stream), target({ apiKeys: [], sendsPriceCap: false }));
     if (result.ok && result.stream) for await (const event of result.events) expect(event).toBeDefined();
     expect(mock.requests[0].headers).not.toHaveProperty("authorization");
     expect(mock.requests[0].headers).not.toHaveProperty("x-max-input-price");
@@ -68,13 +73,13 @@ describe.each([false, true])("request (stream=%s)", (stream) => {
   });
 
   it("hang aborta el fetch con la fase correspondiente", async () => {
-    const result = await fetchUpstream(options(stream, { timeouts: { connectMs: 100, firstByteMs: 180 } }), target({ upstreamModel: "mock/hang" }));
+    const result = await attempt(options(stream, { timeouts: { connectMs: 100, firstByteMs: 180 } }), target({ upstreamModel: "mock/hang" }));
     expect(result).toEqual({ ok: false, failure: { kind: "timeout", phase: stream ? "connect" : "first_byte" }, clientMessage: null });
   });
 
   it("reasoning usa su timeout largo configurable", async () => {
     const input = options(stream);
-    const result = await fetchUpstream({
+    const result = await attempt({
       ...input, model: { ...input.model, isReasoning: true },
       timeouts: { connectMs: 1000, firstByteMs: 50, firstByteReasoningMs: 600 },
     }, target({ upstreamModel: "mock/slow-first-byte:180" }));
@@ -87,19 +92,19 @@ it.each([
   [BigInt(0), "0"], [BigInt(1), "0.000001"], [BigInt(1_000_000), "1"],
   [BigInt(1_234_500), "1.2345"], [BigInt("9007199254740993123456"), "9007199254740993.123456"],
 ])("convierte el tope %s sin perder precisión", async (price, expected) => {
-  await fetchUpstream(options(), target({ costInputPer1M: price, costOutputPer1M: price }));
+  await attempt(options(), target({ costInputPer1M: price, costOutputPer1M: price }));
   expect(mock.requests[0].headers["x-max-input-price"]).toBe(expected);
   expect(mock.requests[0].headers["x-max-output-price"]).toBe(expected);
 });
 
 it.each(["costInputPer1M", "costOutputPer1M"] as const)("rechaza %s negativo con RangeError antes de iniciar fetch", async (field) => {
   const transport = vi.fn<typeof fetch>();
-  await expect(fetchUpstream(options(false, { fetch: transport }), target({ [field]: BigInt(-1) }))).rejects.toThrow(RangeError);
+  await expect(attempt(options(false, { fetch: transport }), target({ [field]: BigInt(-1) }))).rejects.toThrow(RangeError);
   expect(transport).not.toHaveBeenCalled();
 });
 
 it("fuerza include_usage cuando no había stream_options", async () => {
-  const result = await fetchUpstream(options(true), target());
+  const result = await attempt(options(true), target());
   if (result.ok && result.stream) for await (const event of result.events) expect(event).toBeDefined();
   expect(mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true } });
 });
@@ -133,7 +138,7 @@ function delayedBody(signal: AbortSignal, initial: string, rest: string, delay: 
 }
 
 it("recibir headers retira connectMs pero los comentarios no satisfacen firstByteMs", async () => {
-  const result = await fetchUpstream(options(true, {
+  const result = await attempt(options(true, {
     fetch: responseFetch((signal) => new Response(delayedBody(signal, ": processing\n\n", "data: {}\n\n", 600))),
     timeouts: { connectMs: 50, firstByteMs: 150 },
   }), target());
@@ -141,7 +146,7 @@ it("recibir headers retira connectMs pero los comentarios no satisfacen firstByt
 });
 
 it("el primer byte sin stream exige el JSON completo", async () => {
-  const result = await fetchUpstream(options(false, {
+  const result = await attempt(options(false, {
     fetch: responseFetch((signal) => new Response(delayedBody(signal, '{"choices":', "[]}", 600))),
     timeouts: { connectMs: 25, firstByteMs: 150 },
   }), target());
@@ -149,7 +154,7 @@ it("el primer byte sin stream exige el JSON completo", async () => {
 });
 
 it("conserva el primer dato y los comentarios posteriores, sin timeout después de ese dato", async () => {
-  const result = await fetchUpstream(options(true, {
+  const result = await attempt(options(true, {
     fetch: responseFetch((signal) => new Response(delayedBody(signal,
       ': before\n\ndata: {"choices":[]}\n\n', ': after\n\ndata: [DONE]\n\n', 150))),
     timeouts: { connectMs: 20, firstByteMs: 50 },
@@ -164,7 +169,7 @@ it("conserva el primer dato y los comentarios posteriores, sin timeout después 
 
 it.each(["", ": comment\n\n", "data: [DONE]\n\n", 'data: {"error":null}\n\n', "data: invalid\n\n"])(
   "rechaza un stream inicial inválido (%s)", async (body) => {
-    expect(await fetchUpstream(options(true, { fetch: responseFetch(() => new Response(body)) }), target())).toMatchObject({
+    expect(await attempt(options(true, { fetch: responseFetch(() => new Response(body)) }), target())).toMatchObject({
       ok: false, failure: { kind: "stream_error" },
     });
   },
@@ -172,7 +177,7 @@ it.each(["", ": comment\n\n", "data: [DONE]\n\n", 'data: {"error":null}\n\n', "d
 
 it.each([null, [], "text", 42, {}, { choices: {} }, { choices: [], error: null }])(
   "rechaza un JSON sin stream inválido (%j)", async (payload) => {
-    expect(await fetchUpstream(options(false, { fetch: responseFetch(() => Response.json(payload)) }), target())).toEqual({
+    expect(await attempt(options(false, { fetch: responseFetch(() => Response.json(payload)) }), target())).toEqual({
       ok: false, failure: { kind: "stream_error" }, clientMessage: null,
     });
   },
@@ -182,7 +187,7 @@ it.each([
   ["ok", "middle"], ["ok", "done"], ["ok", "usage"], ["mid-stream-error", "error"],
 ])("salir del stream real %s en %s no lanza", async (scenario, stopAt) => {
   const input = options(true);
-  const result = await fetchUpstream({
+  const result = await attempt({
     ...input, body: { ...input.body, x_mock: { chunks: 5, chunkDelayMs: 40 } },
   }, target({ upstreamModel: `mock/${scenario}` }));
   if (!result.ok || !result.stream) throw new Error("Expected stream");
@@ -207,7 +212,7 @@ it.each([
 
 it("return sin iterar un stream real no lanza y cancela el request", async () => {
   const input = options(true);
-  const result = await fetchUpstream({
+  const result = await attempt({
     ...input, body: { ...input.body, x_mock: { chunks: 10, chunkDelayMs: 100 } },
   }, target());
   if (!result.ok || !result.stream) throw new Error("Expected stream");
@@ -224,7 +229,7 @@ it("devolver un iterable sin consumirlo cancela el body y libera el aborto globa
   const body = new ReadableStream<Uint8Array>({
     start(controller) { controller.enqueue(new TextEncoder().encode("data: {}\n\n")); }, cancel,
   });
-  const result = await fetchUpstream(options(true, { signal, fetch: responseFetch(() => new Response(body)) }), target());
+  const result = await attempt(options(true, { signal, fetch: responseFetch(() => new Response(body)) }), target());
   if (!result.ok || !result.stream) throw new Error("Expected stream");
   await result.events[Symbol.asyncIterator]().return?.();
   expect(cancel).toHaveBeenCalledOnce();
@@ -232,14 +237,14 @@ it("devolver un iterable sin consumirlo cancela el body y libera el aborto globa
 });
 
 it.each([400, 422, 500])("tolera HTML en errores HTTP %s", async (status) => {
-  const result = await fetchUpstream(options(false, { fetch: responseFetch(() => new Response("<html>Error</html>", { status })) }), target());
+  const result = await attempt(options(false, { fetch: responseFetch(() => new Response("<html>Error</html>", { status })) }), target());
   expect(result).toMatchObject({ ok: false, failure: { kind: "http", status, code: null } });
   if (result.ok) throw new Error("Expected failure");
   expect(result.clientMessage).toBe(status === 500 ? null : "The model rejected the request parameters.");
 });
 
 it("conserva un mensaje de parámetro seguro y extrae error.code", async () => {
-  const result = await fetchUpstream(options(false, {
+  const result = await attempt(options(false, {
     fetch: responseFetch(() => Response.json({ error: { message: "Invalid temperature", param: "temperature", code: "invalid_value" } }, { status: 400 })),
   }), target());
   expect(result).toEqual({
@@ -251,7 +256,7 @@ it("conserva un mensaje de parámetro seguro y extrae error.code", async () => {
 it("limita la lectura de errores a 64 KiB y aborta el resto", async () => {
   let reads = 0;
   let requestSignal: AbortSignal | undefined;
-  const result = await fetchUpstream(options(false, {
+  const result = await attempt(options(false, {
     fetch: responseFetch((signal) => {
       requestSignal = signal;
       return new Response(new ReadableStream<Uint8Array>({
@@ -273,7 +278,7 @@ it.each([
   try {
     const input = options(stream);
     const settled = vi.fn();
-    const request = fetchUpstream({
+    const request = attempt({
       ...input, model: { ...input.model, isReasoning: reasoning },
       fetch: async (_url, init) => new Promise<Response>((_resolve, reject) => {
         init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
@@ -298,7 +303,7 @@ it.each([
   try {
     const input = options(stream);
     const settled = vi.fn();
-    const request = fetchUpstream({
+    const request = attempt({
       ...input, model: { ...input.model, isReasoning: reasoning },
       timeouts: { connectMs: undefined, firstByteMs: undefined, firstByteReasoningMs: undefined },
       fetch: async (_url, init) => new Promise<Response>((_resolve, reject) => {
@@ -316,7 +321,7 @@ it.each([
 });
 
 it("un corte después del primer dato se propaga al consumidor", async () => {
-  const result = await fetchUpstream(options(true), target({ upstreamModel: "mock/cut" }));
+  const result = await attempt(options(true), target({ upstreamModel: "mock/cut" }));
   if (!result.ok || !result.stream) throw new Error("Expected stream");
   const events: SseEvent[] = [];
   await expect((async () => {
@@ -328,7 +333,7 @@ it("un corte después del primer dato se propaga al consumidor", async () => {
 it("maxDuration interrumpe una lectura pendiente después del primer dato", async () => {
   const controller = new AbortController();
   const reason = new Error("Maximum duration exceeded");
-  const result = await fetchUpstream(options(true, {
+  const result = await attempt(options(true, {
     signal: controller.signal,
     fetch: responseFetch((signal) => new Response(delayedBody(signal, "data: {}\n\n", "data: [DONE]\n\n", 1000))),
   }), target());
@@ -344,7 +349,7 @@ it("maxDuration interrumpe una lectura pendiente después del primer dato", asyn
 it("un aborto antes de consumir el primer evento conserva el error original", async () => {
   const controller = new AbortController();
   const reason = new Error("Maximum duration exceeded");
-  const result = await fetchUpstream(options(true, { signal: controller.signal }), target());
+  const result = await attempt(options(true, { signal: controller.signal }), target());
   if (!result.ok || !result.stream) throw new Error("Expected stream");
   controller.abort(reason);
   const iterator = result.events[Symbol.asyncIterator]();

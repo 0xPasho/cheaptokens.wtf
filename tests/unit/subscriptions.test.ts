@@ -138,7 +138,7 @@ describe("subscription billing", () => {
 
     const halfway = now + 15 * 24 * 3_600_000;
     const charge = upgradeCharge("pro", "max", now + 30 * 24 * 3_600_000, halfway);
-    expect(charge).toBe(BigInt(50_000_000));
+    expect(charge).toBe(BigInt(30_000_000));
     await upgradeSubscription(testDb.db, { workspaceId: fixture.workspace.id, planId: "max", amountMicroUsd: charge, payment: pay() });
     await scheduleDowngrade(testDb.db, fixture.workspace.id, "plus");
     await setCancelAtPeriodEnd(testDb.db, fixture.workspace.id, true);

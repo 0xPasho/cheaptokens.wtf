@@ -101,11 +101,16 @@ function replayFirstEvent(
   };
 }
 
-export async function fetchUpstream(options: CallUpstreamOptions, target: UpstreamTarget): Promise<UpstreamAttemptResult> {
+/** Un intento contra `target` con la key de una de sus cuentas, o sin `Authorization` si es null (el mock). */
+export async function fetchUpstream(
+  options: CallUpstreamOptions,
+  target: UpstreamTarget,
+  apiKey: string | null,
+): Promise<UpstreamAttemptResult> {
   options.signal?.throwIfAborted();
   // Un tope inválido es un error de configuración, no una falla de red.
   const headers: Record<string, string> = { "content-type": "application/json" };
-  if (target.apiKey !== "") headers.authorization = `Bearer ${target.apiKey}`;
+  if (apiKey) headers.authorization = `Bearer ${apiKey}`;
   if (target.sendsPriceCap) {
     headers["x-max-input-price"] = priceCap(target.costInputPer1M);
     headers["x-max-output-price"] = priceCap(target.costOutputPer1M);

@@ -1,21 +1,22 @@
 // @vitest-environment node
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { callUpstream } from "@/lib/gateway/select-upstream";
-import type { CallUpstreamOptions, GatewayModel, SseEvent, UpstreamResult } from "@/lib/gateway/types";
+import { createAccountRotation } from "@/lib/gateway/accounts";
+import { ACCOUNT_PAUSE_MS, callUpstream } from "@/lib/gateway/select-upstream";
+import type { CallUpstreamOptions, GatewayModel, SseEvent, UpstreamResult, UpstreamTarget } from "@/lib/gateway/types";
 
 import { startMockUpstream } from "../../helpers/mock-upstream";
 
 let mock: Awaited<ReturnType<typeof startMockUpstream>>;
 const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
-function options(scenarios: string[], stream = false): CallUpstreamOptions {
+function options(scenarios: string[], stream = false, apiKeys: readonly string[] = ["secret-key"]): CallUpstreamOptions {
   const model: GatewayModel = {
     id: "public/model", status: "active", isReasoning: false,
     inputPricePer1M: BigInt(20_000), outputPricePer1M: BigInt(40_000),
     officialInputPer1M: BigInt(100_000), officialOutputPer1M: BigInt(200_000),
     upstreams: scenarios.map((scenario, index) => ({
-      upstreamId: `upstream-${index}`, baseUrl: mock.baseUrl, apiKey: "secret-key",
+      upstreamId: `upstream-${index}`, baseUrl: mock.baseUrl, apiKeys,
       upstreamModel: `mock/${scenario}`, priority: index,
       costInputPer1M: BigInt(17_550), costOutputPer1M: BigInt(199_000), sendsPriceCap: true,
     })),
@@ -217,7 +218,7 @@ it("no inicia fetch si el aborto global ya ocurrió", async () => {
 
 it("logs solo contienen los campos operativos permitidos", async () => {
   await callUpstream(options(["error-402", "error-401", "error-429"]));
-  const allowed = new Set(["upstreamId", "attempt", "kind", "status", "code", "phase", "durationMs", "severity"]);
+  const allowed = new Set(["upstreamId", "account", "attempt", "kind", "status", "code", "phase", "durationMs", "severity"]);
   for (const [, fields] of [...log.error.mock.calls, ...log.warn.mock.calls]) {
     expect(Object.keys(fields).every((key) => allowed.has(key))).toBe(true);
   }
@@ -234,4 +235,129 @@ it.each([401, 429])("trunca code a 64 caracteres en el log de HTTP %s", async (s
   expect(logger).toHaveBeenCalledExactlyOnceWith(status === 401 ? "upstream_alert" : "upstream_failure", expect.objectContaining({
     kind: "http", status, code: "x".repeat(64),
   }));
+});
+
+describe("varias cuentas por upstream", () => {
+  const keys = ["key-a", "key-b", "key-c"];
+  let used: string[];
+
+  /** Anota la key de cada intento. Las de `failures` responden ese status; las demás llegan al mock. */
+  function byAccount(failures: Record<string, { status: number; code?: string }> = {}): typeof fetch {
+    return async (input, init) => {
+      const key = new Headers(init?.headers).get("authorization")?.replace(/^Bearer /, "") ?? "";
+      used.push(key);
+      const failure = failures[key];
+      if (!failure) return fetch(input, init);
+      return Response.json({ error: { message: "Account failure", code: failure.code ?? null } }, { status: failure.status });
+    };
+  }
+
+  beforeEach(() => { used = []; });
+
+  it("cada request empieza en la cuenta siguiente y vuelve a la primera", async () => {
+    const accounts = createAccountRotation({ random: () => 0 });
+    for (let request = 0; request < 4; request++) {
+      expect(await callUpstream({ ...options(["ok"], false, keys), fetch: byAccount(), accounts })).toMatchObject({ ok: true, attempts: 1 });
+    }
+    expect(used).toEqual(["key-a", "key-b", "key-c", "key-a"]);
+  });
+
+  it("cada instancia arranca en una cuenta al azar", async () => {
+    const accounts = createAccountRotation({ random: () => 0.7 });
+    await callUpstream({ ...options(["ok"], false, keys), fetch: byAccount(), accounts });
+    expect(used).toEqual(["key-c"]);
+  });
+
+  it.each([
+    [{ status: 401 }, "upstream_alert", ACCOUNT_PAUSE_MS.rejected],
+    [{ status: 403 }, "upstream_alert", ACCOUNT_PAUSE_MS.rejected],
+    [{ status: 402, code: "insufficient_balance" }, "upstream_alert", ACCOUNT_PAUSE_MS.rejected],
+    [{ status: 429 }, "upstream_failure", ACCOUNT_PAUSE_MS.rateLimited],
+  ])("%o en una cuenta prueba la siguiente del mismo upstream y la pausa", async (failure, event, pauseMs) => {
+    let now = 0;
+    const accounts = createAccountRotation({ random: () => 0, now: () => now });
+    const input = { ...options(["ok", "ok"], false, keys.slice(0, 2)), fetch: byAccount({ "key-a": failure }), accounts };
+    expect(await callUpstream(input)).toMatchObject({ ok: true, attempts: 2, target: { upstreamId: "upstream-0" } });
+    expect(used).toEqual(["key-a", "key-b"]);
+    const logger = event === "upstream_alert" ? log.error : log.warn;
+    expect(logger).toHaveBeenCalledExactlyOnceWith(event, expect.objectContaining({
+      upstreamId: "upstream-0", account: 1, attempt: 1, status: failure.status,
+    }));
+
+    // Le toca a key-b y después a key-a, pero key-a está pausada: va al final.
+    used = [];
+    await callUpstream(input);
+    await callUpstream(input);
+    expect(used).toEqual(["key-b", "key-b"]);
+
+    // Al vencer la pausa vuelve a su turno.
+    now = pauseMs;
+    used = [];
+    await callUpstream(input);
+    await callUpstream(input);
+    expect(used).toEqual(["key-b", "key-a", "key-b"]);
+  });
+
+  it.each(["error-500", "error-503", "error-404", "error-402-bid", "reset"])(
+    "%s es del upstream: pasa al siguiente sin probar otra cuenta",
+    async (scenario) => {
+      const accounts = createAccountRotation({ random: () => 0 });
+      const input = options([scenario, "ok"], false, keys);
+      input.model.upstreams[1].apiKeys = ["other-key"];
+      const result = await callUpstream({ ...input, fetch: byAccount(), accounts });
+      expect(result).toMatchObject({ ok: true, attempts: 2, target: { upstreamId: "upstream-1" } });
+      expect(used).toEqual(["key-a", "other-key"]);
+      expect(mock.requests.map((request) => request.body)).toEqual([
+        expect.objectContaining({ model: `mock/${scenario}` }), expect.objectContaining({ model: "mock/ok" }),
+      ]);
+    },
+  );
+
+  it("el tope de tres intentos cuenta también los cambios de cuenta", async () => {
+    const accounts = createAccountRotation({ random: () => 0 });
+    const limited = { status: 429 };
+    const result = await callUpstream({
+      ...options(["ok", "ok"], false, [...keys, "key-d"]),
+      fetch: byAccount({ "key-a": limited, "key-b": limited, "key-c": limited, "key-d": limited }), accounts,
+    });
+    expect(result).toMatchObject({ ok: false, attempts: 3, errorCode: "upstream_error", target: { upstreamId: "upstream-0" } });
+    expect(used).toEqual(["key-a", "key-b", "key-c"]);
+  });
+
+  it("con todas las cuentas agotadas pasa al siguiente upstream", async () => {
+    const accounts = createAccountRotation({ random: () => 0 });
+    const input = options(["ok", "ok"], false, keys.slice(0, 2));
+    input.model.upstreams[1].apiKeys = ["other-key"];
+    const result = await callUpstream({
+      ...input, fetch: byAccount({ "key-a": { status: 429 }, "key-b": { status: 401 } }), accounts,
+    });
+    expect(result).toMatchObject({ ok: true, attempts: 3, target: { upstreamId: "upstream-1" } });
+    expect(used).toEqual(["key-a", "key-b", "other-key"]);
+  });
+
+  it("si todas están pausadas las sigue probando, primero la que se libera antes", async () => {
+    const accounts = createAccountRotation({ random: () => 0, now: () => 0 });
+    accounts.pause("upstream-0", 0, ACCOUNT_PAUSE_MS.rejected);
+    accounts.pause("upstream-0", 1, ACCOUNT_PAUSE_MS.rateLimited);
+    const result = await callUpstream({ ...options(["ok"], false, keys.slice(0, 2)), fetch: byAccount(), accounts });
+    expect(result).toMatchObject({ ok: true, attempts: 1 });
+    expect(used).toEqual(["key-b"]);
+  });
+
+  it("sin rotación prueba las cuentas en el orden escrito", async () => {
+    const input = { ...options(["ok"], false, keys), fetch: byAccount({ "key-a": { status: 429 } }) };
+    await callUpstream(input);
+    await callUpstream(input);
+    expect(used).toEqual(["key-a", "key-b", "key-a", "key-b"]);
+  });
+
+  it("avisa cada intento con su upstream", async () => {
+    const onAttempt = vi.fn<(target: UpstreamTarget) => void>();
+    await callUpstream({
+      ...options(["ok", "ok"], false, keys.slice(0, 2)),
+      fetch: byAccount({ "key-a": { status: 429 }, "key-b": { status: 429 } }), onAttempt,
+    });
+    expect(onAttempt.mock.calls.map(([target]) => target.upstreamId))
+      .toEqual(["upstream-0", "upstream-0", "upstream-1"]);
+  });
 });

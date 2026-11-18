@@ -12,7 +12,7 @@ export function ExportDataButton({ label }: { label: string }) {
   const download = () => startTransition(async () => {
     const json = await exportDataAction();
     const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-    const link = Object.assign(document.createElement("a"), { href: url, download: "cheaptokens-data.json" });
+    const link = Object.assign(document.createElement("a"), { href: url, download: "cheapllm-data.json" });
     link.click();
     URL.revokeObjectURL(url);
   });

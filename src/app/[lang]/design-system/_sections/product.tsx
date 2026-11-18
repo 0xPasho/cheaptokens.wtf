@@ -203,7 +203,7 @@ function CatalogPattern() {
                   official={model.officialInput}
                   discounted={model.discountedInput}
                   locale={LOCALE}
-                  labels={{ official: "Precio oficial", discounted: "Precio cheaptokens.wtf" }}
+                  labels={{ official: "Precio oficial", discounted: "Precio cheapllm.wtf" }}
                 />
               </TableCell>
               <TableCell className="text-right align-top">
@@ -211,7 +211,7 @@ function CatalogPattern() {
                   official={model.officialOutput}
                   discounted={model.discountedOutput}
                   locale={LOCALE}
-                  labels={{ official: "Precio oficial", discounted: "Precio cheaptokens.wtf" }}
+                  labels={{ official: "Precio oficial", discounted: "Precio cheapllm.wtf" }}
                 />
               </TableCell>
               <TableCell className="text-right align-top">
@@ -229,7 +229,7 @@ function PricingPattern() {
   return (
     <Section
       title="Precio y descuento"
-      description="El precio oficial siempre se ve, tachado y en gris. El precio cheaptokens.wtf va en el color del texto, no en verde: el verde es solo para el descuento y el ahorro."
+      description="El precio oficial siempre se ve, tachado y en gris. El precio cheapllm.wtf va en el color del texto, no en verde: el verde es solo para el descuento y el ahorro."
     >
       <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
         <span className="flex items-center gap-2">
@@ -237,7 +237,7 @@ function PricingPattern() {
             official={3_000_000}
             discounted={300_000}
             locale={LOCALE}
-            labels={{ official: "Precio oficial", discounted: "Precio cheaptokens.wtf" }}
+            labels={{ official: "Precio oficial", discounted: "Precio cheapllm.wtf" }}
           />
           <DiscountBadge discountBps={9000} locale={LOCALE} />
         </span>
@@ -525,8 +525,8 @@ function PlanLimitsPattern() {
           labels={dict.dashboard.limits}
           usage={{
             plan: PLANS.pro,
-            fiveHour: { usedMicroUsd: BigInt(7_000_000), resetsAt: SAMPLE_NOW + 3 * 3_600_000 },
-            week: { usedMicroUsd: BigInt(12_400_000), resetsAt: SAMPLE_NOW + 4 * 86_400_000 },
+            fiveHour: { usedMicroUsd: BigInt(5_460_000), resetsAt: SAMPLE_NOW + 3 * 3_600_000 },
+            week: { usedMicroUsd: BigInt(9_672_000), resetsAt: SAMPLE_NOW + 4 * 86_400_000 },
           }}
         />
       </div>

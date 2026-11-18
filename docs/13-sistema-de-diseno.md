@@ -1,6 +1,6 @@
 # 13 · Sistema de diseño
 
-El estilo de cheaptokens.wtf es el de NibbleRouter, trasladado directamente de la referencia local proporcionada por el usuario. [ADR-0036](./adr/0036-estilo-nibblerouter-completo.md) reemplaza el material liquid glass y la adaptación anterior. La referencia ejecutable es `/design-system`.
+El estilo de cheapllm.wtf es el de NibbleRouter, trasladado directamente de la referencia local proporcionada por el usuario. [ADR-0036](./adr/0036-estilo-nibblerouter-completo.md) reemplaza el material liquid glass y la adaptación anterior. La referencia ejecutable es `/design-system`.
 
 ## Fuentes de verdad
 
@@ -14,7 +14,7 @@ El estilo de cheaptokens.wtf es el de NibbleRouter, trasladado directamente de l
 
 Fondo negro, paneles `#171717`, texto principal `#f3f3f3`, texto auxiliar `#8d8d8d`. Los valores viven solo en tokens de `globals.css`; los componentes y el CSS de composición consumen variables. El claro usa superficies neutras claras equivalentes. El tema inicial es oscuro; se conserva la preferencia guardada y la opción Sistema.
 
-El nombre es `cheaptokens.wtf`. La marca gráfica y los logos se trasladan de la referencia proporcionada. No se inventan logos de proveedores con iniciales o emojis.
+El nombre es `cheapllm.wtf`. La marca gráfica y los logos se trasladan de la referencia proporcionada. No se inventan logos de proveedores con iniciales o emojis.
 
 `success` significa dinero a favor del usuario; `warning`, atención sin error; `destructive`, error o acción irreversible. Los precios del producto son neutrales. Las tarjetas del catálogo usan etiquetas neutras, incluidos los descuentos. El detalle muestra el precio oficial y el precio descontado juntos.
 
@@ -22,7 +22,7 @@ El nombre es `cheaptokens.wtf`. La marca gráfica y los logos se trasladan de la
 
 | Elemento | Estilo |
 |---|---|
-| Cabecera | Fija; altura 72 px; márgenes 20/24 px; nombre cheaptokens.wtf de 16 px; navegación de 14 px; sin logo ni favicon de NibbleRouter |
+| Cabecera | Fija; altura 72 px; márgenes 20/24 px; nombre cheapllm.wtf de 16 px; navegación de 14 px; sin logo ni favicon de NibbleRouter |
 | Búsqueda | En la cabecera; ancho 168 px, alto 40 px; pill; expande a 330 px al enfocar |
 | Catálogo | Empieza a 112 px; márgenes 20 px; sidebar de 240 px, gap 40 px |
 | Sidebar | Sticky a 96 px; iconos Kubai de 24 px; logos de autores de 18 px; etiquetas de 14 px; filas de al menos 36 px; selección con fondo accent y radio de 10 px |

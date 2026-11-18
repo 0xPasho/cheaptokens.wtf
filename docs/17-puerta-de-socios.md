@@ -64,7 +64,7 @@ Cada escritura exige `Idempotency-Key` (hasta 255 caracteres imprimibles). La mi
 
 ## Planes de socio
 
-Funcionan como los planes públicos, con la ventana y la semana en valor de uso a precio cheaptokens.wtf (`src/lib/partner/tiers.ts`), pero no se venden en el sitio.
+Funcionan como los planes públicos, con la ventana y la semana en valor de uso a precio cheapllm.wtf (`src/lib/partner/tiers.ts`), pero no se venden en el sitio.
 
 | Plan | Precio al mes | Ventana de 5 horas | Semana | Requests por minuto |
 |---|---|---|---|---|
@@ -73,7 +73,7 @@ Funcionan como los planes públicos, con la ventana y la semana en valor de uso 
 | `plan-49` | $49 | $6.86 | $29.40 | 120 |
 | `plan-99` | $99 | $13.86 | $59.40 | 200 |
 
-La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 % (la proporción de Pro). `plan-3` cubre el plan Pro de Deska a menor precio y conserva su rate limit de 120 requests por minuto. Así un asiento usado al máximo tiene el mismo margen que un plan público, con el mismo riesgo: **hay que calibrarlos** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
+La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 %, también como en ellos ([ADR-0052](./adr/0052-precios-de-los-planes.md)). `plan-3` cubre el plan Pro de Deska a menor precio y conserva su rate limit de 120 requests por minuto. Así un asiento usado al máximo tiene el mismo margen que un plan público, con el mismo riesgo: **hay que calibrarlos** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
 
 Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los cuatro planes. Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
 
@@ -119,7 +119,7 @@ Los modelos de un plan son los del catálogo público (`active` y `deprecated`),
 | D7 | Las respuestas guardadas van cifradas con una clave derivada del secreto del socio | Default | La de `POST /keys` lleva la key. Rotar el secreto vuelve ilegibles las guardadas: un reintento recibe `409` |
 | D8 | `expiresAt` entre ahora y 400 días; tope de excedente hasta $100,000 al mes | Default | Cubre un periodo anual con su margen y el tope máximo de Deska ($5,000) con holgura |
 | D9 | El secreto del socio va en una variable por socio (`PARTNER_DESKA_SECRET`), de 32 caracteres o más | Default | Un solo socio hoy; otro socio es una línea en `PARTNERS` |
-| D10 | `inferenceBaseUrl` es `https://<API_HOST>/v1`, o el origen del request sin `API_HOST` | Default | En producción la API vive en `api.cheaptokens.wtf` ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)); en local, donde corre la app |
+| D10 | `inferenceBaseUrl` es `https://<API_HOST>/v1`, o el origen del request sin `API_HOST` | Default | En producción la API vive en `api.cheapllm.wtf` ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)); en local, donde corre la app |
 | D11 | `requestsThisMonth` cuenta todos los requests del mes, también los fallidos | Default | Es el mismo conjunto que `monthMicroUsd`; los fallidos cuestan 0 |
 | D12 | Una corrida cuenta cuando su request se admite y llega al upstream; un `429` o un `401` no la cuentan | Default | Así `runsThisMonth` sale de los mismos requests que `requestsThisMonth`: corridas que usaron el plan |
 | D13 | El tope de un mes pasado es el último que el socio puso en ese mes o antes (`partner_plan_caps`) | Default | El contrato devuelve el tope en cada mes y el workspace solo guarda el actual |

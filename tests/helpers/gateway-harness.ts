@@ -11,6 +11,7 @@ import { syncCatalog } from "@/lib/catalog/sync";
 import type { CatalogEntry, UpstreamDefinition } from "@/lib/catalog/types";
 import { uuidv7 } from "@/lib/db/uuid";
 import { readServerEnv, type EnvSource } from "@/lib/env";
+import { createAccountRotation } from "@/lib/gateway/accounts";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { handleChatCompletion } from "@/lib/gateway/handler";
 import { createJsonLogger } from "@/lib/gateway/logger";
@@ -111,7 +112,7 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
     if (balance !== BigInt(0)) await grantCredits(db, { workspaceId: workspace.id, amountMicroUsd: balance, note: "Gateway harness" });
     const key = await createApiKey(db, { workspaceId: workspace.id, name: "Gateway harness", spendLimitMicroUsd: null });
     const deps: GatewayDeps = {
-      db, catalog, rateLimiter: createMemoryRateLimiter(), fetch, now: Date.now, newId: uuidv7,
+      db, catalog, rateLimiter: createMemoryRateLimiter(), accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
       log: createJsonLogger((line) => logs.push(line)), env: readServerEnv(env),
       after(task) { tasks.push(Promise.resolve().then(task)); },
     };

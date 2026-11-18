@@ -28,7 +28,7 @@ describe("gateway errors", () => {
   });
 
   it("uses the documented insufficient credits message", () => {
-    expect(errorBody("insufficient_credits").error.message).toBe("Insufficient credits. Top up at https://cheaptokens.wtf/dashboard/credits");
+    expect(errorBody("insufficient_credits").error.message).toBe("Insufficient credits. Top up at https://cheapllm.wtf/dashboard/credits");
   });
 
   it.each(codes)("preserves the gateway default for %s when passed explicitly", (code) => {

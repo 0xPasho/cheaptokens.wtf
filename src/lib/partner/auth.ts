@@ -34,5 +34,6 @@ export function idempotencySealKey(partnerId: PartnerId, env: EnvSource): Buffer
   const partner = PARTNERS.find((candidate) => candidate.id === partnerId);
   const secret = partner ? partnerSecret(partner.secretEnv, env) : null;
   if (!secret) throw new Error("Partner secret is not configured");
+  // La etiqueta HKDF conserva el nombre anterior a propósito: cambiarla invalidaría las respuestas ya cifradas.
   return Buffer.from(hkdfSync("sha256", secret, "", `cheaptokens.wtf partner idempotency v1 ${partnerId}`, 32));
 }

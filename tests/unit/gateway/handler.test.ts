@@ -9,6 +9,7 @@ import { generateKey } from "@/lib/api-keys";
 import { reconcile } from "@/lib/billing/reconcile";
 import { apiKeys, requests, workspaces } from "@/lib/db/schema";
 import { uuidv7 } from "@/lib/db/uuid";
+import { createAccountRotation } from "@/lib/gateway/accounts";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { handleChatCompletion } from "@/lib/gateway/handler";
 import { createJsonLogger } from "@/lib/gateway/logger";
@@ -68,7 +69,7 @@ function directDeps(harness: Harness, overrides: Partial<GatewayDeps> = {}): Gat
     catalog: createCatalogSource(() => loadCatalogSnapshot(harness.db, {
       env: { UPSTREAM_MOCK_BASE_URL: harness.mock.baseUrl }, environment: "development", now: Date.now,
     })),
-    rateLimiter: createMemoryRateLimiter(), fetch, now: Date.now, newId: uuidv7,
+    rateLimiter: createMemoryRateLimiter(), accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
     log: createJsonLogger((line) => harness.logs.push(line)), env: { apiHost: null, rateLimitRpm: 60, isProduction: false },
     after: () => {}, ...overrides,
   };
@@ -99,12 +100,12 @@ describe("gateway handler", () => {
     expect(record).toMatchObject({
       id: requestId?.slice(4).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, "$1-$2-$3-$4-$5"),
       status: "success", httpStatus: 200, upstreamId: "mock", attempts: 1, stream: false,
-      costMicroUsd: BigInt(10), upstreamCostMicroUsd: BigInt(10), officialCostMicroUsd: BigInt(7), usageEstimated: false,
+      costMicroUsd: BigInt(13), upstreamCostMicroUsd: BigInt(10), officialCostMicroUsd: BigInt(7), usageEstimated: false,
     });
     const [workspace] = await harness.db.select().from(workspaces);
     const [key] = await harness.db.select().from(apiKeys);
-    expect(workspace.balanceMicroUsd).toBe(BigInt(4_999_990));
-    expect(key.spentMicroUsd).toBe(BigInt(10));
+    expect(workspace.balanceMicroUsd).toBe(BigInt(4_999_987));
+    expect(key.spentMicroUsd).toBe(BigInt(13));
     expect(key.lastUsedAt).not.toBeNull();
     expect(await reconcile(harness.db)).toMatchObject({ balanceMismatches: [], keySpendMismatches: [] });
     const completed = harness.logs.map((line) => JSON.parse(line)).filter((line) => line.event === "request_completed");
@@ -132,7 +133,7 @@ describe("gateway handler", () => {
     expect(usages).toHaveLength(includeUsage ? 1 : 0);
     if (includeUsage) expect(usages[0].usage).toMatchObject({ prompt_tokens: 1, completion_tokens: 14, total_tokens: 15 });
     await harness.flushAfter();
-    expect(await harness.db.select().from(requests)).toMatchObject([{ status: "success", stream: true, completionTokens: 14, costMicroUsd: BigInt(10), upstreamCostMicroUsd: BigInt(10) }]);
+    expect(await harness.db.select().from(requests)).toMatchObject([{ status: "success", stream: true, completionTokens: 14, costMicroUsd: BigInt(13), upstreamCostMicroUsd: BigInt(10) }]);
     // El catálogo mapea el mock con el mismo ID del modelo (catalog/upstreams.ts), así `x_mock` elige el escenario.
     expect(harness.mock.requests[0].body).toMatchObject({ stream_options: { include_usage: true }, model: "qwen/qwen3.8-flash" });
   });
@@ -147,7 +148,7 @@ describe("gateway handler", () => {
   });
 
   it("checks host before size and authentication", async () => {
-    const harness = await start({ env: { API_HOST: "api.cheaptokens.wtf" } });
+    const harness = await start({ env: { API_HOST: "api.cheapllm.wtf" } });
     const response = await post(harness, "garbage", { authorization: "invalid" });
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: { message: "Not found.", type: "invalid_request", code: "invalid_request" } });
@@ -158,17 +159,17 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toHaveLength(0);
   });
 
-  it.each(["api.cheaptokens.wtf", "API.CHEAPTOKENS.WTF", "web.cheaptokens.wtf"])("uses the Host header when Next builds a localhost URL: %s", async (host) => {
+  it.each(["api.cheapllm.wtf", "API.CHEAPLLM.WTF", "web.cheapllm.wtf"])("uses the Host header when Next builds a localhost URL: %s", async (host) => {
     const harness = await start();
     const request = new Request("http://localhost:3000/v1/chat/completions", {
       method: "POST", headers: { host, authorization: `Bearer ${harness.apiKey}` }, body: JSON.stringify(basicBody),
     });
     const response = await handleChatCompletion(request, directDeps(harness, {
-      env: { apiHost: "API.CheapTokens.wtf", rateLimitRpm: 60, isProduction: false },
+      env: { apiHost: "API.CheapLLM.wtf", rateLimitRpm: 60, isProduction: false },
     }));
-    expect(response.status).toBe(host === "web.cheaptokens.wtf" ? 404 : 200);
+    expect(response.status).toBe(host === "web.cheapllm.wtf" ? 404 : 200);
     await response.text();
-    expect(harness.mock.requests).toHaveLength(host === "web.cheaptokens.wtf" ? 0 : 1);
+    expect(harness.mock.requests).toHaveLength(host === "web.cheapllm.wtf" ? 0 : 1);
   });
 
   it("rejects oversized declared and streamed bodies before authentication", async () => {
@@ -301,7 +302,7 @@ describe("gateway handler", () => {
     await reader.cancel();
     await harness.flushAfter();
     const [record] = await harness.db.select().from(requests);
-    expect(record).toMatchObject({ status: "client_cancelled", completionTokens: 50, usageEstimated: false, costMicroUsd: BigInt(10), upstreamCostMicroUsd: BigInt(10) });
+    expect(record).toMatchObject({ status: "client_cancelled", completionTokens: 50, usageEstimated: false, costMicroUsd: BigInt(13), upstreamCostMicroUsd: BigInt(10) });
     expect(harness.mock.requests).toHaveLength(1);
     expect(harness.mock.requests[0].clientAborted).toBe(false);
     expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
@@ -390,7 +391,7 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toMatchObject([{
       status: "upstream_timeout", httpStatus: stream ? 200 : 504,
       completionTokens: stream ? reportedUsage ? 100 : 2 : 0, promptTokens: stream ? reportedUsage ? 100 : 1 : 0,
-      usageEstimated: stream && !reportedUsage, costMicroUsd: BigInt(stream ? 10 : 0),
+      usageEstimated: stream && !reportedUsage, costMicroUsd: BigInt(stream ? reportedUsage ? 12 : 10 : 0),
     }]);
   });
 
@@ -454,7 +455,7 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toMatchObject([{ status }]);
   });
 
-  it("records the attempted upstream by index when targets share a URL", async () => {
+  it("records the attempted upstream when targets share a URL", async () => {
     const harness = await start();
     const tasks: (() => Promise<void>)[] = [];
     const deps = directDeps(harness, { after: (task) => tasks.push(task), now: () => 1_800_000_000_000 });
@@ -492,7 +493,7 @@ describe("gateway handler", () => {
     expect(await response.text()).toContain('"content"');
     await tasks[0]();
     expect(await harness.db.select().from(requests)).toMatchObject([{
-      status: "upstream_error", errorCode: "upstream_error", completionTokens: 14, usageEstimated: false, costMicroUsd: BigInt(10),
+      status: "upstream_error", errorCode: "upstream_error", completionTokens: 14, usageEstimated: false, costMicroUsd: BigInt(13),
     }]);
     expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
     expect(harness.logs.join("\n")).not.toContain("secret");

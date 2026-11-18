@@ -11,6 +11,7 @@ export function actionErrors(dict: Dictionary): Record<ActionError, string> {
     limitInvalid: dashboard.keys.limitInvalid,
     pickOne: dashboard.keys.pickOne,
     tooMany: dashboard.keys.tooMany,
-    amountInvalid: dashboard.credits.amountInvalid,
+    planActive: dashboard.payments.planActive,
+    insufficientBalance: dashboard.payments.insufficientBalance,
   };
 }

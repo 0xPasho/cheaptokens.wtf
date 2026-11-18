@@ -13,7 +13,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { REFERENCE_MODEL_ID } from "@/lib/billing/plans";
-import { getCatalog } from "@/lib/catalog/queries";
+import { getLiveCatalog } from "@/lib/catalog/live";
 import { listKeys } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
@@ -62,7 +62,7 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const labels = keyLabels(dict);
   const errors = actionErrors(dict);
   const snippet = { baseUrl: API_BASE_URL, model: REFERENCE_MODEL_ID };
-  const models = getCatalog().filter((model) => model.status === "active").map((model) => ({ id: model.id, name: model.name }))
+  const models = (await getLiveCatalog()).filter((model) => model.status === "active").map((model) => ({ id: model.id, name: model.name }))
     .toSorted((a, b) => a.name.localeCompare(b.name, locale));
   const names = new Map(models.map((model) => [model.id, model.name]));
   const active = keys.filter((key) => key.revokedAt === null && (key.expiresAt === null || key.expiresAt.getTime() > now)).length;

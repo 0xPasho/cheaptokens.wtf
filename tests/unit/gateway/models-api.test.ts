@@ -8,7 +8,7 @@ import { getCatalog } from "@/lib/catalog/queries";
 
 vi.mock("@catalog/models", () => import("../../fixtures/catalog-models"));
 
-vi.mock("next/cache", () => ({ cacheTag: vi.fn() }));
+vi.mock("next/cache", () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }));
 
 import { cacheTag } from "next/cache";
 
@@ -28,7 +28,7 @@ describe("GET /v1/models", () => {
     expect(haiku).toEqual({
       id: "anthropic/claude-haiku-4.5", object: "model", created: 1760000000, owned_by: "anthropic",
       name: "Claude Haiku 4.5", context_length: 200000, tags: ["fast", "vision", "tools", "long-context"],
-      pricing: { currency: "USD", unit: "1M_tokens", input: "0.22", output: "1.10", official_input: "1.00", official_output: "5.00", discount_percent: 78 },
+      pricing: { currency: "USD", unit: "1M_tokens", input: "0.30", output: "1.50", official_input: "1.00", official_output: "5.00", discount_percent: 70 },
       status: "active",
     });
     expect(await (await GET()).json()).toEqual(body);

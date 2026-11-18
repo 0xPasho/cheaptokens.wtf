@@ -156,11 +156,11 @@ test.describe("docs", () => {
     await open(page, "/es");
     await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Docs" }).click();
     await expect(page).toHaveURL(/\/es\/docs$/);
-    await expect(page).toHaveTitle("Documentación · cheaptokens.wtf");
+    await expect(page).toHaveTitle("Documentación · cheapllm.wtf");
     await expect(page.getByRole("contentinfo").getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/es/docs");
 
     await open(page, "/en/docs");
-    await expect(page).toHaveTitle("Docs · cheaptokens.wtf");
+    await expect(page).toHaveTitle("Docs · cheapllm.wtf");
   });
 
   test("la tabla de errores tiene los 15 códigos y las cifras salen con el formato del idioma", async ({ page }) => {

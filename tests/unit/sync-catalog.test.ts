@@ -149,9 +149,9 @@ describe("syncCatalog", () => {
     const next = input();
     next.upstreams[0].models[0].costInputPer1M = 1_000_000;
     const { warnings } = await syncCatalog(testDb.db, next);
-    expect(warnings).toEqual([expect.stringContaining("10% margin")]);
+    expect(warnings).toEqual([expect.stringContaining("30% margin")]);
     const before = await rows();
-    await expect(syncCatalog(testDb.db, { ...next, environment: "production" })).rejects.toThrow("10% margin");
+    await expect(syncCatalog(testDb.db, { ...next, environment: "production" })).rejects.toThrow("30% margin");
     expect(await rows()).toEqual(before);
   });
 

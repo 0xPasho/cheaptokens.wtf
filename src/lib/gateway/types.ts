@@ -55,8 +55,11 @@ export interface UpstreamTarget {
   upstreamId: string;
   /** Sin `/` final. Ejemplo: `https://api.inferhub.dev/v1`. */
   baseUrl: string;
-  /** Resuelta desde `api_key_env`. Nunca se loguea. Vacía en el mock. */
-  apiKey: string;
+  /**
+   * Una key por cuenta, resueltas desde `api_key_env` (separadas por comas). Nunca se loguean.
+   * Vacía en el mock: el request va sin `Authorization`. Cuáles se usan y en qué orden lo decide `UpstreamAccounts`.
+   */
+  apiKeys: readonly string[];
   upstreamModel: string;
   costInputPer1M: MicroUsd;
   costOutputPer1M: MicroUsd;
@@ -71,7 +74,7 @@ export interface GatewayModel {
   status: ModelStatus;
   /** Tiene el tag `reasoning`: usa el timeout de primer byte largo. */
   isReasoning: boolean;
-  /** Precio cheaptokens.wtf, µUSD por 1M. */
+  /** Precio cheapllm.wtf, µUSD por 1M. */
   inputPricePer1M: MicroUsd;
   outputPricePer1M: MicroUsd;
   /** Precio oficial, µUSD por 1M. Para `official_cost_micro_usd`. */
@@ -106,7 +109,7 @@ export interface SseParser {
 export interface ResponseContext {
   /** `chatcmpl-req_…` */
   id: string;
-  /** ID de cheaptokens.wtf que pidió el cliente. */
+  /** ID de cheapllm.wtf que pidió el cliente. */
   model: string;
   /** Segundos Unix. */
   created: number;
@@ -163,8 +166,23 @@ export interface CallUpstreamOptions {
   /** Se aborta si vence `maxDuration`. La desconexión del cliente NO aborta: el stream se drena (ADR-0013). */
   signal?: AbortSignal;
   timeouts?: Partial<UpstreamTimeouts>;
-  /** Default 3 (docs/07 › Selección y fallback). */
+  /** Default 3 (docs/07 › Selección y fallback). Cuenta cada request al upstream, también el reintento con otra cuenta. */
   maxAttempts?: number;
+  /** Rotación de cuentas. Sin ella, las keys se prueban en el orden escrito y ninguna se pausa. */
+  accounts?: UpstreamAccounts;
+  /** Se llama antes de cada intento: así quien llama sabe a qué upstream se le estaba pidiendo si el request se aborta. */
+  onAttempt?: (target: UpstreamTarget) => void;
+}
+
+/**
+ * Reparte los requests entre las cuentas de cada upstream (docs/07 › Varias cuentas por upstream).
+ * Las cuentas se identifican por su posición en `apiKeys`. El estado vive en memoria, por instancia.
+ */
+export interface UpstreamAccounts {
+  /** Orden en que este request prueba las `count` cuentas del upstream: cada request empieza en la siguiente y las pausadas van al final. */
+  order(upstreamId: string, count: number): number[];
+  /** La cuenta falló por algo suyo (key, saldo o rate limit): las demás van primero durante `ms`. */
+  pause(upstreamId: string, index: number, ms: number): void;
 }
 
 export type UpstreamResult =
@@ -252,6 +270,8 @@ export interface GatewayDeps {
   db: Db;
   rateLimiter: RateLimiter;
   catalog: CatalogSource;
+  /** Una por instancia, igual que el rate limiter: la rotación y las pausas se comparten entre requests. */
+  accounts: UpstreamAccounts;
   fetch: typeof fetch;
   /** `after()` de Next en producción. En pruebas, guarda la tarea para esperarla. */
   after: (task: () => Promise<void>) => void;

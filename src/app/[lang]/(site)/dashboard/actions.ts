@@ -4,21 +4,23 @@ import { and, eq, isNull } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import type { BillingSource } from "@/lib/billing/limits";
-import { isPlanId, packOffer, PLANS, TOPUP_MAX_MICRO_USD, TOPUP_MIN_MICRO_USD } from "@/lib/billing/plans";
-import {
-  activateSubscription, recordPackPurchase, recordTopUp, scheduleDowngrade, setCancelAtPeriodEnd, upgradeCharge, upgradeSubscription,
-} from "@/lib/billing/purchases";
+import { isPlanId } from "@/lib/billing/plans";
+import { buyPlanWithBalance, InsufficientBalanceError, type PlanQuote, PlanNotAvailableError } from "@/lib/billing/purchases";
 import { createApiKey } from "@/lib/billing/workspaces";
-import { getCatalog } from "@/lib/catalog/queries";
+import { getLiveCatalog } from "@/lib/catalog/live";
 import { actionSession } from "@/lib/dashboard/session";
-import { exportWorkspace, getAccount } from "@/lib/dashboard/queries";
+import { exportWorkspace } from "@/lib/dashboard/queries";
 import { getDb } from "@/lib/db/client";
 import { apiKeys, workspaces } from "@/lib/db/schema";
-import { getPaymentProvider } from "@/lib/payments";
+import { paymentsAvailable, readCryptoConfig } from "@/lib/payments/crypto/config";
+import {
+  depositChains, ensureDepositAddresses, getDepositState, MIN_DEPOSIT_MICRO_USD, scanDeposits, simulateDeposit,
+} from "@/lib/payments/crypto/deposits";
+import { type DepositView, depositView } from "@/lib/payments/crypto/view";
 
 /** Los errores son claves de `dashboard.*` o `dashboard.keys.*`: el cliente los traduce. */
 export type ActionError =
-  | "error" | "paymentsUnavailable" | "nameRequired" | "limitInvalid" | "pickOne" | "tooMany" | "amountInvalid";
+  | "error" | "paymentsUnavailable" | "nameRequired" | "limitInvalid" | "pickOne" | "tooMany" | "planActive" | "insufficientBalance";
 
 export type ActionResult = { ok: true } | { ok: false; error: ActionError };
 export type KeyResult = { ok: true; key: string; name: string } | { ok: false; error: ActionError } | null;
@@ -51,7 +53,7 @@ export async function createKeyAction(_previous: KeyResult, form: FormData): Pro
   const billingSource = BILLING_SOURCES.includes(source as BillingSource) ? source as BillingSource : "plan_then_prepaid";
   let allowedModels: string[] | null = null;
   if (form.get("models") === "pick") {
-    const known = new Set(getCatalog().map((model) => model.id));
+    const known = new Set((await getLiveCatalog()).map((model) => model.id));
     allowedModels = [...new Set(form.getAll("model").map(String))].filter((id) => known.has(id));
     if (allowedModels.length === 0) return { ok: false, error: "pickOne" };
   }
@@ -97,7 +99,6 @@ export async function updateOverflowAction(_previous: ActionResult | null, form:
   if (cap === null || cap > MAX_LIMIT_MICRO_USD) return { ok: false, error: "limitInvalid" };
   await getDb().update(workspaces).set({
     overflowMode: form.get("mode") === "stop" ? "stop" : "continue",
-    overflowPacks: form.get("packs") === "on",
     overflowCredits: form.get("credits") === "on",
     overflowCapMicroUsd: cap,
   }).where(eq(workspaces.id, workspaceId));
@@ -105,69 +106,59 @@ export async function updateOverflowAction(_previous: ActionResult | null, form:
   return { ok: true };
 }
 
-/** Elegir, subir o bajar de plan. Subir cobra la diferencia prorrateada; bajar se programa. */
-export async function changePlanAction(planId: string): Promise<ActionResult> {
+export type DepositResult = { ok: true; deposit: DepositView } | { ok: false; error: ActionError };
+
+/**
+ * El depósito en USDC del workspace (ADR-0058): sus direcciones, lo que viene en camino y el saldo. Antes
+ * revisa sus direcciones en la cadena y acredita lo que ya se confirmó; el diálogo la llama cada pocos segundos.
+ */
+export async function depositStatusAction(): Promise<DepositResult> {
   const { workspaceId } = await actionSession();
-  if (!isPlanId(planId)) return { ok: false, error: "error" };
+  const config = readCryptoConfig();
+  if (!paymentsAvailable(config)) return { ok: false, error: "paymentsUnavailable" };
+  const chains = depositChains(config);
   const db = getDb();
-  const now = Date.now();
-  const account = await getAccount(db, workspaceId, now);
-  const current = account.plan?.plan ?? null;
-  if (current?.id === planId) {
-    await scheduleDowngrade(db, workspaceId, null);
-    refresh();
-    return { ok: true };
-  }
-  if (current && PLANS[planId].priceMicroUsd < current.priceMicroUsd) {
-    await scheduleDowngrade(db, workspaceId, planId);
-    refresh();
-    return { ok: true };
-  }
-  const provider = getPaymentProvider();
-  if (!provider) return { ok: false, error: "paymentsUnavailable" };
-  if (current && account.subscription) {
-    const amount = upgradeCharge(current.id, planId, account.subscription.periodEnd.getTime(), now);
-    const payment = await provider.charge(workspaceId, { kind: "subscription", planId, amountMicroUsd: amount });
-    await upgradeSubscription(db, { workspaceId, planId, amountMicroUsd: amount, payment });
-  } else {
-    const payment = await provider.charge(workspaceId, { kind: "subscription", planId, amountMicroUsd: PLANS[planId].priceMicroUsd });
-    await activateSubscription(db, { workspaceId, planId, payment, now });
-  }
-  refresh();
-  return { ok: true };
+  // Las direcciones existen antes de revisar: la primera consulta de un workspace ya las mira en la cadena.
+  await ensureDepositAddresses(db, chains, workspaceId);
+  await scanDeposits(db, chains, Date.now(), { workspaceId });
+  return { ok: true, deposit: depositView(config, chains, await getDepositState(db, chains, workspaceId, Date.now())) };
 }
 
-export async function setCancelAction(cancel: boolean): Promise<ActionResult> {
+/** Solo en desarrollo local: acredita un depósito sin cadena. */
+export async function simulateDepositAction(amount: string): Promise<DepositResult> {
   const { workspaceId } = await actionSession();
-  await setCancelAtPeriodEnd(getDb(), workspaceId, cancel);
-  refresh();
-  return { ok: true };
-}
-
-export async function topUpAction(amount: string): Promise<ActionResult> {
-  const { workspaceId } = await actionSession();
+  const config = readCryptoConfig();
+  if (!config.simulate) return { ok: false, error: "error" };
   const micros = /^\d{1,13}$/.test(amount) ? BigInt(amount) : null;
-  if (micros === null || micros < TOPUP_MIN_MICRO_USD || micros > TOPUP_MAX_MICRO_USD || micros % BigInt(10_000) !== BigInt(0)) {
-    return { ok: false, error: "amountInvalid" };
-  }
-  const provider = getPaymentProvider();
-  if (!provider) return { ok: false, error: "paymentsUnavailable" };
-  const payment = await provider.charge(workspaceId, { kind: "topup", amountMicroUsd: micros });
-  await recordTopUp(getDb(), { workspaceId, amountMicroUsd: micros, payment });
-  refresh();
-  return { ok: true };
+  if (micros === null || micros < MIN_DEPOSIT_MICRO_USD) return { ok: false, error: "error" };
+  const chains = depositChains(config);
+  await simulateDeposit(getDb(), workspaceId, micros, Date.now());
+  return { ok: true, deposit: depositView(config, chains, await getDepositState(getDb(), chains, workspaceId, Date.now())) };
 }
 
-export async function buyPackAction(modelId: string): Promise<ActionResult> {
-  const { workspaceId } = await actionSession();
-  const offer = packOffer(modelId);
-  if (!offer) return { ok: false, error: "error" };
-  const provider = getPaymentProvider();
-  if (!provider) return { ok: false, error: "paymentsUnavailable" };
-  const payment = await provider.charge(workspaceId, { kind: "pack", modelId, amountMicroUsd: offer.priceMicroUsd });
-  await recordPackPurchase(getDb(), { workspaceId, modelId, payment, now: Date.now() });
-  refresh();
-  return { ok: true };
+export type PurchaseResult =
+  | { ok: true; mode: PlanQuote["mode"]; amountMicroUsd: string }
+  /** Con `insufficientBalance`: cuánto falta depositar y el saldo de ese momento. */
+  | { ok: false; error: ActionError; missingMicroUsd?: string; balanceMicroUsd?: string };
+
+/** Compra un plan con el saldo. El precio lo pone el servidor: el cliente solo dice qué plan quiere. */
+export async function buyPlanAction(planId: string): Promise<PurchaseResult> {
+  const { workspaceId, now } = await actionSession();
+  if (!isPlanId(planId)) return { ok: false, error: "error" };
+  try {
+    // Sin `refresh()`: la página la refresca el diálogo, que vive fuera de lo que cambia al comprar.
+    const result = await buyPlanWithBalance(getDb(), { workspaceId, planId, now });
+    return { ok: true, mode: result.mode, amountMicroUsd: result.amountMicroUsd.toString() };
+  } catch (error) {
+    if (error instanceof InsufficientBalanceError) {
+      return {
+        ok: false, error: "insufficientBalance",
+        missingMicroUsd: error.missingMicroUsd.toString(), balanceMicroUsd: error.balanceMicroUsd.toString(),
+      };
+    }
+    if (error instanceof PlanNotAvailableError) return { ok: false, error: "planActive" };
+    throw error;
+  }
 }
 
 export async function exportDataAction(): Promise<string> {

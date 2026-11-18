@@ -18,7 +18,7 @@ Lo que falta decidir o conseguir. Cada pregunta tiene un **default**: es lo que 
 | ¿Se cobra un mínimo por request? | Sí: 10 µUSD por request que genera salida, igual que el upstream | [0030](./adr/0030-cobro-minimo-por-request.md) |
 | ¿Pasa el razonamiento de los modelos al cliente? | Sí, como `reasoning_content` | [0031](./adr/0031-reasoning-content-pasa-al-cliente.md) |
 | ¿Qué base se usa en desarrollo? | PGlite, con node-postgres en todos lados | [0032](./adr/0032-postgres-node-postgres-y-pglite.md) |
-| ¿Nombre y dominio definitivo? (era la 4) | `cheaptokens.wtf`, con la API en `api.cheaptokens.wtf` | [0026](./adr/0026-marca-cheaptokens-wtf.md) |
+| ¿Nombre y dominio definitivo? (era la 4) | `cheapllm.wtf`, con la API en `api.cheapllm.wtf` | [0051](./adr/0051-marca-cheapllm-wtf.md) |
 | ¿Comparte marca con Deska? (parte de la 9) | No: la marca es propia | [0026](./adr/0026-marca-cheaptokens-wtf.md) |
 | ¿Prefijo de las API keys? | `wtf_` | [0027](./adr/0027-formato-api-keys-wtf.md) |
 
@@ -40,22 +40,22 @@ Se decide al cerrar la fase de pruebas, que corre con InferHub y el upstream sim
 
 ### 2. Aprobación por escrito de un MoR
 
-Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y pedir la confirmación por escrito ([ADR-0019](./adr/0019-merchant-of-record.md)). La descripción incluye los planes mensuales y los paquetes por modelo, no solo las recargas ([ADR-0049](./adr/0049-suscripcion-con-limites.md)). Si los dos rechazan, se activa el plan B: Stripe directo con Stripe Tax ([ADR-0009](./adr/0009-stripe-checkout.md)). *Default: Polar.*
+Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y pedir la confirmación por escrito ([ADR-0019](./adr/0019-merchant-of-record.md)). La descripción incluye los planes mensuales y los paquetes por modelo, no solo las recargas ([ADR-0049](./adr/0049-suscripcion-con-limites.md)). Si los dos rechazan, se activa el plan B: Stripe directo con Stripe Tax ([ADR-0009](./adr/0009-stripe-checkout.md)). *Default: Polar.* **En pausa:** mientras tanto se cobra solo en USDC ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)), así que ya no bloquea vender; sí bloquea cobrar con tarjeta.
 
 ### 3. Validación legal y fiscal en México
 
 - **Abogado:** términos de servicio, política de uso aceptable trasladada y aviso de privacidad (LFPDPPP, más GDPR si hay usuarios en la UE) ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
-- **Contador:** facturación al MoR (probable exportación de servicios), IVA por los servicios que compramos a upstreams extranjeros, y qué pasa con los clientes mexicanos que pidan CFDI.
+- **Contador:** cómo se registran los ingresos en USDC sin MoR ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)) y el IVA de cada cliente; si vuelve un MoR, la facturación a él (probable exportación de servicios); IVA por los servicios que compramos a upstreams extranjeros, y qué pasa con los clientes mexicanos que pidan CFDI.
 
 *Sin default: lo tienen que revisar ellos.*
 
-### 4. Registrar `cheaptokens.wtf`
+### 4. Registrar `cheapllm.wtf`
 
-El nombre y el dominio ya están decididos ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)), pero el 2026-11-10 el dominio seguía libre, sin registrar. Hay que comprarlo **antes de anunciar el nombre** y antes de configurarlo en Vercel y en Clerk. *Sin default.*
+El nombre y el dominio ya están decididos ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)), pero el 2026-11-17 el dominio seguía libre, sin registrar. El primer nombre, `cheaptokens.wtf`, se perdió justo por eso: lo registró un tercero antes que nosotros. Hay que comprarlo ya, **antes de anunciar el nombre** y antes de configurarlo en Vercel y en Clerk. *Sin default.*
 
 ### 10. Calibrar los límites de los planes y el margen
 
-Los límites de Plus, Pro y Max se miden a precio cheaptokens.wtf, y sus valores son iniciales ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)). Usados al máximo, los tres planes solo cubren su costo si el costo upstream es ≤ ~38 % del precio. Con Claude Opus 5.5 es ≈ 91 % (InferHub nos cobra $0.436 / $2.18 por 1M y lo vendemos a $0.48 / $2.40). Los paquetes, con 20 % extra, necesitan ≤ 83 %.
+Los límites de Plus, Pro y Max se miden a precio cheapllm.wtf, y sus valores son iniciales ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)). Usados al máximo, los tres planes solo cubren su costo si el costo upstream es ≤ ~38 % del precio. Con Claude Opus 5.5 es ≈ 91 % (InferHub nos cobra $0.436 / $2.18 por 1M y lo vendemos a $0.48 / $2.40). Los paquetes, con 20 % extra, necesitan ≤ 83 %.
 
 - (a) Bajar los límites hasta que el peor caso cuadre con el modelo de menor margen.
 - (b) Ponderar por modelo: los de margen bajo gastan el límite con un multiplicador o quedan fuera del plan y de los paquetes.
@@ -86,12 +86,20 @@ Con un MoR, una recarga de $10 pierde unos $0.80–$1.00 (8–10%) en comisión,
 
 ### 7. ¿Qué margen mínimo sobre el costo upstream?
 
-*Default: 10% (`MIN_MARGIN`), validado al sincronizar ([06](./06-catalogo-y-precios.md#margen-mínimo)).*
+*Decidido el 2026-11-17: 30% (`MIN_MARGIN`), validado al sincronizar ([06](./06-catalogo-y-precios.md#margen-mínimo), [ADR-0053](./adr/0053-margen-minimo-de-30.md)). Los planes usados al máximo siguen sin cuadrar (#10).*
 
 ### 8. ¿Qué rate limit inicial?
 
 *Default: 60 requests/min por workspace, con override por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Con plan: 60 en Plus, 120 en Pro y 300 en Max ([ADR-0049](./adr/0049-suscripcion-con-limites.md)).*
 
-### 9. ¿cheaptokens.wtf comparte usuarios con Deska?
+### 9. ¿cheapllm.wtf comparte usuarios con Deska?
 
 La marca ya es propia ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)). *Default: tampoco comparte usuarios: tiene su propia instancia de Clerk.*
+
+### 10. ¿Dónde pide ayuda quien envió otro token u otra red?
+
+Un depósito de otro token, o de USDC por otra red, no se acredita solo ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). Se puede recuperar a mano con la llave de esa dirección, pero el dashboard no nombra un canal ni existe la herramienta. *Sin default: falta elegir un correo o un Discord de soporte.*
+
+### 11. ¿Quién guarda la semilla de los depósitos?
+
+De `CRYPTO_DEPOSIT_SEED` salen todas las direcciones de depósito ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). Si se pierde, lo que llegue a las direcciones actuales queda sin llave; si se filtra, quien la tenga puede mover lo que todavía no se barrió. *Default: un gestor de contraseñas además de Vercel, con acceso de una sola persona.*

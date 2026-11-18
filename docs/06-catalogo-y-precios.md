@@ -4,7 +4,7 @@
 
 Desde [ADR-0046](./adr/0046-catalogo-desde-la-lista-oficial.md), `pnpm catalog:refresh` importa modelos de pago desde la lista oficial pública de InferHub. Los modelos visibles, precios de referencia y rutas proceden de `catalog/generated/`, exportados por `catalog/models.ts` y `catalog/upstreams.ts`. El reporte guarda la URL de origen, fecha y conteos de importación. `pnpm catalog:sync` sigue siendo el paso que valida y persiste la configuración en la base del gateway.
 
-Se agrupan rutas duplicadas y se excluyen alias, pools gratuitos y entradas sin datos suficientes. Cada modelo conserva una ruta explícita y sus metadatos. Los descuentos importados cubren la mediana de sus ofertas más el margen mínimo del 10%, con un máximo de 90%. Los precios de referencia reportados por el proveedor mantienen la verificación con el creador pendiente. Los modelos retirados conservan su ID y no se publican.
+Se agrupan rutas duplicadas y se excluyen alias, pools gratuitos y entradas sin datos suficientes. Cada modelo conserva una ruta explícita y sus metadatos. Los descuentos importados cubren la mediana de sus ofertas más el margen mínimo del 30%, con un máximo de 90%. Los precios de referencia reportados por el proveedor mantienen la verificación con el creador pendiente. Los modelos retirados conservan su ID y no se publican.
 
 ## Identificadores de modelo
 
@@ -32,21 +32,21 @@ Esquema completo en [09 · Modelo de datos](./09-modelo-de-datos.md#models). Lo 
 | `tags` | `["fast", "vision", "tools", "long-context"]` | Ver [Tags](#tags) |
 | `status` | `active` | Ver [Estados](#estados-de-un-modelo) |
 
-## Precio cheaptokens.wtf
+## Precio cheapllm.wtf
 
-**El precio cheaptokens.wtf se deriva, no se escribe a mano** ([ADR-0010](./adr/0010-precio-por-descuento.md)):
+**El precio cheapllm.wtf se deriva, no se escribe a mano** ([ADR-0010](./adr/0010-precio-por-descuento.md)):
 
 ```
-precio_cheaptokens = redondear( precio_oficial × (10000 − discount_bps) / 10000 )
+precio_cheapllm = redondear( precio_oficial × (10000 − discount_bps) / 10000 )
 ```
 
 - Se calcula para input y para output con **el mismo descuento**. Así cada modelo muestra un solo porcentaje.
 - Se expresa en µUSD por 1M de tokens y se redondea al µUSD más cercano ([ADR-0007](./adr/0007-dinero-en-micro-dolares.md)).
-- Si el autor cambia su precio oficial, se actualiza ese campo y el precio cheaptokens.wtf se recalcula solo.
+- Si el autor cambia su precio oficial, se actualiza ese campo y el precio cheapllm.wtf se recalcula solo.
 
 Ejemplo (ilustrativo):
 
-| | Oficial / 1M | Descuento | cheaptokens.wtf / 1M |
+| | Oficial / 1M | Descuento | cheapllm.wtf / 1M |
 |---|---|---|---|
 | Input | $3.00 | 90% | **$0.30** |
 | Output | $15.00 | 90% | **$1.50** |
@@ -63,10 +63,11 @@ Ejemplo (ilustrativo):
 Cada mapeo modelo → upstream guarda **lo que ese upstream nos cobra** (input y output por 1M). La sincronización del catálogo **falla** si en algún mapeo habilitado:
 
 ```
-precio_cheaptokens < costo_upstream × (1 + MIN_MARGIN)
+precio_cheapllm < costo_upstream × (1 + MIN_MARGIN)
 ```
 
-- `MIN_MARGIN` empieza en **10%** y se configura globalmente (está en [preguntas abiertas](./12-preguntas-abiertas.md)).
+- **El precio publicado es una referencia y un máximo.** Cada request se cobra a su costo real en el upstream × (1 + `MIN_MARGIN`) ([ADR-0054](./adr/0054-cobro-por-costo-real.md)).
+- `MIN_MARGIN` es **30%** y se configura globalmente (`MIN_MARGIN_BPS` en `src/lib/catalog/validate.ts`, [ADR-0053](./adr/0053-margen-minimo-de-30.md)).
 - Se valida por separado para input y para output.
 - **Fase de pruebas:** fuera de producción, la validación solo **advierte**, para poder probar mapeos que todavía no tienen un costo confirmado. Con InferHub, los modelos medidos sí dejan margen ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md)). En producción, falla.
 - **Nunca se publica en producción un precio que pierda dinero.** Si un upstream sube su precio, hay dos salidas: bajar el descuento de ese modelo o deshabilitar ese upstream.
@@ -87,7 +88,7 @@ Ejemplo con los precios de arriba y 2,000 tokens de input + 500 de output:
 
 | | Cálculo | µUSD | USD |
 |---|---|---|---|
-| cheaptokens.wtf | (2,000 × 300,000 + 500 × 1,500,000) / 1M | 1,350 | $0.00135 |
+| cheapllm.wtf | (2,000 × 300,000 + 500 × 1,500,000) / 1M | 1,350 | $0.00135 |
 | Oficial | (2,000 × 3,000,000 + 500 × 15,000,000) / 1M | 13,500 | $0.0135 |
 | Ahorro del cliente | | 12,150 | $0.01215 |
 
@@ -110,7 +111,7 @@ La lista de tags es **fija y vive en el código** ([ADR-0011](./adr/0011-tags-cu
 | `tools` | Tools | Herramientas | Soporta function calling | Curado |
 | `open-weights` | Open weights | Pesos abiertos | Sus pesos son públicos (Llama, Qwen, DeepSeek…) | Curado |
 | `long-context` | Long context | Contexto largo | `context_length ≥ 200,000` | **Calculado** al sincronizar |
-| `cheap` | Budget | Económico | Precio cheaptokens.wtf de output ≤ $1.00 por 1M | **Calculado** al sincronizar |
+| `cheap` | Budget | Económico | Precio cheapllm.wtf de output ≤ $1.00 por 1M | **Calculado** al sincronizar |
 
 - Un modelo puede tener varios tags.
 - Los tags calculados no se escriben a mano: el script de sincronización los agrega o los quita, así nunca quedan desactualizados.
@@ -127,12 +128,16 @@ La lista de tags es **fija y vive en el código** ([ADR-0011](./adr/0011-tags-cu
 
 ## Fuente de verdad y sincronización
 
-([ADR-0012](./adr/0012-catalogo-en-repo.md))
+([ADR-0055](./adr/0055-catalogo-en-vivo-con-varios-proveedores.md), que actualiza a [ADR-0012](./adr/0012-catalogo-en-repo.md))
 
-- **El catálogo vive en el repo:** `catalog/models.ts` y `catalog/upstreams.ts`, tipados y validados con zod.
-- **`pnpm catalog:sync`** valida todo (esquema, margen mínimo, tags, que no se borre ningún ID) y hace upsert a Postgres. Al terminar, llama a un endpoint interno protegido que ejecuta `revalidateTag('catalog', 'max')` para refrescar `/models` y `GET /v1/models`.
+- **El catálogo vigente vive en Postgres y se actualiza solo.** Cada minuto un cron llama a `GET /api/internal/refresh-catalog`: trae la lista de cada proveedor (`src/lib/catalog/providers/`), las mezcla, valida y escribe. Desde la terminal: `pnpm catalog:live`.
+- **Varios proveedores:** el precio publicado de un modelo sale de la ruta más barata. Las demás quedan de respaldo solo si su costo cabe bajo ese precio.
+- **Un proveedor que falla conserva sus rutas.** Si fallan todos, no se escribe nada.
+- **El sitio y `GET /v1/models` leen de la base,** con caché de un minuto. Un cambio de costo llega al precio publicado en cerca de un minuto.
+- **El catálogo del repo es la semilla y el respaldo:** `catalog/models.ts` y `catalog/upstreams.ts`, tipados y validados con zod. Se usa sin base de datos (build, pruebas), con la base vacía o si no responde.
+- **`pnpm catalog:sync`** escribe el catálogo del repo en la base (para sembrar una base nueva): valida todo (esquema, margen mínimo, tags, que no se borre ningún ID) y hace upsert a Postgres. Al terminar, llama a un endpoint interno protegido que ejecuta `revalidateTag('catalog', 'max')` para refrescar `/models` y `GET /v1/models`.
 - **Nunca borra filas.** Si un modelo desaparece del archivo, la sincronización falla: hay que pasarlo a `retired`.
 - **Interruptor de emergencia:** la columna `ops_disabled_at` de `model_upstreams` se puede poner a mano en la base (SQL en la consola de Neon) para apagar un upstream al instante. **La sincronización nunca toca esa columna**, así que un deploy no revierte una medida de emergencia.
-- El gateway cachea el catálogo en memoria por 60 s, así que un cambio, incluido el interruptor de emergencia, tarda como máximo 60 s en aplicarse.
+- El gateway cachea el catálogo en memoria por 15 s, así que un cambio, incluido el interruptor de emergencia, tarda como máximo 15 s en aplicarse.
 
 En la fase 2 se agrega un panel de admin que edita los mismos datos.

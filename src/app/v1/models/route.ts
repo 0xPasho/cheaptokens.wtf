@@ -1,11 +1,13 @@
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 
+import { loadCatalogEntries } from "@/lib/catalog/live";
 import { buildModelsResponse } from "@/lib/catalog/public-api";
 
 async function getPublicModels() {
   "use cache";
   cacheTag("catalog");
-  return buildModelsResponse();
+  cacheLife("minutes");
+  return buildModelsResponse(await loadCatalogEntries());
 }
 
 export async function GET(): Promise<Response> {

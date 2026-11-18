@@ -27,7 +27,7 @@ Además, metadata por página (canónica y alternativas de idioma recíprocas) y
 | D2 | Se indexan todos los modelos visibles (`active` y `deprecated`) en los dos idiomas | Default | El precio comparado es un dato propio; 89 páginas es poco riesgo de contenido pobre |
 | D3 | Páginas nuevas: por autor, por tag y comparaciones | Usuario | Son el equivalente de makers, categorías y colecciones de Deska |
 | D4 | `deprecated` entra al sitemap; `retired` sigue dando 404 y no entra | Default | Antes del lanzamiento no hay URLs indexadas que perder |
-| D5 | `SITE_URL = https://cheaptokens.wtf`; `x-default` apunta a inglés | Default | ADR-0026; igual que `languageAlternates()` de Deska |
+| D5 | `SITE_URL = https://cheapllm.wtf`; `x-default` apunta a inglés | Default | ADR-0051; igual que `languageAlternates()` de Deska |
 | D6 | `robots.ts` bloquea todo (`Disallow: /`) fuera de producción (`VERCEL_ENV`) | Default | Los previews no deben indexarse |
 | D7 | `/design-system`, `/api` y `/v1` quedan fuera del sitemap y bloqueadas | Default | `/design-system` es una referencia interna; `/v1` es la API |
 | D8 | `lastModified` solo con una fecha que represente el contenido; hoy ningún modelo tiene una | Default | Regla de Deska: nunca `new Date()` ni la fecha del snapshot, que cambia en cada refresh |
@@ -35,7 +35,7 @@ Además, metadata por página (canónica y alternativas de idioma recíprocas) y
 
 ## 2. Qué se copia, archivo por archivo
 
-| Deska (`deska-web/src/…`) | cheaptokens (`src/…`) | Cambia |
+| Deska (`deska-web/src/…`) | cheapllm (`src/…`) | Cambia |
 |---|---|---|
 | `app/sitemap.ts` | `app/sitemap.ts` | `revalidate` → `"use cache"` (ver §3) |
 | `app/sitemap-index/route.ts` | `app/sitemap-index/route.ts` | Nada |
@@ -43,7 +43,7 @@ Además, metadata por página (canónica y alternativas de idioma recíprocas) y
 | `app/robots.ts` | `app/robots.ts` | + bloqueo fuera de producción (D6) |
 | `modules/sitemap/types.ts` | `lib/sitemap/types.ts` | Familias: `models`, `authors`, `compare` |
 | `modules/sitemap/lib.ts` | `lib/sitemap/lib.ts` | `sitemapUrls()` con prefijo `/en` (ver §3) |
-| `modules/sitemap/data.ts` (`STATIC_ROUTES`) | `lib/sitemap/data.ts` | Las rutas de cheaptokens |
+| `modules/sitemap/data.ts` (`STATIC_ROUTES`) | `lib/sitemap/data.ts` | Las rutas de cheapllm |
 | `common/lib/sitemap.ts` (`sitemapIds`, `sitemapEntries`, `leadingEntries`) | `lib/sitemap/index.ts` | Lee el catálogo del repo, no una base de datos |
 | `modules/blog/sitemap.ts` | `lib/blog/sitemap.ts` | Prisma → Drizzle (ver §3 y §8.2) |
 | `common/lib/seo.ts` (`SITE_URL`, `SITEMAP_CHUNK_SIZE`, `pageMetadata`, `languageAlternates`) | `lib/seo.ts` | Sin tarjeta OG |

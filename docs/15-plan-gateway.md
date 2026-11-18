@@ -1,6 +1,6 @@
 # 15 · Plan: gateway con InferHub
 
-> **Estado (2026-11-11): implementado.** Las olas 0 a 4 están integradas en `main`, con revisión de cada paquete y una verificación final. El gateway funciona de punta a punta contra el upstream simulado y contra InferHub de verdad. Lo que salió al construir está en [§8](#8-lo-que-salió-al-construir). Falta P2: la key de InferHub solo para cheaptokens.wtf.
+> **Estado (2026-11-11): implementado.** Las olas 0 a 4 están integradas en `main`, con revisión de cada paquete y una verificación final. El gateway funciona de punta a punta contra el upstream simulado y contra InferHub de verdad. Lo que salió al construir está en [§8](#8-lo-que-salió-al-construir). Falta P2: la key de InferHub solo para cheapllm.wtf.
 
 ## Objetivo
 
@@ -39,7 +39,7 @@ El 2026-11-10, con la cuenta que ya usan las herramientas de código del dueño,
 | # | Qué | Quién | Bloquea |
 |---|---|---|---|
 | P1 | **Inicializar git** en el proyecto y hacer el commit inicial. Opcional: un repo privado en GitHub | Dueño (o Claude, con su visto bueno) | **Todo.** Los ejecutores trabajan en worktrees y los revisores revisan diffs |
-| P2 | **Una key de InferHub solo para cheaptokens.wtf**, en `.env.local` como `UPSTREAM_INFERHUB_API_KEY`. Si InferHub permite ponerle límite, de unos $5 | Dueño | Solo las pruebas en vivo (ola 4). Antes se trabaja con el upstream simulado |
+| P2 | **Una key de InferHub solo para cheapllm.wtf**, en `.env.local` como `UPSTREAM_INFERHUB_API_KEY`. Si InferHub permite ponerle límite, de unos $5 | Dueño | Solo las pruebas en vivo (ola 4). Antes se trabaja con el upstream simulado |
 | P3 | ~~Las decisiones D1–D3~~ | — | **Resuelto:** quedaron en los ADRs 0029, 0030 y 0031 ([§2](#2-decisiones)) |
 | P4 | Base de datos local: **PGlite**, sin cuenta ni Docker (Docker y `psql` no están instalados) ([ADR-0032](./adr/0032-postgres-node-postgres-y-pglite.md)) | Nadie | No bloquea |
 | P5 | Clerk, Upstash, Neon y Vercel | — | **No hacen falta en este plan** |
@@ -298,7 +298,7 @@ Verificado el 2026-11-11 sobre el `main` integrado (verificación final con Opus
 ## 7. Después de este plan
 
 - **Dashboard:** keys, saldo y uso. Necesita la instancia de Clerk del dueño.
-- **Deploy:** Vercel Pro, Neon, Upstash y los dominios ([12 #4](./12-preguntas-abiertas.md#4-registrar-cheaptokenswtf)).
+- **Deploy:** Vercel Pro, Neon, Upstash y los dominios ([12 #4](./12-preguntas-abiertas.md#4-registrar-cheapllmwtf)).
 - **Pagos:** solo con la aprobación por escrito del MoR ([12 #2](./12-preguntas-abiertas.md#2-aprobación-por-escrito-de-un-mor)).
 - **Prueba de fidelidad de InferHub,** antes de considerarlo para producción ([ADR-0028](./adr/0028-inferhub-upstream-de-pruebas.md#consecuencias)).
 - **`/v1/messages`:** InferHub ya lo expone, así que la fase 2 (Claude Code) sería un adaptador más que un upstream nuevo.
@@ -346,7 +346,7 @@ Codex pasó de 29% a 30% de su cuota semanal en todo el plan.
 
 ### Pendientes conocidos
 
-- **P2:** la key de InferHub solo para cheaptokens.wtf. Las pruebas en vivo usaron la de las herramientas del dueño, por variable de entorno y sin guardarla en ningún archivo.
+- **P2:** la key de InferHub solo para cheapllm.wtf. Las pruebas en vivo usaron la de las herramientas del dueño, por variable de entorno y sin guardarla en ningún archivo.
 - **Rate limit en memoria:** es por instancia. Upstash llega con el plan de deploy.
 - **`CodeBlock`:** el botón de copiar tapa el final de la primera línea en bloques con líneas largas (los ejemplos SSE de `/docs`).
 - **Header en 360 px:** se desborda unos 40 px en las dos lenguas. Ya pasaba antes de este plan.

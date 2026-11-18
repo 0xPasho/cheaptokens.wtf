@@ -16,7 +16,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0002](./0002-api-compatible-openai.md) | API pública compatible con OpenAI Chat Completions | Aceptada (ampliada por 0031) | Default |
 | [0003](./0003-clerk-solo-dashboard.md) | Clerk solo para el dashboard, API keys propias | Aceptada (ampliada por 0050) | Usuario |
 | [0004](./0004-formato-api-keys.md) | Formato de API key con prefijo + checksum, guardadas como SHA-256 | Reemplazada por 0027 | Default |
-| [0005](./0005-gateway-en-nextjs-vercel.md) | Gateway dentro de Next.js en Vercel, aislado para poder extraerlo | Aceptada | Default |
+| [0005](./0005-gateway-en-nextjs-vercel.md) | Gateway dentro de Next.js en Vercel, aislado para poder extraerlo | Aceptada (el hosting cambia por 0059) | Default |
 | [0006](./0006-postgres-neon-drizzle.md) | Postgres en Neon con Drizzle | Reemplazada por 0032 | Default |
 | [0007](./0007-dinero-en-micro-dolares.md) | Dinero como enteros en micro-dólares | Aceptada | Default |
 | [0008](./0008-creditos-prepagados.md) | Créditos prepagados y cobro después del request | Reemplazada por 0049 | Default |
@@ -30,16 +30,16 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0016](./0016-workspace-dueno.md) | El workspace es dueño del saldo y las keys, con cuentas personales | Aceptada | Default |
 | [0017](./0017-rate-limit-upstash.md) | Rate limit por workspace con Upstash Redis | Aceptada | Default |
 | [0018](./0018-sin-creditos-gratis.md) | Sin créditos gratis al registrarse | Aceptada | Default |
-| [0019](./0019-merchant-of-record.md) | Merchant of Record para las recargas (Polar, luego Paddle) | **Propuesta** | Usuario + Default |
+| [0019](./0019-merchant-of-record.md) | Merchant of Record para las recargas (Polar, luego Paddle) | **Propuesta**, en pausa por 0058 | Usuario + Default |
 | [0020](./0020-intermediario-entidad-mexico.md) | cheaptokens.wtf opera como intermediario, con entidad en México | Aceptada | Usuario |
 | [0021](./0021-dominios.md) | Dominio temporal, con la web y la API en hosts separados | Reemplazada por 0026 | Usuario + Default |
 | [0022](./0022-openrouter-no-es-upstream.md) | OpenRouter no es upstream; los términos del upstream deben permitir la reventa | Reemplazada por 0024 | Default |
 | [0023](./0023-sistema-de-diseno-neutro.md) | Sistema de diseño neutro, con color solo para dinero, atención y error | Aceptada | Default |
 | [0024](./0024-openrouter-upstream-de-pruebas.md) | OpenRouter es el upstream de la fase de pruebas | Reemplazada por 0028 | Usuario |
 | [0025](./0025-material-liquid-glass.md) | Material liquid glass para la capa de controles y navegación | Aceptada | Usuario + Default |
-| [0026](./0026-marca-cheaptokens-wtf.md) | La marca es `cheaptokens.wtf`, con la web en `cheaptokens.wtf` y la API en `api.cheaptokens.wtf` | Aceptada | Usuario + Default |
+| [0026](./0026-marca-cheaptokens-wtf.md) | La marca es `cheaptokens.wtf`, con la web en `cheaptokens.wtf` y la API en `api.cheaptokens.wtf` | Reemplazada por 0051 | Usuario + Default |
 | [0027](./0027-formato-api-keys-wtf.md) | Formato `wtf_` + checksum, guardadas como SHA-256 | Aceptada | Usuario + Default |
-| [0028](./0028-inferhub-upstream-de-pruebas.md) | InferHub es el upstream de la fase de pruebas, con tope de precio por request | Aceptada | Usuario + Default |
+| [0028](./0028-inferhub-upstream-de-pruebas.md) | InferHub es el upstream de la fase de pruebas, con tope de precio por request | Aceptada (la key pasa a una lista de cuentas por 0057) | Usuario + Default |
 | [0029](./0029-catalogo-de-pruebas-inferhub.md) | El catálogo de pruebas usa cuatro modelos que InferHub sirve de verdad | Aceptada | Default |
 | [0030](./0030-cobro-minimo-por-request.md) | Cobro mínimo de 10 µUSD por request que genera salida | Aceptada | Default |
 | [0031](./0031-reasoning-content-pasa-al-cliente.md) | `reasoning_content` pasa al cliente | Aceptada | Default |
@@ -60,8 +60,17 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0046](./0046-catalogo-desde-la-lista-oficial.md) | Importar modelos, precios y rutas desde la lista oficial de InferHub | Aceptada | Usuario |
 | [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
 | [0048](./0048-modo-retro-konami.md) | El código Konami (↑↑↓↓←→←→BA Enter) activa el modo retro de toda la web | Aceptada | Usuario |
-| [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada | Usuario |
+| [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada (precios y límites cambiados por 0052; renovación y paquetes cambiados por 0058) | Usuario |
 | [0050](./0050-login-clerk-y-modo-desarrollo.md) | Login con Clerk cuando está configurado, y un modo de desarrollo solo en local | Aceptada | Usuario |
+| [0051](./0051-marca-cheapllm-wtf.md) | La marca es `cheapllm.wtf`, con la web en `cheapllm.wtf` y la API en `api.cheapllm.wtf` | Aceptada | Usuario |
+| [0052](./0052-precios-de-los-planes.md) | Plus, Pro y Max cuestan $9, $39 y $99 al mes, con la ventana al 14 % y la semana al 60 % del precio | Aceptada | Usuario + Default |
+| [0053](./0053-margen-minimo-de-30.md) | El margen mínimo sobre el costo del upstream sube de 10 % a 30 % | Aceptada | Usuario |
+| [0054](./0054-cobro-por-costo-real.md) | Cada request se cobra a su costo real en el upstream más el margen; el precio del catálogo queda como referencia y tope | Aceptada | Usuario + Default |
+| [0055](./0055-catalogo-en-vivo-con-varios-proveedores.md) | El catálogo vigente vive en la base, se actualiza solo desde los proveedores y admite varios | Aceptada | Usuario + Default |
+| [0056](./0056-pagos-en-usdc.md) | Se cobra en USDC sobre Solana y Base, directo a nuestras wallets, con un monto único por orden; los planes se pagan por 30 días | Reemplazada por 0058 | Usuario + Default |
+| [0057](./0057-varias-cuentas-por-upstream.md) | Un upstream puede tener varias cuentas: el gateway rota entre ellas y, si una falla por su key, saldo o rate limit, prueba la siguiente | Aceptada | Usuario + Default |
+| [0058](./0058-deposito-por-cuenta-y-saldo.md) | Cada cuenta deposita USDC en su propia dirección y el sistema lo barre a la wallet principal; el depósito es saldo para cualquier modelo, los planes se pagan con saldo y ya no se venden paquetes por modelo | Aceptada | Usuario + Default |
+| [0059](./0059-servidor-propio-con-pm2-y-nginx.md) | La app corre en un servidor propio con pm2 y nginx, detrás de Cloudflare | Aceptada | Usuario |
 
 ## Plantilla
 

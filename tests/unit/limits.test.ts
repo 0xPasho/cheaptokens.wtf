@@ -19,25 +19,25 @@ const pro = (fiveHourUsed: number, weekUsed = fiveHourUsed): PlanUsage => ({
 
 describe("plan limits", () => {
   it("the smaller of the two limits wins and never goes negative", () => {
-    expect(planRemaining(pro(1_000_000, 1_000_000), now)).toBe(big(6_000_000));
-    expect(planRemaining(pro(0, 29_000_000), now)).toBe(big(1_000_000));
+    expect(planRemaining(pro(1_000_000, 1_000_000), now)).toBe(big(4_460_000));
+    expect(planRemaining(pro(0, 22_400_000), now)).toBe(big(1_000_000));
     expect(planRemaining(pro(9_000_000, 9_000_000), now)).toBe(big(0));
   });
 
   it("an expired window counts as empty", () => {
-    const usage = pro(7_000_000);
+    const usage = pro(5_460_000);
     expect(planRemaining(usage, now)).toBe(big(0));
-    expect(planRemaining(usage, now + FIVE_HOUR_MS)).toBe(big(7_000_000));
+    expect(planRemaining(usage, now + FIVE_HOUR_MS)).toBe(big(5_460_000));
   });
 
   it("resumes when the binding window resets: the week when it is full", () => {
-    expect(planResumesAt(pro(7_000_000, 10_000_000), now)).toBe(now + FIVE_HOUR_MS / 2);
-    expect(planResumesAt(pro(1_000_000, 30_000_000), now)).toBe(now + WEEK_MS / 2);
+    expect(planResumesAt(pro(5_460_000, 10_000_000), now)).toBe(now + FIVE_HOUR_MS / 2);
+    expect(planResumesAt(pro(1_000_000, 23_400_000), now)).toBe(now + WEEK_MS / 2);
     expect(planResumesAt(pro(1_000_000), now)).toBeNull();
   });
 
   it("reports fractions between 0 and 1", () => {
-    expect(windowFraction({ usedMicroUsd: big(3_500_000), resetsAt: now + 1 }, PLANS.pro.fiveHourLimitMicroUsd, now)).toBe(0.5);
+    expect(windowFraction({ usedMicroUsd: big(2_730_000), resetsAt: now + 1 }, PLANS.pro.fiveHourLimitMicroUsd, now)).toBe(0.5);
     expect(windowFraction({ usedMicroUsd: big(9_000_000), resetsAt: now + 1 }, PLANS.pro.fiveHourLimitMicroUsd, now)).toBe(1);
     expect(windowFraction(null, PLANS.pro.fiveHourLimitMicroUsd, now)).toBe(0);
   });
@@ -67,20 +67,20 @@ describe("admission", () => {
   });
 
   it("continues with a pack or credits after the limit", () => {
-    expect(admit({ ...base, plan: pro(7_000_000), packBalanceMicroUsd: big(1) })).toEqual({ ok: true, usesPlan: false });
-    expect(admit({ ...base, plan: pro(7_000_000), balanceMicroUsd: big(1) })).toEqual({ ok: true, usesPlan: false });
+    expect(admit({ ...base, plan: pro(5_460_000), packBalanceMicroUsd: big(1) })).toEqual({ ok: true, usesPlan: false });
+    expect(admit({ ...base, plan: pro(5_460_000), balanceMicroUsd: big(1) })).toEqual({ ok: true, usesPlan: false });
   });
 
   it("rejects with the reset time when the limit is spent and overflow can't pay", () => {
-    expect(admit({ ...base, plan: pro(7_000_000), balanceMicroUsd: big(1), overflow: { ...overflow, mode: "stop" } }))
+    expect(admit({ ...base, plan: pro(5_460_000), balanceMicroUsd: big(1), overflow: { ...overflow, mode: "stop" } }))
       .toEqual({ ok: false, code: "usage_limit_reached", retryAt: now + FIVE_HOUR_MS / 2 });
-    expect(admit({ ...base, plan: pro(7_000_000), balanceMicroUsd: big(1), overflow: { ...overflow, spentThisMonthMicroUsd: big(5_000_000) } }))
+    expect(admit({ ...base, plan: pro(5_460_000), balanceMicroUsd: big(1), overflow: { ...overflow, spentThisMonthMicroUsd: big(5_000_000) } }))
       .toMatchObject({ ok: false, code: "usage_limit_reached" });
   });
 
   it("plan-only keys never use money; prepaid-only keys never use the plan", () => {
     expect(admit({ ...base, source: "plan_only", plan: null, balanceMicroUsd: big(10) })).toEqual({ ok: false, code: "no_active_plan", retryAt: null });
-    expect(admit({ ...base, source: "plan_only", plan: pro(7_000_000), balanceMicroUsd: big(10) })).toMatchObject({ ok: false, code: "usage_limit_reached" });
+    expect(admit({ ...base, source: "plan_only", plan: pro(5_460_000), balanceMicroUsd: big(10) })).toMatchObject({ ok: false, code: "usage_limit_reached" });
     expect(admit({ ...base, source: "prepaid_only", plan: pro(0) })).toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
   });
 
@@ -95,17 +95,17 @@ describe("charge split", () => {
   const total = (split: ReturnType<typeof splitCharge>) => split.plan + split.pack + split.credits + split.absorbed;
 
   it("the request that crosses the limit is not cut: the rest goes to the pack, then credits", () => {
-    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(6_999_900), packBalanceMicroUsd: big(150) });
+    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(5_459_900), packBalanceMicroUsd: big(150) });
     expect(split).toEqual({ plan: big(100), pack: big(150), credits: big(50), absorbed: big(0) });
   });
 
   it("caps overflow credits at the monthly cap and absorbs the rest", () => {
-    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(7_000_000), overflow: { ...overflow, spentThisMonthMicroUsd: big(4_999_900) } });
+    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(5_460_000), overflow: { ...overflow, spentThisMonthMicroUsd: big(4_999_900) } });
     expect(split).toEqual({ plan: big(0), pack: big(0), credits: big(100), absorbed: big(200) });
   });
 
   it("absorbs what passes the limit when overflow is stopped", () => {
-    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(6_999_900), overflow: { ...overflow, mode: "stop" } });
+    const split = splitCharge({ ...base, costMicroUsd: big(300), plan: pro(5_459_900), overflow: { ...overflow, mode: "stop" } });
     expect(split).toEqual({ plan: big(100), pack: big(0), credits: big(0), absorbed: big(200) });
   });
 
@@ -114,8 +114,8 @@ describe("charge split", () => {
   });
 
   it("always adds up to the cost", () => {
-    for (const cost of [0, 1, 10, 999, 7_000_001]) {
-      for (const used of [0, 6_999_999, 7_000_000]) {
+    for (const cost of [0, 1, 10, 999, 5_460_001]) {
+      for (const used of [0, 5_459_999, 5_460_000]) {
         const split = splitCharge({ ...base, costMicroUsd: big(cost), plan: pro(used), packBalanceMicroUsd: big(37) });
         expect(total(split)).toBe(big(cost));
       }

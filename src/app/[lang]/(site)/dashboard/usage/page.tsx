@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getCatalog } from "@/lib/catalog/queries";
+import { getLiveCatalog } from "@/lib/catalog/live";
 import { getUsageSummary, listKeys, listRequests, type UsageFilters as Filters, type UsageSource } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
@@ -69,7 +69,7 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
     listRequests(db, workspaceId, filters, page, PAGE_SIZE),
   ]);
   const d = dict.dashboard.usage;
-  const catalog = getCatalog();
+  const catalog = await getLiveCatalog();
   const names = new Map(catalog.map((model) => [model.id, model.name]));
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageHref = (target: number) => {
@@ -79,6 +79,8 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
   };
   const sourceTotal = Number(summary.plan + summary.pack + summary.credits);
   const split = dict.dashboard.split;
+  // Los paquetes por modelo ya no se venden (ADR-0058): solo aparecen si pagaron algo en este rango.
+  const hadPacks = summary.pack > BigInt(0) || filters.source === "pack";
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,7 +89,11 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
         ranges={RANGES.map((value) => ({ value, label: d.ranges[value] }))}
         keys={[{ value: "all", label: d.allKeys }, ...keys.map((key) => ({ value: key.id, label: key.name }))]}
         models={[{ value: "all", label: d.allModels }, ...catalog.map((model) => ({ value: model.id, label: model.name })).toSorted((a, b) => a.label.localeCompare(b.label, locale))]}
-        sources={[{ value: "all", label: d.allSources }, { value: "plan", label: split.plan }, { value: "pack", label: split.pack }, { value: "credits", label: split.credits }, { value: "errors", label: d.errors }]}
+        sources={[
+          { value: "all", label: d.allSources }, { value: "plan", label: split.plan },
+          ...(hadPacks ? [{ value: "pack", label: split.pack }] : []),
+          { value: "credits", label: split.credits }, { value: "errors", label: d.errors },
+        ]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -105,8 +111,8 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
             {summary.absorbed > BigInt(0) ? ` · ${t(d.absorbed, { amount: formatUsd(Number(summary.absorbed), locale, totalKind(Number(summary.absorbed))) })}` : ""}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-3">
-          {([["plan", summary.plan], ["pack", summary.pack], ["credits", summary.credits]] as const).map(([key, amount]) => (
+        <CardContent className={hadPacks ? "grid gap-6 sm:grid-cols-3" : "grid gap-6 sm:grid-cols-2"}>
+          {([["plan", summary.plan], ...(hadPacks ? [["pack", summary.pack] as const] : []), ["credits", summary.credits]] as const).map(([key, amount]) => (
             <Stat key={key} size="sm" label={split[key]} value={<Price micros={Number(amount)} locale={locale} kind={totalKind(Number(amount))} />} hint={sourceTotal > 0 ? formatPercent(Number(amount) / sourceTotal, locale) : undefined} />
           ))}
         </CardContent>

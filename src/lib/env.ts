@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Variables de entorno del servidor (ADR-0028, ADR-0032). Nunca se importa desde un Client Component.
- * Los nombres de las keys de upstream no están aquí: cada upstream declara su `apiKeyEnv` y se lee con `readSecret`.
+ * Los nombres de las keys de upstream no están aquí: cada upstream declara su `apiKeyEnv` y se lee con `readSecretList`.
  */
 const appEnvSchema = z.enum(["development", "preview", "production"]);
 
@@ -13,7 +13,7 @@ const schema = z.object({
   VERCEL_ENV: appEnvSchema.optional(),
   APP_ENV: appEnvSchema.optional(),
   INTERNAL_REVALIDATE_SECRET: z.string().min(16).optional(),
-  /** Host del gateway (`api.cheaptokens.wtf`). Si falta, se acepta cualquier host. */
+  /** Host del gateway (`api.cheapllm.wtf`). Si falta, se acepta cualquier host. */
   API_HOST: z.string().min(1).optional(),
   GATEWAY_RATE_LIMIT_RPM: z.coerce.number().int().positive().default(60),
 });
@@ -57,10 +57,18 @@ export function readServerEnv(source: EnvSource = process.env): ServerEnv {
   };
 }
 
-/** Lee un secreto por nombre (por ejemplo `UPSTREAM_INFERHUB_API_KEY`). Vacío cuenta como ausente. */
+/** Lee un secreto por nombre (por ejemplo `CRON_SECRET`). Vacío cuenta como ausente. */
 export function readSecret(name: string, source: EnvSource = process.env): string | null {
   const value = source[name];
   return value ? value : null;
+}
+
+/**
+ * Las keys de un upstream (por ejemplo `UPSTREAM_INFERHUB_API_KEY`): una por cuenta, separadas por comas,
+ * espacios o saltos de línea. Sin repetidas y en el orden escrito. Vacía o ausente: lista vacía.
+ */
+export function readSecretList(name: string, source: EnvSource = process.env): string[] {
+  return [...new Set((source[name] ?? "").split(/[\s,]+/).filter(Boolean))];
 }
 
 /** `UPSTREAM_<ID>_BASE_URL`: permite apuntar un upstream a otra URL (los tests apuntan el mock a su puerto). */

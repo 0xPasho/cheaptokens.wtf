@@ -72,7 +72,7 @@ describe("CopyButton", () => {
 
 describe("CodeBlock", () => {
   it("muestra el código en mono sin cortar líneas y copia el bloque completo", async () => {
-    const code = "curl https://api.cheaptokens.wtf/v1/models";
+    const code = "curl https://api.cheapllm.wtf/v1/models";
     const { container } = render(<CodeBlock code={code} copyLabel="Copiar" />);
 
     const pre = container.querySelector("pre");

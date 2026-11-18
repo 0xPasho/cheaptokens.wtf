@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,7 +109,7 @@ const KEY_LIMIT = usd(10);
 function Usage({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs text-muted-foreground">
-      <span className="font-medium text-foreground">Uso en cheaptokens.wtf:</span>{" "}
+      <span className="font-medium text-foreground">Uso en cheapllm.wtf:</span>{" "}
       {children}
     </p>
   );
@@ -574,6 +575,26 @@ function Paging() {
   );
 }
 
+function Disclosures() {
+  return (
+    <Section
+      title="Collapsible"
+      description="Esconde el detalle que solo algunos necesitan, sin sacarlo de la pantalla. El título dice qué hay dentro como pregunta o acción."
+    >
+      <Usage>pago en USDC: pegar la transacción y enviar desde un exchange.</Usage>
+      <Collapsible className="group/disclosure max-w-xl rounded-2xl border">
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium outline-none hover:bg-glass-control-hover focus-visible:ring-[3px] focus-visible:ring-ring/50">
+          ¿Envías desde un exchange?
+          <ChevronDownIcon size={16} aria-hidden className="shrink-0 text-muted-foreground transition-transform group-data-open/disclosure:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-4 pb-4 text-sm text-muted-foreground">
+          Elige «Solana» como red de retiro, no Ethereum, Base, Polygon ni Tron. Si el exchange descuenta su comisión del monto, súmala.
+        </CollapsibleContent>
+      </Collapsible>
+    </Section>
+  );
+}
+
 function Unused() {
   return (
     <Section
@@ -605,7 +626,7 @@ export function Atoms() {
     <Group
       id="atomos"
       title="Átomos"
-      description="Los componentes de shadcn/ui en @/components/ui, cada uno en el uso que tiene en cheaptokens.wtf. Table, Tabs, Dialog, AlertDialog, Alert, Empty y ToggleGroup se ven arriba, dentro de los patrones."
+      description="Los componentes de shadcn/ui en @/components/ui, cada uno en el uso que tiene en cheapllm.wtf. Table, Tabs, Dialog, AlertDialog, Alert, Empty y ToggleGroup se ven arriba, dentro de los patrones."
     >
       <Section title="Kubai Icons" description="Official kubai-icons-react components in Ink: dark bodies, original shading and white details in both themes. Server-rendered SVG and hover motion with reduced-motion support.">
         <div className="flex flex-wrap gap-6">
@@ -628,6 +649,7 @@ export function Atoms() {
       <Choices />
       <ProgressAndLoading />
       <HelpAndShortcuts />
+      <Disclosures />
       <Cards />
       <Menus />
       <Paging />

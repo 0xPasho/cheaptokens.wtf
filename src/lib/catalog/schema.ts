@@ -39,7 +39,7 @@ export const catalogEntrySchema = z.strictObject({
 }) satisfies z.ZodType<CatalogEntry>;
 
 export const upstreamModelMappingSchema = z.strictObject({
-  model: z.string().regex(MODEL_ID_PATTERN, "Must be a cheaptokens.wtf model ID (author/model)"),
+  model: z.string().regex(MODEL_ID_PATTERN, "Must be a cheapllm.wtf model ID (author/model)"),
   upstreamModel: z.string().trim().min(1),
   costInputPer1M: microUsdPer1M,
   costOutputPer1M: microUsdPer1M,

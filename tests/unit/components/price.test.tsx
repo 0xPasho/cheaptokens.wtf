@@ -27,7 +27,7 @@ describe("PriceComparison", () => {
         official={3_000_000}
         discounted={300_000}
         locale="en"
-        labels={{ official: "Precio oficial", discounted: "Precio cheaptokens.wtf" }}
+        labels={{ official: "Precio oficial", discounted: "Precio cheapllm.wtf" }}
       />,
     );
 
@@ -38,7 +38,7 @@ describe("PriceComparison", () => {
     expect(official).toHaveClass("text-muted-foreground");
   });
 
-  it("el precio cheaptokens.wtf va en el color del texto, no en verde", () => {
+  it("el precio cheapllm.wtf va en el color del texto, no en verde", () => {
     const { container } = renderComparison();
     const discounted = container.querySelector("s + span");
     expect(discounted).toHaveTextContent("$0.30");
@@ -49,7 +49,7 @@ describe("PriceComparison", () => {
   it("anuncia qué precio es cada uno al lector de pantalla", () => {
     const { container } = renderComparison();
     const labels = [...container.querySelectorAll(".sr-only")].map((el) => el.textContent);
-    expect(labels).toEqual(["Precio oficial: ", "Precio cheaptokens.wtf: "]);
+    expect(labels).toEqual(["Precio oficial: ", "Precio cheapllm.wtf: "]);
   });
 
   it("no parte la línea y alinea los dígitos", () => {

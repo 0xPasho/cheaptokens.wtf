@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 
-import { readSecret, readServerEnv, upstreamBaseUrlOverride } from "@/lib/env";
+import { readSecret, readSecretList, readServerEnv, upstreamBaseUrlOverride } from "@/lib/env";
 
 describe("readServerEnv", () => {
   it("las variables vacías cuentan como ausentes, así .env.example se puede copiar tal cual", () => {
@@ -43,6 +43,14 @@ describe("secretos y overrides", () => {
   it("readSecret trata vacío como ausente", () => {
     expect(readSecret("X", { X: "" })).toBeNull();
     expect(readSecret("X", { X: "v" })).toBe("v");
+  });
+
+  it("readSecretList separa una key por cuenta y quita vacías y repetidas", () => {
+    expect(readSecretList("X", {})).toEqual([]);
+    expect(readSecretList("X", { X: "" })).toEqual([]);
+    expect(readSecretList("X", { X: " , \n" })).toEqual([]);
+    expect(readSecretList("X", { X: "sk-one" })).toEqual(["sk-one"]);
+    expect(readSecretList("X", { X: "sk-one, sk-two,sk-three\nsk-one\n" })).toEqual(["sk-one", "sk-two", "sk-three"]);
   });
 
   it("el override de base URL sigue la convención UPSTREAM_<ID>_BASE_URL", () => {

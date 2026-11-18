@@ -278,7 +278,7 @@ describe("createUsageAccumulator", () => {
 });
 
 const target: UpstreamTarget = {
-  upstreamId: "mock", baseUrl: "http://127.0.0.1", apiKey: "", upstreamModel: "acme/model",
+  upstreamId: "mock", baseUrl: "http://127.0.0.1", apiKeys: [], upstreamModel: "acme/model",
   costInputPer1M: BigInt(300_000), costOutputPer1M: BigInt(1_500_000), priority: 0, sendsPriceCap: false,
 };
 const model: GatewayModel = {
@@ -298,11 +298,17 @@ describe("computeRequestCosts", () => {
     });
   });
 
-  it.each([BigInt(615), BigInt(0)])("prefiere el costo reportado %s, incluso sin target", (upstreamCostMicroUsd) => {
-    for (const selectedTarget of [target, null]) {
-      expect(computeRequestCosts({ usage: { ...usage, upstreamCostMicroUsd }, model, target: selectedTarget }))
-        .toEqual({ costMicroUsd: BigInt(2_700), upstreamCostMicroUsd, officialCostMicroUsd: BigInt(13_500) });
-    }
+  // ADR-0054: con costo reportado se cobra costo × 1.3 hacia arriba (615 → 799.5 → 800); un costo de 0 cobra el mínimo.
+  it.each([[BigInt(615), BigInt(800)], [BigInt(0), BigInt(10)], [BigInt(1_000_000), BigInt(1_300_000)]])(
+    "con costo reportado %s cobra %s, incluso sin target", (upstreamCostMicroUsd, costMicroUsd) => {
+      for (const selectedTarget of [target, null]) {
+        expect(computeRequestCosts({ usage: { ...usage, upstreamCostMicroUsd }, model, target: selectedTarget }))
+          .toEqual({ costMicroUsd, upstreamCostMicroUsd, officialCostMicroUsd: BigInt(13_500) });
+      }
+    });
+
+  it("sin tokens de salida no aplica el mínimo al costo reportado", () => {
+    expect(computeRequestCosts({ usage: { ...usage, completionTokens: 0, upstreamCostMicroUsd: BigInt(0) }, model, target }).costMicroUsd).toBe(BigInt(0));
   });
 
   it("usa cero para el upstream si no hay costo reportado ni target", () => {

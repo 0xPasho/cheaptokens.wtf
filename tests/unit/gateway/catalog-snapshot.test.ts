@@ -75,17 +75,17 @@ describe("loadCatalogSnapshot", () => {
     });
     expect(saved?.upstreams).toEqual([
       {
-        upstreamId: "backup", baseUrl: "https://backup.example/v1", apiKey: "backup-secret",
+        upstreamId: "backup", baseUrl: "https://backup.example/v1", apiKeys: ["backup-secret"],
         upstreamModel: "backup/remote", costInputPer1M: hugePrice, costOutputPer1M: hugePrice + BigInt(2),
         priority: 1, sendsPriceCap: false,
       },
       {
-        upstreamId: "primary", baseUrl: "http://127.0.0.1:9999/v1", apiKey: "primary-secret",
+        upstreamId: "primary", baseUrl: "http://127.0.0.1:9999/v1", apiKeys: ["primary-secret"],
         upstreamModel: "primary/remote", costInputPer1M: hugePrice, costOutputPer1M: hugePrice + BigInt(2),
         priority: 20, sendsPriceCap: true,
       },
       {
-        upstreamId: "mock", baseUrl: "http://127.0.0.1:4010/v1", apiKey: "",
+        upstreamId: "mock", baseUrl: "http://127.0.0.1:4010/v1", apiKeys: [],
         upstreamModel: "mock/remote", costInputPer1M: hugePrice, costOutputPer1M: hugePrice + BigInt(2),
         priority: 30, sendsPriceCap: false,
       },
@@ -112,6 +112,16 @@ describe("loadCatalogSnapshot", () => {
         { upstreamId: "missing-key", baseUrl: "http://127.0.0.1:9876/v1" },
         { upstreamId: "mock", baseUrl: "http://127.0.0.1:4010/v1" },
       ]);
+  });
+
+  it("reads one key per account from a comma separated env var", async () => {
+    const snapshot = await loadCatalogSnapshot(testDb.db, {
+      ...options, env: { ...options.env, PRIMARY_KEY: "primary-one, primary-two\nprimary-one", BACKUP_KEY: " , " },
+    });
+    expect(snapshot.getModel(model.id)?.upstreams.map(({ upstreamId, apiKeys }) => ({ upstreamId, apiKeys }))).toEqual([
+      { upstreamId: "primary", apiKeys: ["primary-one", "primary-two"] },
+      { upstreamId: "mock", apiKeys: [] },
+    ]);
   });
 
   it("reflects an emergency switch by the default 60 second TTL", async () => {

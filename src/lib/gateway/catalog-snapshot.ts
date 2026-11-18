@@ -3,7 +3,7 @@ import { and, asc, eq, isNull, ne } from "drizzle-orm";
 import type { UpstreamEnvironment } from "@/lib/catalog/types";
 import { modelUpstreams, models, upstreams } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
-import { readSecret, upstreamBaseUrlOverride, type EnvSource } from "@/lib/env";
+import { readSecretList, upstreamBaseUrlOverride, type EnvSource } from "@/lib/env";
 
 import type { CatalogSnapshot, CatalogSource, GatewayModel } from "./types";
 
@@ -36,8 +36,9 @@ export async function loadCatalogSnapshot(
   }]));
 
   for (const { mapping, upstream } of mappingRows) {
-    const apiKey = upstream.apiKeyEnv === null ? "" : readSecret(upstream.apiKeyEnv, env);
-    if (apiKey === null) continue;
+    // Una key por cuenta (docs/07 › Varias cuentas por upstream). Sin ninguna, el upstream no se usa; el mock no lleva.
+    const apiKeys = upstream.apiKeyEnv === null ? [] : readSecretList(upstream.apiKeyEnv, env);
+    if (upstream.apiKeyEnv !== null && apiKeys.length === 0) continue;
     const model = byId.get(mapping.modelId);
     if (!model) continue;
     byId.set(model.id, {
@@ -45,7 +46,7 @@ export async function loadCatalogSnapshot(
       upstreams: [...model.upstreams, {
         upstreamId: upstream.id,
         baseUrl: (upstreamBaseUrlOverride(upstream.id, env) ?? upstream.baseUrl).replace(/\/+$/, ""),
-        apiKey,
+        apiKeys,
         upstreamModel: mapping.upstreamModel,
         costInputPer1M: mapping.costInputMicroUsd,
         costOutputPer1M: mapping.costOutputMicroUsd,

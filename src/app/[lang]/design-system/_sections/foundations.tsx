@@ -78,7 +78,7 @@ const TYPE_SCALE = [
     note: "El dashboard y las tablas usan text-sm",
     sample: (
       <p className="text-sm">
-        Cambia la base URL y usa tu API key de cheaptokens.wtf. El resto de tu código no
+        Cambia la base URL y usa tu API key de cheapllm.wtf. El resto de tu código no
         cambia.
       </p>
     ),

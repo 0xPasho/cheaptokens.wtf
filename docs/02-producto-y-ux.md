@@ -4,7 +4,7 @@ La regla es simple: **cada pantalla sirve para un solo trabajo.** Si algo no ayu
 
 ## Mapa de páginas
 
-Todas las páginas web viven en `cheaptokens.wtf` y llevan el idioma en la ruta ([10 · i18n](./10-i18n.md)). La API vive en su propio host y no lleva idioma.
+Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([10 · i18n](./10-i18n.md)). La API vive en su propio host y no lleva idioma.
 
 | Ruta | Acceso | Trabajo que resuelve |
 |---|---|---|
@@ -15,12 +15,12 @@ Todas las páginas web viven en `cheaptokens.wtf` y llevan el idioma en la ruta 
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
 | `/[lang]/dashboard` | Privada | Ver plan, límites y saldo, y empezar |
 | `/[lang]/dashboard/plan` | Privada | Elegir plan, ver límites y decidir qué pasa al llegar al límite |
-| `/[lang]/dashboard/credits` | Privada | Recargar, comprar paquetes e historial de pagos |
+| `/[lang]/dashboard/credits` | Privada | Depositar USDC e historial de pagos |
 | `/[lang]/dashboard/keys` | Privada | Crear, rotar y revocar API keys |
 | `/[lang]/dashboard/usage` | Privada | Ver qué se gastó, de dónde se cobró y cuánto se ahorró |
 | `/[lang]/dashboard/settings` | Privada | Cuenta, cerrar sesión y exportar datos |
 | `/[lang]/design-system` | Interna | Referencia de átomos de UI |
-| `api.cheaptokens.wtf/v1/*` | API key | El gateway, en su propio host ([04 · API](./04-api.md), [ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)) |
+| `api.cheapllm.wtf/v1/*` | API key | El gateway, en su propio host ([04 · API](./04-api.md), [ADR-0051](./adr/0051-marca-cheapllm-wtf.md)) |
 
 ## Landing (`/[lang]`)
 
@@ -30,13 +30,13 @@ Arriba del pliegue van tres cosas:
 2. **El snippet** que muestra que solo cambian dos líneas:
    ```python
    client = OpenAI(
-       base_url="https://api.cheaptokens.wtf/v1",
+       base_url="https://api.cheapllm.wtf/v1",
        api_key="wtf_...",
    )
    ```
 3. **CTA:** "Get your API key" / "Obtén tu API key" → registro.
 
-Debajo: una vista previa del catálogo (5–6 modelos populares con el precio oficial tachado y el precio cheaptokens.wtf) y un link a `/models`.
+Debajo: una vista previa del catálogo (5–6 modelos populares con el precio oficial tachado y el precio cheapllm.wtf) y un link a `/models`.
 
 ## Catálogo (`/[lang]/models`)
 
@@ -71,7 +71,7 @@ Una sidebar con la composición del catálogo ([ADR-0038](./adr/0038-sidebar-izq
 ### Inicio (`/[lang]/dashboard`)
 
 - **Límites del plan:** la ventana de 5 horas y la semana con `UsageMeter` (porcentaje usado, cuándo se reinicia y valor usado), cuántas requests típicas quedan y qué pasa al llegar al límite, con un link a ajustarlo. Sin plan, una tarjeta lo explica y lleva a elegir uno.
-- **Créditos** con botón **Recargar**, y los **paquetes activos** con lo que queda y su vencimiento.
+- **Créditos** con botón **Recargar**, que lleva al depósito.
 - **Checklist de 3 pasos** mientras no haya ningún request: elegir plan o recargar, crear una API key y copiar el snippet (Python, JS y curl, con la base URL ya puesta).
 - **Últimos 7 días:** requests, valor de uso (y cuánto vino del plan), ahorro frente al precio oficial y tokens.
 - **Qué gasta tu límite:** la parte del uso del plan por modelo.
@@ -79,19 +79,20 @@ Una sidebar con la composición del catálogo ([ADR-0038](./adr/0038-sidebar-izq
 
 ### Plan y límites (`/[lang]/dashboard/plan`)
 
-- **Plan actual:** los dos medidores, la fecha de renovación o de fin, el cambio de plan programado, el rate limit y **Cancelar plan** (con confirmación; se conserva hasta el fin del periodo).
-- **Al llegar al límite:** seguir con paquetes y créditos o detenerse hasta el reinicio, los interruptores de paquetes y créditos, y el tope mensual de créditos con lo usado este mes.
-- **Planes:** Plus, Pro y Max con precio, límite cada 5 horas y cada semana, requests típicas que caben y rate limit. Subir cobra la diferencia prorrateada y aplica ya; bajar se programa para la renovación.
+- **Plan actual:** los dos medidores, hasta cuándo está activo, el rate limit y **Sumar 30 días**.
+- **Al llegar al límite:** seguir con créditos o detenerse hasta el reinicio, el interruptor de créditos y el tope mensual de créditos con lo usado este mes.
+- **Planes:** Plus, Pro y Max con precio por 30 días, límite cada 5 horas y cada semana, requests típicas que caben y rate limit. Subir cobra la diferencia prorrateada y aplica ya; un plan más barato se compra cuando termina el vigente.
+- **Comprar un plan** abre un diálogo: precio, saldo y lo que queda después, y un botón para pagar con el saldo. Si el saldo no alcanza, muestra el depósito y completa la compra cuando llega ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)).
 - **Consumo por modelo:** precio de entrada y salida, multiplicador frente a Claude Sonnet 5.5 y requests típicas por ventana y por semana.
 - Las reglas están en [08 · Créditos y pagos](./08-creditos-y-pagos.md#planes) ([ADR-0049](./adr/0049-suscripcion-con-limites.md)).
 
 ### Créditos (`/[lang]/dashboard/credits`)
 
-- Saldo actual.
-- **Recargar:** montos rápidos ($10, $25, $50, $100) y monto libre ($10–$1,000). Con el MoR, el botón llevará al checkout, que agrega el impuesto de cada país, y al volver se confirma con el saldo ya actualizado.
-- **Orden de cobro:** plan, paquete del modelo y créditos, explicado en una tarjeta.
-- **Paquetes por modelo:** qué recibes por lo que pagas y cuántas requests típicas son, con un diálogo de compra. Debajo, tus paquetes: restante, pagado, fecha de compra y vencimiento.
-- **Historial de pagos** (recargas, planes y paquetes): fecha, concepto, monto, estado y link al recibo del MoR.
+- Saldo actual: sirve para cualquier modelo.
+- **Depositar USDC:** la dirección propia de la cuenta en Solana y en Base, con QR (la dirección o un link de wallet) y botón de copiar. Debajo, lo que pasa con el depósito: esperando, en camino o acreditado, con link a la transacción. Un desplegable explica cómo enviar desde un exchange ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)).
+- **Orden de cobro:** plan y créditos, explicado en una tarjeta.
+- **Historial de pagos** (depósitos y planes): fecha, concepto, monto, estado y link a la transacción.
+- Los paquetes por modelo ya no se venden. Si a una cuenta le queda alguno, lo ve aquí y en Inicio.
 - Detalle en [08 · Créditos y pagos](./08-creditos-y-pagos.md).
 
 ### API keys (`/[lang]/dashboard/keys`)
@@ -126,7 +127,7 @@ Una sola página, en este orden: base URL, autenticación, ejemplo en curl, Pyth
 | Sin uso | "No requests yet." + el snippet |
 | Saldo en cero | Banner: "Your balance is $0. Requests will fail with 402." + Recargar |
 | Límite del plan alcanzado | El medidor dice "Límite alcanzado" y cuándo se reinicia. La API responde `429 usage_limit_reached` si el excedente no cubre |
-| Pagos no disponibles | Aviso en Plan y Créditos: los pagos se abren cuando el MoR apruebe la cuenta |
+| Depósitos no disponibles | Aviso en Plan y Créditos: los depósitos en USDC todavía no están abiertos |
 | Saldo negativo | Banner: "Your balance is −$0.12. Top up to keep using the API." |
 | Pago fallido | Se vuelve a `/credits` con "Payment didn't go through. You weren't charged." |
 

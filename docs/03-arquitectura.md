@@ -2,7 +2,7 @@
 
 ## Vista general
 
-Una sola app de Next.js 16 en Vercel con dos caras muy distintas ([ADR-0005](./adr/0005-gateway-en-nextjs-vercel.md)):
+Una sola app de Next.js 16 con dos caras muy distintas ([ADR-0005](./adr/0005-gateway-en-nextjs-vercel.md)). Desde [ADR-0059](./adr/0059-servidor-propio-con-pm2-y-nginx.md) corre en un servidor propio con pm2 y nginx, no en Vercel: donde este documento diga Vercel, vale lo que dice ese ADR y [18 · Deploy](./18-deploy.md).
 
 - **Web** (landing, catálogo, docs, dashboard): está protegida con Clerk.
 - **Gateway** (`/v1/*`): se autentica con nuestras API keys y no toca Clerk ([ADR-0003](./adr/0003-clerk-solo-dashboard.md)).
@@ -50,10 +50,10 @@ flowchart LR
 | Rate limiting | Redis en Upstash | [0017](./adr/0017-rate-limit-upstash.md) |
 | Login del dashboard | Clerk | [0003](./adr/0003-clerk-solo-dashboard.md) |
 | Pagos | Merchant of Record: Polar, luego Paddle (propuesta) | [0019](./adr/0019-merchant-of-record.md) |
-| Dominios | Web en `cheaptokens.wtf`, API en `api.cheaptokens.wtf` | [0026](./adr/0026-marca-cheaptokens-wtf.md) |
+| Dominios | Web en `cheapllm.wtf`, API en `api.cheapllm.wtf` | [0051](./adr/0051-marca-cheapllm-wtf.md) |
 | Inferencia | Upstreams compatibles con OpenAI. En pruebas: InferHub + upstream simulado | [0001](./adr/0001-upstreams-agregadores.md), [0028](./adr/0028-inferhub-upstream-de-pruebas.md) |
 
-**Hosts** ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)): la web responde en `cheaptokens.wtf` y el gateway en `api.cheaptokens.wtf`. Los dos son el mismo proyecto de Vercel. El gateway rechaza los requests que lleguen por el host web, y `proxy.ts` solo actúa en el host web.
+**Hosts** ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)): la web responde en `cheapllm.wtf` y el gateway en `api.cheapllm.wtf`. Los dos son el mismo proyecto de Vercel. El gateway rechaza los requests que lleguen por el host web, y `proxy.ts` solo actúa en el host web.
 
 ## Estructura de carpetas (propuesta)
 
@@ -78,7 +78,7 @@ src/
       chat/completions/route.ts
       models/route.ts
     api/
-      webhooks/payments/route.ts      # Eventos del MoR, vía PaymentProvider
+      internal/crypto-payments/route.ts  # Cron: barre los depósitos en USDC de Solana y Base y los acredita (ADR-0058)
       webhooks/clerk/route.ts
       cron/reconcile/route.ts
       internal/revalidate-catalog/route.ts  # Lo llama catalog:sync con un secreto
@@ -94,7 +94,8 @@ src/
       metering.ts             # Costo y transacción de cobro
       errors.ts               # Errores con formato OpenAI
     api-keys/                 # Generar, hashear, checksum
-    billing/                  # Ledger e interfaz PaymentProvider (adaptador del MoR)
+    billing/                  # Ledger y lo que entrega cada compra
+    payments/crypto/          # Direcciones de depósito, barrido y adaptadores de Solana y Base (ADR-0058)
     catalog/                  # Consultas y cálculo de precios
     db/                       # Esquema Drizzle y cliente
     i18n/                     # Config de idiomas y diccionarios
@@ -200,7 +201,7 @@ Todos los webhooks verifican la firma y son idempotentes.
 - **Logs:** nunca incluyen el header `Authorization`, el body del request ni el de la respuesta. Solo `request_id`, workspace, key, modelo, upstream, estado, tokens y latencias.
 - **Errores del upstream:** se sanitizan. El mensaje se reemplaza por uno nuestro sin nombres ni URLs del upstream.
 - **API keys:** se guarda solo el hash ([05 · API keys](./05-api-keys.md)).
-- **Sin CORS en la API:** una API key en el navegador es una key filtrada ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)).
+- **Sin CORS en la API:** una API key en el navegador es una key filtrada ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)).
 - **Dashboard:** se verifica la sesión en cada Server Function. Ninguna acción confía en IDs que vengan del cliente sin comprobar que pertenecen al workspace del usuario.
 
 ## Límites conocidos de la plataforma

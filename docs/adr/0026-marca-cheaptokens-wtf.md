@@ -1,6 +1,6 @@
 # ADR-0026: La marca es `cheaptokens.wtf`, con la web en `cheaptokens.wtf` y la API en `api.cheaptokens.wtf`
 
-- **Estado:** Aceptada. Reemplaza a [ADR-0021](./0021-dominios.md).
+- **Estado:** Reemplazada por [ADR-0051](./0051-marca-cheapllm-wtf.md) el 2026-11-17: un tercero registró `cheaptokens.wtf` antes que nosotros. Reemplazaba a [ADR-0021](./0021-dominios.md).
 - **Fecha:** 2026-11-10
 - **Origen:** Usuario (nombre, dominio y nombre completo como wordmark) + Default (subdominio para la API, que viene de ADR-0021, y reglas de escritura)
 

@@ -2,106 +2,111 @@
 
 ## Modelo
 
-Hay tres formas de pagar el uso, y un request las usa en este orden ([ADR-0049](./adr/0049-suscripcion-con-limites.md)):
+Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](./adr/0049-suscripcion-con-limites.md), [ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)):
 
-1. **Plan mensual** con un límite cada 5 horas y otro cada semana.
-2. **Paquete del modelo:** uso prepagado de un solo modelo, con 20 % extra.
-3. **Créditos:** saldo prepagado en USD. Cada request los descuenta.
+1. **Plan** con un límite cada 5 horas y otro cada semana. Se paga por 30 días.
+2. **Créditos:** saldo prepagado en USD, para cualquier modelo. Cada request los descuenta.
 
+- **Lo único que entra de fuera son depósitos en USDC.** Un depósito se vuelve saldo dólar por dólar; el plan se compra con ese saldo.
 - **Todo el dinero se guarda como enteros en µUSD** (1 USD = 1,000,000 µUSD) ([ADR-0007](./adr/0007-dinero-en-micro-dolares.md)). Nunca se usan floats para dinero.
 - **No hay créditos gratis** al registrarse ([ADR-0018](./adr/0018-sin-creditos-gratis.md)).
 - **No hay pospago.**
-- **Los créditos son saldo prepagado del servicio cheaptokens.wtf:** no se transfieren, no se retiran, no tienen valor fuera del servicio y no se reembolsan salvo error ([ADR-0019](./adr/0019-merchant-of-record.md), [ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
+- **Los créditos son saldo prepagado del servicio cheapllm.wtf:** no se transfieren, no se retiran, no tienen valor fuera del servicio y no se reembolsan salvo error ([ADR-0019](./adr/0019-merchant-of-record.md), [ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
+- **Los paquetes por modelo ya no se venden** ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). El cobro todavía sabe gastar uno que exista, entre el plan y los créditos.
 
-## Quién cobra: un Merchant of Record
+<a id="recargas"></a>
 
-([ADR-0019](./adr/0019-merchant-of-record.md), en estado *Propuesta* hasta tener la aprobación por escrito)
+## Depósitos en USDC
 
-- El **MoR** es el vendedor legal frente al cliente: cobra, calcula y paga los impuestos de cada país, emite la factura al cliente y atiende los contracargos. Nos transfiere lo neto a la empresa en México.
-- **Primera opción: Polar** (4% + 40¢ por transacción, paga a México vía Stripe Connect Express). **Segunda: Paddle** (alrededor de 5% + 50¢).
-- **Requisito previo:** las políticas de uso de los dos tienen cláusulas que podrían excluir el negocio (reventa de servicios de terceros y "stored value"). **No se integra ningún MoR hasta que uno lo apruebe por escrito**, con la descripción exacta del negocio.
-- **Plan B:** Stripe directo con Stripe Tax ([ADR-0009](./adr/0009-stripe-checkout.md)).
-- El código no sabe qué MoR se usa: todo pasa por la interfaz `PaymentProvider` de `src/lib/payments/index.ts`. Lo que pasa después de un cobro confirmado está en `src/lib/billing/purchases.ts`.
-- La descripción para el MoR tiene que incluir los planes mensuales y los paquetes, no solo las recargas.
+([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md). El Merchant of Record de [ADR-0019](./adr/0019-merchant-of-record.md) y Stripe quedan en pausa.)
 
-### Proveedor de desarrollo
+- **Cada cuenta tiene su propia dirección de depósito** en Solana y en Base. Es fija: se puede guardar y reusar.
+- **Cualquier monto desde 1 USDC.** Lo que llega se acredita completo; no hay montos exactos ni órdenes que vencen.
+- **El sistema barre lo recibido a la wallet principal** de cada red (`CRYPTO_SOLANA_ADDRESS`, `CRYPTO_BASE_ADDRESS`) **y acredita cuando ese barrido queda confirmado.** Lo acreditado es siempre lo que llegó a la wallet principal.
+- **Las llaves de las direcciones de depósito salen de `CRYPTO_DEPOSIT_SEED`.** Es el único secreto de pagos. La llave de la wallet principal nunca pasa por el servidor.
+- **La comisión de red de cada barrido la paga otra wallet,** también derivada de la semilla: el fee payer en Solana y el relayer en Base. Hay que mantenerlas con SOL y con ETH; cada barrido cuesta fracciones de centavo.
+- **Cuándo se revisa:** con el dashboard abierto, cada 5 segundos. Además un cron de Vercel corre cada minuto (`/api/internal/crypto-payments`) y revisa las direcciones abiertas en las últimas 24 horas y un turno de 300 de las demás.
+- **Cuándo se acredita:** en Solana, con el barrido finalizado; en Base, con 10 bloques encima. En total, alrededor de medio minuto después del depósito.
+- **Sin comisión de intermediario ni contracargos.** Los impuestos y la contabilidad son nuestros: no hay MoR que los calcule.
+- **Otro token u otra red no se acreditan solos.** Se recuperan a mano con la llave de esa dirección.
+- El código vive en `src/lib/payments/crypto/`. Lo que pasa después de un depósito acreditado sigue en `src/lib/billing/purchases.ts`.
 
-Mientras ningún MoR apruebe, solo existe un proveedor de desarrollo:
+### Operación
 
-- **Solo con `APP_ENV=development`.** En preview y producción `getPaymentProvider()` devuelve null y el dashboard muestra los pagos como no disponibles.
-- **Confirma al instante y no cobra nada.** Devuelve un pago `dev_<uuid>` y la server action lo aplica en el momento (recarga, plan o paquete).
+- `pnpm payments:status --new-seed` genera la semilla. Se guarda en un gestor de contraseñas y en Vercel. **No se cambia nunca:** lo que llegue a las direcciones actuales quedaría sin llave.
+- `pnpm payments:status` muestra las redes activas, la wallet principal, las wallets de comisiones con su saldo y los barridos sin resolver. Con `--scan` corre un barrido en el momento.
+- **La wallet principal de Solana tiene que haber recibido USDC antes:** el barrido solo envía a una cuenta de USDC que ya existe. La de Base se configura con mayúsculas y minúsculas, como la muestra la wallet.
+- **Alertas en los logs** (`severity: critical`): `deposit_fee_wallet_low`, `deposit_sweep_not_prepared`, `deposit_sweep_not_sent` y `deposit_address_mismatch`.
+
+### Desarrollo local
+
+- **Sin semilla ni wallets y con `APP_ENV=development`,** el dashboard muestra direcciones de ejemplo y un botón «Simular un depósito», que acredita sin cadena (red `dev`).
+- **En preview y producción sin configuración,** el dashboard muestra los depósitos como no disponibles. Con saldo se puede seguir comprando un plan.
+- **Para probar contra una cadena:** `CRYPTO_SOLANA_CLUSTER=devnet` o `CRYPTO_BASE_CHAIN=sepolia`, con USDC de prueba.
+- `USDC_LIVE=1 pnpm test:live` comprueba los adaptadores contra mainnet solo con lecturas y simulaciones: no envía nada ni necesita fondos.
 - Fuera de Vercel, sin `APP_ENV` ni `VERCEL_ENV`, la app se considera de desarrollo. Un servidor propio debe poner `APP_ENV=production`.
 
 ## Planes
 
-| Plan | Precio al mes | Ventana de 5 horas | Semana | Requests por minuto |
+| Plan | Precio por 30 días | Ventana de 5 horas | Semana | Requests por minuto |
 |---|---|---|---|---|
-| Plus | $20 | $2.50 | $12 | 60 |
-| Pro | $50 | $7 | $30 | 120 |
-| Max | $150 | $22 | $90 | 300 |
+| Plus | $9 | $1.26 | $5.40 | 60 |
+| Pro | $39 | $5.46 | $23.40 | 120 |
+| Max | $99 | $13.86 | $59.40 | 300 |
 
-- **Los límites se miden en valor de uso a precio cheaptokens.wtf:** cada request gasta del límite lo mismo que costaría en créditos. Están en `src/lib/billing/plans.ts`. **Son valores iniciales que hay que calibrar** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
+- **Precios de [ADR-0052](./adr/0052-precios-de-los-planes.md).** La ventana es el 14 % del precio y la semana el 60 %.
+- **Los límites se miden en valor de uso a precio cheapllm.wtf:** cada request gasta del límite lo mismo que costaría en créditos. Están en `src/lib/billing/plans.ts`. **Son valores iniciales que hay que calibrar** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
 - **Ventanas:** empiezan con el primer request que cobra del plan y se reinician a las 5 horas y a los 7 días (`usage_windows`). Lo que queda del plan es el menor de los dos restos.
 - **El plan vale** mientras la suscripción esté `active` y no haya pasado `current_period_end`, aunque se haya pedido cancelar al final del periodo.
 - **Subir de plan** aplica ya y cobra la diferencia prorrateada por lo que queda del periodo. Lo usado cuenta sobre el límite nuevo.
-- **Bajar de plan** se programa para la renovación (`next_plan_id`). **Cancelar** marca `cancel_at_period_end`: el plan termina con el periodo y después se paga con créditos.
-- **Todavía no hay renovación:** llegará con el webhook del MoR. Con el proveedor de desarrollo el periodo dura 30 días y vence.
-
-## Paquetes por modelo
-
-- Pagas X y recibes X × 1.2 de uso de un modelo (`PACK_OFFERS` en `src/lib/billing/plans.ts`). Hoy: Claude Opus 5.5 ($20), Claude Fable 5.2 ($25), GPT 6.1 Sol ($10) y Claude Sonnet 5.5 ($10).
-- Vencen a los 90 días. Lo que quede al vencer se pierde.
-- Solo pagan requests de su modelo. Se gasta primero el que vence antes.
+- **Se paga con saldo, 30 días a la vez,** y no se renueva solo ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). Pagar el plan vigente suma 30 días al final del periodo actual.
+- **Si el saldo no alcanza,** el diálogo de compra muestra el depósito y completa la compra cuando llega, mientras siga abierto.
+- **Bajar de plan:** el plan más barato se compra cuando termina el vigente. No hay cancelación: el plan vence solo.
 
 ## Orden de cobro y excedente
 
-- **Plan → paquete del modelo → créditos.** Las keys de solo créditos (`prepaid_only`) se saltan el plan; las de solo plan (`plan_only`) nunca tocan el prepago ([05 · API keys](./05-api-keys.md#fuente-de-cobro-y-modelos)).
+- **Plan → créditos.** Las keys de solo créditos (`prepaid_only`) se saltan el plan; las de solo plan (`plan_only`) nunca tocan los créditos ([05 · API keys](./05-api-keys.md#fuente-de-cobro-y-modelos)).
 - **El request que cruza el límite termina completo.** Lo que no cabe en el plan va al excedente.
 - **El excedente se configura por workspace** en Plan y límites:
-  - **Modo:** `continue` (seguir con paquetes y créditos, el default) o `stop` (`429 usage_limit_reached` hasta el reinicio).
-  - **Interruptores:** usar paquetes y usar créditos.
+  - **Modo:** `continue` (seguir con créditos, el default) o `stop` (`429 usage_limit_reached` hasta el reinicio).
+  - **Interruptor:** usar créditos.
   - **Tope mensual de créditos** usados como excedente, por mes UTC. Default: $25.
 - **Lo que nadie paga lo absorbemos** (`requests.absorbed_micro_usd`): pasa cuando el excedente está apagado o llegó al tope. El siguiente request recibe `429 usage_limit_reached` con `retry-after`.
-- Sin plan, o con una key de solo créditos, los paquetes y los créditos pagan sin tope de excedente.
+- Sin plan, o con una key de solo créditos, los créditos pagan sin tope de excedente.
+- **Un paquete por modelo que todavía exista** se gasta después del plan y antes de los créditos, solo en requests de su modelo.
 
-## Recargas
-
-- **Montos:** atajos de $10, $25, $50 y $100, más un monto libre entre **$10 y $1,000**, en dólares enteros.
-  - **Mínimo $10.** La comisión del MoR en una recarga de $10 es de unos $0.80 a $1.00 (8–10%). Subir el mínimo está en las [preguntas abiertas](./12-preguntas-abiertas.md).
-  - **Máximo $1,000:** limita el daño de una tarjeta robada.
-- **Impuestos:** el monto elegido es el **subtotal sin impuestos**. El MoR agrega el impuesto que corresponda al país del comprador en el checkout. Acreditamos exactamente el subtotal: si elige $10, recibe $10 en créditos.
-- **Métodos de pago:** los que ofrezca el checkout del MoR (tarjeta y wallets como mínimo).
-
-### Flujo
+## Flujo de un depósito
 
 ```mermaid
 sequenceDiagram
   autonumber
   participant U as Usuario
   participant W as Dashboard
-  participant M as MoR (checkout)
-  participant H as /api/webhooks/payments
+  participant C as Solana / Base
+  participant S as scanDeposits
   participant DB as Postgres
 
-  U->>W: Elige monto y "Recargar"
-  W->>W: Server Function: sesión + workspace
-  W->>M: PaymentProvider.createTopupCheckout(workspaceId, amountUsd, locale)
-  W-->>U: Redirige al checkout del MoR
-  U->>M: Paga (subtotal + impuesto)
-  M-->>U: Vuelve a /dashboard/credits?checkout=...
-  M->>H: Evento de pago completado
-  H->>H: PaymentProvider.parseWebhook → TopupPaid (firma verificada)
-  H->>DB: INSERT payments (external_id) ON CONFLICT DO NOTHING<br/>+ INSERT credit_transactions + UPDATE workspaces.balance (misma transacción)
+  W-->>U: Su dirección de depósito y el QR
+  U->>C: Envía USDC a su dirección
+  loop Cada 5 s con el dashboard abierto, y cada minuto por cron
+    W->>S: depositStatusAction
+    S->>C: Saldo de las direcciones
+    S->>DB: INSERT deposit_sweeps (pending)
+    S->>C: Barrido: de la dirección a la wallet principal
+    S->>C: ¿Ya quedó confirmado?
+    S->>DB: deposit_sweeps → confirmed<br/>+ INSERT payments + credit_transactions + UPDATE workspaces.balance (misma transacción)
+  end
+  W-->>U: Sumamos X a tu saldo
 ```
 
-- **Idempotencia:** cada cobro se registra en `payments`, con `external_id` único. Si el MoR reenvía el evento, el insert no hace nada y no se aplica dos veces. Planes y paquetes usan el mismo flujo, con `payments.kind`.
-- **La página de retorno no suma saldo.** Solo muestra el estado. El saldo lo suma únicamente el webhook. Si el webhook todavía no llegó, la página dice "Procesando…" y se refresca.
-- **Recibos y facturas:** los emite el MoR. El historial del dashboard enlaza al recibo.
+- **Idempotencia:** el barrido se guarda antes de enviarse y pasa a `confirmed` una sola vez; el pago lleva `external_id = <red>:<transacción>`. Revisar dos veces el mismo barrido no acredita dos veces.
+- **Un solo barrido en vuelo por dirección.** Si dos procesos ven el mismo saldo, solo uno lo guarda; y la cadena solo deja moverlo una vez.
+- **Recibos:** el historial del dashboard enlaza a la transacción del barrido en Solscan o Basescan.
 
 ## Saldo
 
 - `workspaces.balance_micro_usd` es un valor **desnormalizado**. Se actualiza en la misma transacción que cada movimiento.
-- **La verdad está en dos tablas:** `credit_transactions` (entradas: recargas, ajustes, reembolsos) y `requests` (salidas: la parte de cada request que pagaron los créditos).
+- **La verdad está en dos tablas:** `credit_transactions` (depósitos, ajustes y reembolsos; y en negativo, los planes comprados con saldo) y `requests` (la parte de cada request que pagaron los créditos).
 - **Invariante:** `balance = Σ credit_transactions.amount − Σ requests.credits_micro_usd`. La conciliación (`src/lib/billing/reconcile.ts`) lo verifica y alerta si no cuadra ([09 · Modelo de datos](./09-modelo-de-datos.md#invariantes)).
 
 ## Cobro por request
@@ -115,6 +120,8 @@ sequenceDiagram
   - con plan, y la key no es de solo créditos: `429 usage_limit_reached`, con `retry-after` hasta el reinicio;
   - key de solo plan sin plan activo: `402 no_active_plan`;
   - en cualquier otro caso: `402 insufficient_credits`.
+
+**Cuánto se cobra** ([ADR-0054](./adr/0054-cobro-por-costo-real.md)): el costo real que reporta el upstream × 1.3, hacia arriba. El precio del catálogo es una referencia y el máximo por token; solo se cobra con él cuando el upstream no reporta su costo.
 
 **Después del request** (en `after()`, una sola transacción, `chargeRequest` en `src/lib/billing/ledger.ts`):
 
@@ -156,17 +163,17 @@ No hacemos reserva previa: no sabemos cuánto va a costar un request hasta que t
 
 ## Fraude, reembolsos y contracargos
 
-Es el riesgo más concreto del prepago de IA: alguien recarga con una tarjeta robada, quema los créditos (que a nosotros sí nos cuestan en el upstream) y luego llega el contracargo. El MoR atiende la disputa con el banco, pero **el costo del upstream ya lo pagamos nosotros**.
-
-- **Antifraude del MoR,** con su configuración por defecto.
-- **Máximo $1,000 por recarga** y, en el MVP, como máximo 3 recargas por workspace en 24 h.
-- **Evento `Disputed`:** suspende el workspace al instante (`suspended_at`) y dispara una alerta. Las keys dejan de funcionar con `403 account_suspended`.
-- **Evento `Refunded`:** registra un ajuste negativo por el monto reembolsado.
+- **Un depósito en USDC no tiene contracargo:** desaparece el riesgo de la tarjeta robada que quema créditos.
+- **Reembolsos:** a mano, enviando USDC desde la wallet principal, y con un ajuste negativo en `credit_transactions`.
+- **Suspender un workspace** (`suspended_at`) sigue disponible para abusos: las keys responden `403 account_suspended`.
+- **Si se filtra la semilla,** quien la tenga puede mover los depósitos que todavía no se barrieron (lo de uno o dos minutos). Lo ya barrido está en la wallet principal, fuera de su alcance.
+- **Cuando se sume Stripe o un MoR** vuelven el antifraude, el tope de recargas por día y los eventos `Disputed` y `Refunded`.
 
 ## Contabilidad y fiscal en México
 
 Lo tiene que validar un contador ([preguntas abiertas](./12-preguntas-abiertas.md)):
 
-- **Ingresos:** el MoR nos paga en USD. Probablemente se factura (CFDI) al MoR como exportación de servicios.
-- **Compras a upstreams extranjeros:** pagar servicios del extranjero tiene implicaciones de IVA para una empresa mexicana.
-- **Clientes mexicanos que necesiten CFDI:** dependen de lo que pueda emitir el MoR.
+- **Ingresos en USDC:** cómo se registran, a qué tipo de cambio y cuándo se reconoce el ingreso. Cada pago queda con su transacción en `payments.receipt_url`.
+- **IVA de cada cliente:** sin MoR, nadie lo calcula ni lo cobra por nosotros.
+- **Compras a upstreams extranjeros:** pagar servicios del extranjero (InferHub, en USDC) tiene implicaciones de IVA para una empresa mexicana.
+- **Clientes mexicanos que necesiten CFDI:** los tendríamos que emitir nosotros.

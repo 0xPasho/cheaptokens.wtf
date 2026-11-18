@@ -21,7 +21,7 @@ export function Price({ micros, locale, kind = "balance", className }: PriceProp
 type PriceComparisonProps = {
   /** Precio oficial por 1M de tokens, en µUSD. */
   official: number;
-  /** Precio cheaptokens.wtf por 1M de tokens, en µUSD. */
+  /** Precio cheapllm.wtf por 1M de tokens, en µUSD. */
   discounted: number;
   locale: string;
   labels?: { official?: string; discounted?: string };
@@ -29,7 +29,7 @@ type PriceComparisonProps = {
 };
 
 /**
- * Precio oficial tachado y precio cheaptokens.wtf al lado: ~~$3.00~~ **$0.30**.
+ * Precio oficial tachado y precio cheapllm.wtf al lado: ~~$3.00~~ **$0.30**.
  * Las etiquetas solo existen para lectores de pantalla, porque el tachado no se anuncia.
  */
 export function PriceComparison({
@@ -39,7 +39,7 @@ export function PriceComparison({
   labels,
   className,
 }: PriceComparisonProps) {
-  const text = { official: "Official price", discounted: "cheaptokens.wtf price", ...labels };
+  const text = { official: "Official price", discounted: "cheapllm.wtf price", ...labels };
 
   return (
     <span

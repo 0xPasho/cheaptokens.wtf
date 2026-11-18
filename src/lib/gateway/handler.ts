@@ -167,10 +167,11 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   try {
     result = await callUpstream({
       model, body: validated.body, stream: validated.stream, now: deps.now, log: deps.log, signal: abort.signal,
-      fetch: (input, init) => {
+      fetch: deps.fetch, accounts: deps.accounts,
+      // Si `maxDuration` aborta, `callUpstream` lanza: esto conserva el intento para el registro.
+      onAttempt: (target) => {
         attempts++;
-        attemptedTarget = model.upstreams[attempts - 1] ?? null;
-        return deps.fetch(input, init);
+        attemptedTarget = target;
       },
     });
   } catch {

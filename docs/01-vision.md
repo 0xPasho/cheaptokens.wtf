@@ -2,12 +2,12 @@
 
 ## Qué es
 
-cheaptokens.wtf es un gateway de LLMs: **una URL, una API key y un saldo para usar modelos de muchos proveedores**, a un precio muy por debajo del oficial. Se parece a OpenRouter, con dos diferencias deliberadas:
+cheapllm.wtf es un gateway de LLMs: **una URL, una API key y un saldo para usar modelos de muchos proveedores**, a un precio muy por debajo del oficial. Se parece a OpenRouter, con dos diferencias deliberadas:
 
-1. **El precio.** Cada modelo muestra su precio oficial tachado, el precio cheaptokens.wtf y el porcentaje de descuento.
+1. **El precio.** Cada modelo muestra su precio oficial tachado, el precio cheapllm.wtf y el porcentaje de descuento.
 2. **La simplicidad.** Lo que no ayuda a hacer el primer request no aparece en la interfaz.
 
-Legalmente, cheaptokens.wtf es un **intermediario** con entidad en México: da acceso, ruteo y cobro por uso hacia modelos de terceros, sin desarrollarlos ni hospedarlos ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)). Web en `cheaptokens.wtf` y API en `api.cheaptokens.wtf/v1` ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)).
+Legalmente, cheapllm.wtf es un **intermediario** con entidad en México: da acceso, ruteo y cobro por uso hacia modelos de terceros, sin desarrollarlos ni hospedarlos ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)). Web en `cheapllm.wtf` y API en `api.cheapllm.wtf/v1` ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)).
 
 ## El problema
 
@@ -19,7 +19,7 @@ Legalmente, cheaptokens.wtf es un **intermediario** con entidad en México: da a
 
 - **Una sola URL compatible con OpenAI.** Cualquier código que ya use el SDK de OpenAI funciona cambiando `base_url` y `api_key`.
 - **Todos los modelos con un mismo saldo.** Recargas una vez y usas Claude, GPT, Gemini o modelos abiertos.
-- **Descuento visible.** Precio oficial vs. precio cheaptokens.wtf, en cada fila del catálogo y en cada request del historial ("ahorraste $X este mes").
+- **Descuento visible.** Precio oficial vs. precio cheapllm.wtf, en cada fila del catálogo y en cada request del historial ("ahorraste $X este mes").
 - **Clasificación útil.** Tags como `fast`, `reasoning`, `vision` o `coding` para encontrar el modelo adecuado sin leer benchmarks.
 
 ## Para quién
@@ -31,7 +31,7 @@ Fuera del MVP: usuarios de Claude Code, que necesitan el formato `/v1/messages` 
 ## Principios
 
 1. **Minimalismo.** Si una pantalla necesita explicación, sobra algo. El onboarding son tres pasos: recargar, crear key, copiar el snippet. **Meta: primer request exitoso en menos de 3 minutos desde el registro.**
-2. **Transparencia de precio.** Siempre mostramos el precio oficial, el precio cheaptokens.wtf y el descuento. Nunca hay costos sorpresa.
+2. **Transparencia de precio.** Siempre mostramos el precio oficial, el precio cheapllm.wtf y el descuento. Nunca hay costos sorpresa.
 3. **Compatibilidad antes que invención.** No inventamos un formato de API: usamos el de OpenAI, que el ecosistema ya entiende.
 4. **No guardamos contenido.** Solo metadatos de uso ([ADR-0014](./adr/0014-no-guardar-contenido.md)).
 5. **El cliente nunca ve el upstream.** Ni en headers, ni en IDs, ni en mensajes de error ([07 · Upstreams](./07-upstreams.md#ocultar-el-upstream)).
@@ -49,7 +49,7 @@ Fuera del MVP: usuarios de Claude Code, que necesitan el formato `/v1/messages` 
 ## Modelo de negocio
 
 ```
-Costo upstream (C)  <  Precio cheaptokens.wtf (P)  <<  Precio oficial (O)
+Costo upstream (C)  <  Precio cheapllm.wtf (P)  <<  Precio oficial (O)
 ```
 
 - Compramos tokens por adelantado a **upstreams**, plataformas agregadoras con una URL única que venden por debajo del precio oficial ([ADR-0001](./adr/0001-upstreams-agregadores.md)).
@@ -68,4 +68,4 @@ Riesgo principal del modelo: **dependemos de terceros cuyo precio y continuidad 
 | % de registrados que recargan | Medir desde el día uno |
 | Margen bruto mensual (Σ P − Σ C) | Positivo desde el primer mes |
 | Latencia que agrega el gateway antes del primer byte | p50 < 100 ms |
-| Tasa de error atribuible a cheaptokens.wtf (5xx propios) | < 0.5% |
+| Tasa de error atribuible a cheapllm.wtf (5xx propios) | < 0.5% |

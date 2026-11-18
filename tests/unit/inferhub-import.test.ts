@@ -21,7 +21,7 @@ const payload = (...data: ReturnType<typeof model>[]) => ({ object: "list", data
 describe("official catalog import", () => {
   it("uses published names, context and prices, and budgets the median offer instead of promising the minimum", () => {
     const result = importInferhubCatalog(payload(model()));
-    expect(result.models[0]).toMatchObject({ id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5", contextLength: 200_000, officialInput: 1_000_000, officialOutput: 5_000_000, discountBps: 7800, status: "active", officialPriceVerifiedAt: null, tags: ["vision"] });
+    expect(result.models[0]).toMatchObject({ id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5", contextLength: 200_000, officialInput: 1_000_000, officialOutput: 5_000_000, discountBps: 7400, status: "active", officialPriceVerifiedAt: null, tags: ["vision"] });
     expect(result.mappings[0]).toMatchObject({ upstreamModel: "ant/claude-haiku-4-5", costInputPer1M: 200_000, costOutputPer1M: 1_000_000 });
   });
 

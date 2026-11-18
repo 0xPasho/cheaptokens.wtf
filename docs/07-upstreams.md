@@ -5,11 +5,11 @@
 Un **upstream** es una plataforma externa que expone muchos modelos detrás de **una sola URL**, vende tokens por debajo del precio oficial y nos deja comprarlos por adelantado. **Es de donde sale el descuento** ([ADR-0001](./adr/0001-upstreams-agregadores.md)).
 
 ```
-Cliente ──▶ cheaptokens.wtf ──▶ Upstream (agregador) ──▶ Proveedor del modelo
+Cliente ──▶ cheapllm.wtf ──▶ Upstream (agregador) ──▶ Proveedor del modelo
             (precio P)       (costo C)                 (precio oficial O)
 ```
 
-cheaptokens.wtf agrega cuatro cosas encima de los upstreams:
+cheapllm.wtf agrega cuatro cosas encima de los upstreams:
 
 - una sola cuenta, key y saldo para el usuario;
 - un catálogo con precios claros;
@@ -23,7 +23,7 @@ cheaptokens.wtf agrega cuatro cosas encima de los upstreams:
 Antes de mapear un modelo a un upstream de producción, el upstream tiene que pasar esta lista:
 
 - [ ] **Sus términos permiten revender el acceso**, o dárselo a nuestros clientes a través de nuestro producto. Si el texto es ambiguo, se pide confirmación por escrito y se guarda como evidencia.
-- [ ] **Su costo deja margen** con el descuento que queremos mostrar: precio cheaptokens.wtf ≥ costo × (1 + `MIN_MARGIN`) ([ADR-0010](./adr/0010-precio-por-descuento.md)).
+- [ ] **Su costo deja margen** con el descuento que queremos mostrar: precio cheapllm.wtf ≥ costo × (1 + `MIN_MARGIN`) ([ADR-0010](./adr/0010-precio-por-descuento.md)).
 - [ ] Expone `POST /chat/completions` **compatible con OpenAI**, con streaming SSE.
 - [ ] **Reporta `usage`** en respuestas sin streaming y en el último chunk del stream (por defecto o con `stream_options.include_usage`). Sin `usage` confiable no podemos cobrar bien.
 - [ ] Permite saldo prepagado o una facturación clara, con el precio por modelo publicado.
@@ -34,9 +34,11 @@ Antes de mapear un modelo a un upstream de producción, el upstream tiene que pa
 
 ## Configuración
 
+**Agregar un proveedor** es escribir su adaptador (`CatalogProvider`, en `src/lib/catalog/providers/`) y registrarlo en `providers/index.ts`: la actualización automática mezcla sus rutas con las de los demás ([ADR-0055](./adr/0055-catalogo-en-vivo-con-varios-proveedores.md)).
+
 Cada upstream vive en `catalog/upstreams.ts` ([06 · Catálogo](./06-catalogo-y-precios.md#fuente-de-verdad-y-sincronización)). El ejemplo concreto está en [InferHub en la fase de pruebas](#inferhub-en-la-fase-de-pruebas).
 
-- La API key de cada upstream está **solo** en una variable de entorno de Vercel.
+- La API key de cada upstream está **solo** en una variable de entorno de Vercel. Puede tener varias, una por cuenta, separadas por comas ([Varias cuentas por upstream](#varias-cuentas-por-upstream)).
 - `costInputPer1M` / `costOutputPer1M` son el **costo efectivo**: incluyen cualquier comisión del upstream (por ejemplo, la que cobra al comprar créditos).
 - Un modelo puede estar mapeado a varios upstreams. En producción, la meta es tener **al menos dos** para los modelos más usados.
 
@@ -55,7 +57,7 @@ Es el upstream real mientras dura la fase de pruebas. Es un mercado: cada modelo
   apiKeyEnv: "UPSTREAM_INFERHUB_API_KEY", // nombre de la env var, nunca el valor
   models: [
     {
-      model: "anthropic/claude-haiku-4.5",  // ID de cheaptokens.wtf
+      model: "anthropic/claude-haiku-4.5",  // ID de cheapllm.wtf
       upstreamModel: "ant/claude-haiku-4-5", // prefijo/modelo de InferHub, nunca un alias
       costInputPer1M: 0.199,                 // USD: el ask que se aceptan. Va como tope en cada request
       costOutputPer1M: 0.995,
@@ -89,7 +91,7 @@ Es el upstream real mientras dura la fase de pruebas. Es un mercado: cada modelo
 
 **Antes de la primera prueba:**
 
-- [ ] Crear una key de InferHub solo para cheaptokens.wtf, distinta de la que usan otras herramientas, y guardarla en `UPSTREAM_INFERHUB_API_KEY` (local y previews).
+- [ ] Crear una key de InferHub solo para cheapllm.wtf, distinta de la que usan otras herramientas, y guardarla en `UPSTREAM_INFERHUB_API_KEY` (local y previews).
 - [ ] Armar un catálogo de pruebas con 3–5 modelos de distintos autores y tags que InferHub sirva de verdad (definido en [ADR-0029](./adr/0029-catalogo-de-pruebas-inferhub.md)).
 - [ ] Antes de sincronizar, verificar en `GET /v1/models` el ID de cada modelo y el ask que se va a usar como costo.
 
@@ -119,16 +121,34 @@ Complementa a InferHub: sirve para los tests automáticos y para provocar a volu
 | `404` | Sí + **alerta** | Nuestro mapeo de modelo está mal |
 | `400` / `422` | **No** | El request del cliente es inválido. Se devuelve sanitizado |
 
-4. Se intentan como máximo 3 upstreams por request.
+4. Se hacen como máximo 3 intentos por request, contando los cambios de cuenta ([Varias cuentas por upstream](#varias-cuentas-por-upstream)).
 5. **Una vez que salió el primer chunk de datos, no hay reintento.** Si el upstream falla después, el cliente recibe un chunk de error ([04 · API › Streaming](./04-api.md#streaming)) y se cobra lo generado.
 
 En el MVP la prioridad es fija. En la fase 2 se agrega un **circuit breaker**: si un upstream acumula errores en una ventana corta, baja de prioridad automáticamente durante unos minutos.
+
+### Varias cuentas por upstream
+
+([ADR-0057](./adr/0057-varias-cuentas-por-upstream.md))
+
+Un upstream puede tener varias cuentas, para no depender de una sola (saldo, rate limit, suspensión) y repartir el tráfico entre ellas:
+
+```bash
+# Una key por cuenta, separadas por comas, espacios o saltos de línea. Una sola también vale.
+UPSTREAM_INFERHUB_API_KEY=sk-cuenta-uno,sk-cuenta-dos
+```
+
+- **Rotación:** cada request empieza en la cuenta siguiente a la del anterior. Cada instancia arranca en una al azar.
+- **Fallback entre cuentas:** un `429`, `401`, `403` o `402` por saldo es de la cuenta, no del upstream. Se prueba la siguiente cuenta del mismo upstream, y la que falló pasa al final de la rotación (1 minuto tras un `429`, 5 minutos tras los demás). Las alertas de la tabla de arriba se mantienen.
+- **Lo demás es del upstream** (`402 no_provider_under_bid`, `404`, `5xx`, red, timeout): con otra cuenta sería igual, así que se pasa al siguiente upstream.
+- **Una cuenta pausada no se descarta:** si todas lo están, se siguen probando, de la que se libera antes a la que tarda más.
+- **Logs:** `account` es la posición de la key en la lista, empezando en 1. La key nunca se loguea.
+- La rotación y las pausas viven en memoria, por instancia (`src/lib/gateway/accounts.ts`).
 
 ## Ocultar el upstream
 
 El cliente nunca debe poder saber qué upstream lo atendió:
 
-- **IDs:** `id` se reemplaza por `chatcmpl-<request_id>` y `model` por el ID de cheaptokens.wtf.
+- **IDs:** `id` se reemplaza por `chatcmpl-<request_id>` y `model` por el ID de cheapllm.wtf.
 - **Campos:** solo pasan los campos del estándar de OpenAI ([04 · API › Response](./04-api.md#response)). Se descartan `usage.cost`, `provider`, `system_fingerprint` y cualquier extra, porque algunos agregadores incluyen su costo o su proveedor.
 - **Headers:** no se reenvía ningún header del upstream, salvo `content-type`.
 - **Errores:** el mensaje del upstream se reemplaza por uno nuestro. Para un `400`, se conserva solo la parte que le sirve al cliente (qué parámetro falló) y se quitan nombres, URLs e IDs internos.
@@ -139,7 +159,7 @@ El cliente nunca debe poder saber qué upstream lo atendió:
 - **Prepagamos poco y seguido.** La meta es no tener más de ~2 semanas de consumo prepagado en un mismo upstream, para limitar lo que perdemos si desaparece.
 - **MVP:** se revisa el saldo a mano cada semana. El `402` de un upstream dispara una alerta crítica.
 - **Fase 2:** un cron diario consulta el saldo de los upstreams que tengan endpoint para eso y alerta por debajo de un umbral.
-- **Conciliación semanal:** se compara lo que nuestro registro dice que gastamos en cada upstream (Σ `requests.upstream_cost_micro_usd`) con lo que el upstream realmente descontó. Una diferencia grande significa que su `usage` no coincide con lo que cobra.
+- **Conciliación semanal:** se compara lo que nuestro registro dice que gastamos en cada upstream (Σ `requests.upstream_cost_micro_usd`) con lo que el upstream realmente descontó, sumando todas sus cuentas. Una diferencia grande significa que su `usage` no coincide con lo que cobra.
 
 ## Riesgos y mitigaciones
 
@@ -154,4 +174,4 @@ El cliente nunca debe poder saber qué upstream lo atendió:
 | `usage` reportado ≠ lo que el upstream cobra | Margen real distinto del calculado | Conciliación semanal |
 | Latencia extra por un salto más | Peor experiencia | Gateway en la misma región que los upstreams y sin bufferear el stream |
 
-> **Privacidad, resuelto:** cheaptokens.wtf se declara intermediario. El aviso de privacidad nombra la *categoría* "proveedores de inferencia de terceros", sin nombres, y aclara que no guardamos contenido ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)). Un abogado mexicano valida el texto antes del lanzamiento.
+> **Privacidad, resuelto:** cheapllm.wtf se declara intermediario. El aviso de privacidad nombra la *categoría* "proveedores de inferencia de terceros", sin nombres, y aclara que no guardamos contenido ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)). Un abogado mexicano valida el texto antes del lanzamiento.

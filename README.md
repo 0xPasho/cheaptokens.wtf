@@ -1,4 +1,4 @@
-# cheaptokens.wtf
+# cheapllm.wtf
 
 Next.js 16 (App Router) con TypeScript, Tailwind CSS v4 y shadcn/ui (`base-nova` sobre Base UI). El gateway (`/v1/*`) vive en la misma app ([ADR-0005](./docs/adr/0005-gateway-en-nextjs-vercel.md)).
 
@@ -13,6 +13,7 @@ pnpm test          # pruebas unitarias y de componentes (Vitest)
 pnpm test:gateway  # pruebas de punta a punta del gateway: handler real, PGlite y el upstream simulado
 pnpm test:e2e      # build + pruebas en Chrome: axe y capturas por sección (Playwright)
 pnpm test:live     # prueba en vivo contra InferHub; solo con INFERHUB_LIVE=1 y la key (gasta dinero real)
+                   # con USDC_LIVE=1, los adaptadores de USDC contra mainnet: solo lee y simula, no gasta nada
 pnpm check         # lint + typecheck + pruebas unitarias + pruebas del gateway + build
 ```
 
@@ -28,7 +29,7 @@ pnpm mock:upstream             # terminal 2: upstream simulado en 127.0.0.1:4010
 
 pnpm catalog:sync              # carga catalog/ en la base (db:dev ya aplicó las migraciones)
 pnpm keys:create -- --workspace demo            # imprime la key wtf_ una sola vez
-export CHEAPTOKENS_API_KEY=wtf_...              # la key que imprimió el paso anterior
+export CHEAPLLM_API_KEY=wtf_...                 # la key que imprimió el paso anterior
 pnpm credits:grant -- --workspace demo --usd 5 --note "prueba local"
 pnpm dev                       # terminal 3
 ```
@@ -37,7 +38,7 @@ pnpm dev                       # terminal 3
 
 ```bash
 curl http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer $CHEAPTOKENS_API_KEY" \
+  -H "Authorization: Bearer $CHEAPLLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model": "qwen/qwen3.8-flash", "messages": [{"role": "user", "content": "Hola"}]}'
 
@@ -60,4 +61,4 @@ Las convenciones del proyecto están en [`AGENTS.md`](./AGENTS.md).
 
 ## Documentación
 
-Qué es cheaptokens.wtf, cómo funciona y por qué se decidió cada cosa: [`docs/`](./docs/README.md). Las decisiones de arquitectura están en [`docs/adr/`](./docs/adr/README.md). El plan con el que se construyó el gateway está en [`docs/15-plan-gateway.md`](./docs/15-plan-gateway.md).
+Qué es cheapllm.wtf, cómo funciona y por qué se decidió cada cosa: [`docs/`](./docs/README.md). Las decisiones de arquitectura están en [`docs/adr/`](./docs/adr/README.md). El plan con el que se construyó el gateway está en [`docs/15-plan-gateway.md`](./docs/15-plan-gateway.md).

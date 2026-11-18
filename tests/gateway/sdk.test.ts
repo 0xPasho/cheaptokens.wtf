@@ -189,8 +189,8 @@ describe("contrato del gateway con el SDK oficial de OpenAI", () => {
       status: "client_cancelled", stream: true, usageEstimated: false,
       promptTokens: 1, completionTokens: 26,
     });
-    // ceil((1 × 220000 + 26 × 1100000) / 1000000) = 29 µUSD, por encima del mínimo.
-    expect(record.costMicroUsd).toBe(BigInt(29));
+    // El mock reporta 10 µUSD de costo: se cobra ceil(10 × 1.3) = 13 µUSD (ADR-0054).
+    expect(record.costMicroUsd).toBe(BigInt(13));
     expect(record.upstreamCostMicroUsd).toBe(BigInt(10));
     const [workspaceAfter] = await harness.db.select().from(workspaces).where(eq(workspaces.id, harness.workspaceId));
     const [keyAfter] = await harness.db.select().from(apiKeys).where(eq(apiKeys.id, harness.apiKeyId));

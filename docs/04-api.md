@@ -2,7 +2,7 @@
 
 Compatible con **OpenAI Chat Completions** ([ADR-0002](./adr/0002-api-compatible-openai.md)). Cualquier cliente que permita cambiar `base_url` funciona sin más cambios.
 
-- **Base URL:** `https://api.cheaptokens.wtf/v1` ([ADR-0026](./adr/0026-marca-cheaptokens-wtf.md)).
+- **Base URL:** `https://api.cheapllm.wtf/v1` ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)).
 - **Autenticación:** `Authorization: Bearer wtf_...`
 - **Formato:** JSON, UTF-8. Los mensajes de error van siempre en inglés, porque los lee una máquina.
 - **Sin CORS:** la API se llama desde un servidor, no desde el navegador. Una key en el frontend es una key filtrada.
@@ -18,11 +18,11 @@ Compatible con **OpenAI Chat Completions** ([ADR-0002](./adr/0002-api-compatible
 
 ### Request
 
-Es el body estándar de OpenAI. La única diferencia es que `model` usa el ID de cheaptokens.wtf (`autor/modelo`):
+Es el body estándar de OpenAI. La única diferencia es que `model` usa el ID de cheapllm.wtf (`autor/modelo`):
 
 ```bash
-curl https://api.cheaptokens.wtf/v1/chat/completions \
-  -H "Authorization: Bearer $CHEAPTOKENS_API_KEY" \
+curl https://api.cheapllm.wtf/v1/chat/completions \
+  -H "Authorization: Bearer $CHEAPLLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "anthropic/claude-haiku-4.5",
@@ -36,7 +36,7 @@ curl https://api.cheaptokens.wtf/v1/chat/completions \
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://api.cheaptokens.wtf/v1",
+    base_url="https://api.cheapllm.wtf/v1",
     api_key="wtf_...",
 )
 
@@ -53,8 +53,8 @@ print(response.choices[0].message.content)
 import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://api.cheaptokens.wtf/v1",
-  apiKey: process.env.CHEAPTOKENS_API_KEY,
+  baseURL: "https://api.cheapllm.wtf/v1",
+  apiKey: process.env.CHEAPLLM_API_KEY,
 });
 
 const stream = await client.chat.completions.create({
@@ -72,7 +72,7 @@ for await (const chunk of stream) {
 
 ### Parámetros
 
-- **`model`** (obligatorio): un ID de cheaptokens.wtf.
+- **`model`** (obligatorio): un ID de cheapllm.wtf.
 - **Todo lo demás** (`messages`, `temperature`, `max_tokens`, `tools`, `tool_choice`, `response_format`, contenido con imágenes, etc.) **se reenvía tal cual al upstream.** Si un modelo no soporta un parámetro, el error del upstream vuelve como `400`.
 - **`stream`** y **`stream_options.include_usage`**: se respetan. Internamente siempre pedimos `usage` al upstream, pero solo se lo reenviamos al cliente si lo pidió.
 
@@ -80,7 +80,7 @@ for await (const chunk of stream) {
 
 El formato estándar de OpenAI (`chat.completion` o `chat.completion.chunk`), con estas garantías:
 
-- `model` es siempre el ID de cheaptokens.wtf que pidió el cliente.
+- `model` es siempre el ID de cheapllm.wtf que pidió el cliente.
 - `id` es nuestro (`chatcmpl-<request_id>`), no el del upstream.
 - **Solo pasan los campos del estándar:** `id`, `object`, `created`, `model`, `choices`, `usage`. La única excepción es `reasoning_content` en `message` y en `delta`, el razonamiento del modelo ([ADR-0031](./adr/0031-reasoning-content-pasa-al-cliente.md)). Dentro de `usage` solo pasan `prompt_tokens`, `completion_tokens`, `total_tokens`, `prompt_tokens_details` y `completion_tokens_details`. Todo lo demás se descarta, incluidos campos como `usage.cost` o `provider` que algunos upstreams agregan y que revelarían nuestro costo o proveedor.
 - **Header `x-request-id`:** el ID para soporte, el mismo que aparece en el dashboard.
@@ -149,7 +149,7 @@ Usan el formato de OpenAI, así los SDKs los parsean sin cambios:
 ```json
 {
   "error": {
-    "message": "Insufficient credits. Top up at https://cheaptokens.wtf/dashboard/credits",
+    "message": "Insufficient credits. Top up at https://cheapllm.wtf/dashboard/credits",
     "type": "insufficient_credits",
     "code": "insufficient_credits"
   }
@@ -183,7 +183,7 @@ Los mensajes nunca mencionan al upstream.
 
 ## Límites del plan
 
-Con un plan, cada request gasta de dos límites lo que cuesta a precio cheaptokens.wtf: una ventana de 5 horas y una semana ([ADR-0049](./adr/0049-suscripcion-con-limites.md), [08 · Créditos y pagos](./08-creditos-y-pagos.md#planes)). Cuando la key cobra del plan, cada respuesta trae:
+Con un plan, cada request gasta de dos límites lo que cuesta a precio cheapllm.wtf: una ventana de 5 horas y una semana ([ADR-0049](./adr/0049-suscripcion-con-limites.md), [08 · Créditos y pagos](./08-creditos-y-pagos.md#planes)). Cuando la key cobra del plan, cada respuesta trae:
 
 | Header | Valor |
 |---|---|

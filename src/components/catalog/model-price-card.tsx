@@ -9,7 +9,7 @@ import { formatDate, formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 
-/** Precio del modelo (ref 7): precio cheaptokens.wtf grande, oficial tachado, descuento y precio por token en tooltip. */
+/** Precio del modelo (ref 7): precio cheapllm.wtf grande, oficial tachado, descuento y precio por token en tooltip. */
 export function ModelPriceCard({
   model,
   locale,

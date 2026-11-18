@@ -5,8 +5,8 @@ import { catalogEntrySchema, upstreamDefinitionSchema } from "./schema";
 import type { ModelTag } from "./tags";
 import type { CatalogEntry, UpstreamDefinition, UpstreamEnvironment, UpstreamModelMapping } from "./types";
 
-/** Margen mínimo sobre el costo del upstream, en bps: 1000 = 10% (docs/06 › Margen mínimo). */
-export const MIN_MARGIN_BPS = 1_000;
+/** Margen mínimo sobre el costo del upstream, en bps: 3000 = 30% (docs/06 › Margen mínimo, ADR-0053). */
+export const MIN_MARGIN_BPS = 3_000;
 
 /** Los calcula la sincronización a partir del contexto y del precio: nunca se escriben a mano (docs/06 › Tags). */
 const COMPUTED_TAGS: readonly ModelTag[] = ["long-context", "cheap"];
@@ -122,7 +122,7 @@ function schemaErrors(schema: z.ZodType, value: unknown, label: string): string[
 }
 
 /**
- * Precio cheaptokens.wtf ≥ costo × (1 + MIN_MARGIN), por separado en input y output (ADR-0010).
+ * Precio cheapllm.wtf ≥ costo × (1 + MIN_MARGIN), por separado en input y output (ADR-0010).
  * Se compara en enteros (`precio × 10000 ≥ costo × (10000 + bps)`) para no redondear el umbral.
  */
 function marginShortfalls(entry: CatalogEntry, mapping: UpstreamModelMapping): string[] {

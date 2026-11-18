@@ -5,7 +5,7 @@ import { REFERENCE_MODEL_ID, TYPICAL_REQUEST } from "./plans";
 
 type Priced = Pick<CatalogModel, "id" | "discountedInput" | "discountedOutput">;
 
-/** Lo que vale una request típica (20 mil de entrada, 2 mil de salida) con el precio cheaptokens.wtf del modelo. */
+/** Lo que vale una request típica (20 mil de entrada, 2 mil de salida) con el precio cheapllm.wtf del modelo. */
 export function typicalCost(model: Priced): bigint {
   return chargeForTokens(TYPICAL_REQUEST, { input: BigInt(model.discountedInput), output: BigInt(model.discountedOutput) });
 }

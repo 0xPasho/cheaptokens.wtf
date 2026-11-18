@@ -68,7 +68,7 @@ describe("Stat", () => {
 
 describe("QuickstartSnippet", () => {
   const props = {
-    baseUrl: "https://api.cheaptokens.wtf/v1",
+    baseUrl: "https://api.cheapllm.wtf/v1",
     apiKey: "wtf_abc",
     model: "anthropic/claude-haiku-4.5",
   };
@@ -85,7 +85,7 @@ describe("QuickstartSnippet", () => {
   it("abre en Python con la base URL, la key y el modelo ya puestos", () => {
     render(<QuickstartSnippet {...props} />);
     const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveTextContent('base_url="https://api.cheaptokens.wtf/v1"');
+    expect(panel).toHaveTextContent('base_url="https://api.cheapllm.wtf/v1"');
     expect(panel).toHaveTextContent('api_key="wtf_abc"');
     expect(panel).toHaveTextContent('model="anthropic/claude-haiku-4.5"');
   });
@@ -94,14 +94,14 @@ describe("QuickstartSnippet", () => {
     render(<QuickstartSnippet {...props} defaultLanguage="curl" />);
     expect(screen.getByRole("tab", { name: "curl" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveTextContent(
-      "curl https://api.cheaptokens.wtf/v1/chat/completions",
+      "curl https://api.cheapllm.wtf/v1/chat/completions",
     );
   });
 });
 
 describe("Stat size", () => {
   it("sm baja la cifra a text-2xl para cards angostas", () => {
-    render(<Stat label="Con cheaptokens.wtf" value="$0.00135" size="sm" />);
+    render(<Stat label="Con cheapllm.wtf" value="$0.00135" size="sm" />);
     const value = screen.getByText("$0.00135");
     expect(value).toHaveClass("text-2xl");
     expect(value).not.toHaveClass("text-4xl");
