@@ -10,7 +10,8 @@ module.exports = {
       cwd: root,
       script: `${root}/node_modules/next/dist/bin/next`,
       // nginx manda cheapllm.wtf y api.cheapllm.wtf a este puerto. Los anteriores son de las otras apps del servidor.
-      args: ["start", "--port", "3014", "--hostname", "127.0.0.1"],
+      // Sin --hostname: con él, Next arma las URLs como https://localhost:3014 y el proxy de Clerk falla (docs/18 › Trampas).
+      args: ["start", "--port", "3014"],
       env: { NODE_ENV: "production" },
     },
   ],
