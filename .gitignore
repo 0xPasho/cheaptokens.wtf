@@ -50,3 +50,7 @@ next-env.d.ts
 
 # base local de desarrollo (PGlite, ADR-0032)
 /.pglite
+
+# builds del servidor (deploy/build.sh)
+/.next-build/
+/.next-prev/
