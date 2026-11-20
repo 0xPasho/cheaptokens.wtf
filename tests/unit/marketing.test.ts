@@ -7,6 +7,7 @@ import { getCatalog, toModel } from "@/lib/catalog/queries";
 import type { CatalogEntry, CatalogModel } from "@/lib/catalog/types";
 import { en } from "@/lib/i18n/dictionaries/en";
 import {
+  BITCOIN_QUOTE_MINUTES,
   DEFAULT_OVERFLOW_CAP_MICRO_USD,
   ESTIMATOR_MODELS,
   FAQ_TOPICS,
@@ -14,6 +15,7 @@ import {
   HOME_FAQ,
   maxDiscountBps,
   medianDiscountBps,
+  MIN_BITCOIN_ORDER_MICRO_USD,
   MIN_DEPOSIT_MICRO_USD,
   PEEK_SIZE,
   PEEK_TAGS,
@@ -24,6 +26,7 @@ import {
   PRICING_FAQ,
   USAGE_TABLE_MODELS,
 } from "@/lib/marketing";
+import { MIN_BITCOIN_ORDER_MICRO_USD as BITCOIN_MINIMUM, QUOTE_WINDOW_MS } from "@/lib/payments/bitcoin/config";
 import { MIN_DEPOSIT_MICRO_USD as DEPOSIT_MINIMUM } from "@/lib/payments/crypto/deposits";
 
 /** Un modelo mínimo para probar el orden: solo importan autor, descuento y tags. */
@@ -112,6 +115,11 @@ describe("preguntas frecuentes", () => {
 describe("constantes que repiten las de otro módulo", () => {
   it("el depósito mínimo es el de los depósitos en USDC", () => {
     expect(BigInt(MIN_DEPOSIT_MICRO_USD)).toBe(DEPOSIT_MINIMUM);
+  });
+
+  it("la compra mínima en Bitcoin y los minutos del precio fijo son los de las cotizaciones", () => {
+    expect(BigInt(MIN_BITCOIN_ORDER_MICRO_USD)).toBe(BITCOIN_MINIMUM);
+    expect(BITCOIN_QUOTE_MINUTES * 60_000).toBe(QUOTE_WINDOW_MS);
   });
 
   it("el tope del excedente es el default de la base", () => {

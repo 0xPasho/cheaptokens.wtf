@@ -47,5 +47,6 @@ En el servidor: `cd ~/cheapllm.wtf && mv .next .next-bad && mv .next-prev .next 
 
 - **`tar` no borra:** un archivo eliminado del repo sigue en el servidor hasta que se borre a mano. No afecta al build salvo que sea una ruta de `src/app`.
 - **Sin `APP_ENV=production`** la app entra en modo de desarrollo: login sin verificación y pagos de prueba ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
+- **El sitio nombra los medios de pago aunque estén apagados:** la landing, `/pricing` y `/faq` dicen siempre que se paga con USDC o con Bitcoin. Sin `CRYPTO_DEPOSIT_SEED` y la dirección de cada red, o sin `CRYPTO_BITCOIN_XPUB`, el dashboard no ofrece ese medio ([08 · Créditos y pagos](./08-creditos-y-pagos.md)). Antes de publicar, `pnpm payments:status` tiene que mostrar encendido lo que el sitio dice.
 - **Cloudflare corta a los 100 s sin bytes.** Afecta a requests sin stream muy largos.
 - **`next start` sin `--hostname`:** con `--hostname 127.0.0.1`, Next arma las URLs como `https://localhost:3014`, el proxy de Clerk intenta reenviar ahí por TLS y todas las páginas responden 500 (`Failed to proxy … EPROTO`, visto el 2026-11-17). El firewall del servidor ya cierra el puerto 3014 hacia afuera.

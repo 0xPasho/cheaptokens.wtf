@@ -11,7 +11,7 @@ export const es: Dictionary = {
     modelsTitle: "Modelos y precios",
     modelsDescription: "Cada modelo con su precio oficial, el precio cheapllm.wtf y el descuento.",
     pricingTitle: "Precios",
-    pricingDescription: "Planes Plus, Pro y Max, créditos por uso, lo que gasta cada modelo y cómo pagar con USDC.",
+    pricingDescription: "Planes Plus, Pro y Max, créditos por uso, lo que gasta cada modelo y cómo pagar con USDC o Bitcoin.",
     faqTitle: "Preguntas frecuentes",
     faqDescription: "Todo sobre cheapllm.wtf: el producto, los precios, los planes, los pagos, la API y la privacidad.",
   },
@@ -183,7 +183,7 @@ export const es: Dictionary = {
       none: "Ninguno",
       models: "Modelos",
       allModels: "Los {count}",
-      cta: "Depositar USDC",
+      cta: "Agregar créditos",
     },
     estimatorLabel: "Calcula las requests con",
     estimatorNote: "Request típica: 20 mil tokens de entrada y 2 mil de salida. Un modelo más caro gasta el límite más rápido.",
@@ -206,8 +206,8 @@ export const es: Dictionary = {
       ],
     },
     pay: {
-      title: "Pagas con USDC.",
-      body: "Tu cuenta tiene su propia dirección: lo que envías llega como saldo, dólar por dólar, en cerca de medio minuto. El plan se compra con ese saldo, dura 30 días y no se renueva solo.",
+      title: "Pagas con USDC o Bitcoin.",
+      body: "Con USDC, lo que envías a tu propia dirección llega como saldo, dólar por dólar, en cerca de medio minuto. Con Bitcoin, el precio queda fijo {minutes} minutos y se acredita cuando la red lo confirma. El plan se compra con ese saldo, dura 30 días y no se renueva solo.",
       cta: "Cómo depositar",
     },
     usage: {
@@ -224,7 +224,7 @@ export const es: Dictionary = {
     },
     paySteps: {
       title: "Cómo pagas.",
-      description: "Con USDC en Solana o en Base. Sin tarjeta, sin cobros automáticos y sin contracargos.",
+      description: "Con USDC en Solana o en Base, o con Bitcoin. Sin tarjeta, sin cobros automáticos y sin contracargos.",
       steps: [
         {
           title: "Copia tu dirección",
@@ -239,6 +239,10 @@ export const es: Dictionary = {
           body: "En cerca de medio minuto llega como saldo, dólar por dólar. Úsalo directo o compra un plan con él.",
         },
       ],
+      bitcoin: {
+        title: "O paga con Bitcoin",
+        body: "En Créditos eliges cuánto, desde {btcMin}, y te damos el monto en BTC con el precio fijo por {minutes} minutos. Se acredita cuando la red lo confirma: unos 10 minutos, a veces hasta una hora.",
+      },
     },
     faqTitle: "Dudas de cobro.",
     faqDescription: "Las que más llegan sobre precios y planes.",
@@ -321,19 +325,23 @@ export const es: Dictionary = {
       },
       howPay: {
         q: "¿Cómo pago?",
-        a: "Con USDC en Solana o en Base, desde {min}. Lo que envías se vuelve saldo, dólar por dólar, y sirve para cualquier modelo o para comprar un plan. Todavía no aceptamos tarjeta.",
+        a: "Con USDC en Solana o en Base, desde {min}, o con Bitcoin, desde {btcMin}. Lo que envías se vuelve saldo y sirve para cualquier modelo o para comprar un plan. Todavía no aceptamos tarjeta.",
+      },
+      bitcoin: {
+        q: "¿Cómo funciona el pago con Bitcoin?",
+        a: "En Créditos eliges cuánto, desde {btcMin}, y te damos el monto exacto en BTC con el precio fijo por {minutes} minutos. Si el pago llega a la red después, se acredita al precio de ese momento. Solo por la red de Bitcoin: Lightning todavía no.",
       },
       howLong: {
-        q: "¿Cuánto tarda un depósito?",
-        a: "Cerca de medio minuto con el dashboard abierto. Lo que envías se acredita completo, dólar por dólar.",
+        q: "¿Cuánto tarda en acreditarse un pago?",
+        a: "Con USDC, cerca de medio minuto con el dashboard abierto, y se acredita completo, dólar por dólar. Con Bitcoin, cuando la red confirma el pago: unos 10 minutos, a veces hasta una hora.",
       },
       cards: {
         q: "¿Aceptan tarjeta?",
-        a: "Todavía no. Por ahora el único medio de pago es USDC.",
+        a: "Todavía no. Por ahora se paga con USDC o con Bitcoin.",
       },
       wrongToken: {
         q: "¿Qué pasa si envío otro token o uso otra red?",
-        a: "No se acredita solo. Envía solo USDC, y solo por Solana o por Base.",
+        a: "No se acredita solo. A tus direcciones de USDC envía solo USDC, por Solana o por Base. A tu dirección de Bitcoin, solo Bitcoin por su propia red: ni Lightning ni un BTC envuelto.",
       },
       refunds: {
         q: "¿Se reembolsan los créditos?",

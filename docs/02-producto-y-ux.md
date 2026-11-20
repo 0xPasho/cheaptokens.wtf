@@ -17,7 +17,7 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
 | `/[lang]/dashboard` | Privada | Ver plan, límites y saldo, y empezar |
 | `/[lang]/dashboard/plan` | Privada | Elegir plan, ver límites y decidir qué pasa al llegar al límite |
-| `/[lang]/dashboard/credits` | Privada | Depositar USDC e historial de pagos |
+| `/[lang]/dashboard/credits` | Privada | Agregar créditos con USDC o Bitcoin, e historial de pagos |
 | `/[lang]/dashboard/keys` | Privada | Crear, rotar y revocar API keys |
 | `/[lang]/dashboard/usage` | Privada | Ver qué se gastó, de dónde se cobró y cuánto se ahorró |
 | `/[lang]/dashboard/settings` | Privada | Cuenta, cerrar sesión y exportar datos |
@@ -41,11 +41,11 @@ La cabecera lleva Modelos, Precios, Cómo funciona (`/[lang]#how-it-works`) y Do
 
 ## Precios (`/[lang]/pricing`)
 
-Planes y créditos con el selector de modelo, el reparto entre plan y créditos, la tabla de lo que gasta cada modelo (la misma cuenta que «Consumo por modelo» del dashboard), los pasos para pagar con USDC y cinco preguntas de cobro ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
+Planes y créditos con el selector de modelo, el reparto entre plan y créditos, la tabla de lo que gasta cada modelo (la misma cuenta que «Consumo por modelo» del dashboard), los pasos para pagar con USDC, la tarjeta de Bitcoin ([ADR-0065](./adr/0065-pagos-en-bitcoin.md)) y cinco preguntas de cobro ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
 
 ## Preguntas frecuentes (`/[lang]/faq`)
 
-27 preguntas en seis temas, con los temas a la izquierda y un llamado al registro al final. El texto está en `faq.items` del diccionario y el orden en `FAQ_TOPICS` (`src/lib/marketing.ts`) ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
+28 preguntas en seis temas, con los temas a la izquierda y un llamado al registro al final. El texto está en `faq.items` del diccionario y el orden en `FAQ_TOPICS` (`src/lib/marketing.ts`) ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
 
 ## Catálogo (`/[lang]/models`)
 
@@ -101,7 +101,9 @@ Una sidebar con la composición del catálogo ([ADR-0038](./adr/0038-sidebar-izq
 ### Créditos (`/[lang]/dashboard/credits`)
 
 - Saldo actual: sirve para cualquier modelo.
-- **Depositar USDC:** la dirección propia de la cuenta en Solana y en Base, con QR (la dirección o un link de wallet) y botón de copiar. Debajo, lo que pasa con el depósito: esperando, en camino o acreditado, con link a la transacción. Un desplegable explica cómo enviar desde un exchange ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)).
+- **Agregar créditos:** una pestaña por medio de pago.
+  - **Solana y Base (USDC):** la dirección propia de la cuenta, con QR (la dirección o un link de wallet) y botón de copiar. Debajo, lo que pasa con el depósito: esperando, en camino o acreditado, con link a la transacción. Un desplegable explica cómo enviar desde un exchange ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)).
+  - **Bitcoin:** se elige un monto y se cotiza. La cotización muestra el QR con el monto, el monto exacto en BTC, la dirección y cuánto le queda al precio fijo; después, lo que pasa con el pago: esperando, visto en la red o acreditado ([ADR-0065](./adr/0065-pagos-en-bitcoin.md)).
 - **Orden de cobro:** plan y créditos, explicado en una tarjeta.
 - **Historial de pagos** (depósitos y planes): fecha, concepto, monto, estado y link a la transacción.
 - Los paquetes por modelo ya no se venden. Si a una cuenta le queda alguno, lo ve aquí y en Inicio.
@@ -139,7 +141,7 @@ Una sola página, en este orden: base URL, autenticación, ejemplo en curl, Pyth
 | Sin uso | "No requests yet." + el snippet |
 | Saldo en cero | Banner: "Your balance is $0. Requests will fail with 402." + Recargar |
 | Límite del plan alcanzado | El medidor dice "Límite alcanzado" y cuándo se reinicia. La API responde `429 usage_limit_reached` si el excedente no cubre |
-| Depósitos no disponibles | Aviso en Plan y Créditos: los depósitos en USDC todavía no están abiertos |
+| Pagos no disponibles | Aviso en Plan y Créditos cuando no hay ningún medio de pago configurado: los pagos todavía no están abiertos |
 | Saldo negativo | Banner: "Your balance is −$0.12. Top up to keep using the API." |
 | Pago fallido | Se vuelve a `/credits` con "Payment didn't go through. You weren't charged." |
 

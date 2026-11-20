@@ -10,7 +10,7 @@ export const en = {
     modelsTitle: "Models and prices",
     modelsDescription: "Every model with its official price, the cheapllm.wtf price and the discount.",
     pricingTitle: "Pricing",
-    pricingDescription: "Plus, Pro and Max plans, credits by usage, what each model spends and how to pay with USDC.",
+    pricingDescription: "Plus, Pro and Max plans, credits by usage, what each model spends and how to pay with USDC or Bitcoin.",
     faqTitle: "Frequently asked questions",
     faqDescription: "Everything about cheapllm.wtf: the product, pricing, plans, payments, the API and privacy.",
   },
@@ -182,7 +182,7 @@ export const en = {
       none: "None",
       models: "Models",
       allModels: "All {count}",
-      cta: "Deposit USDC",
+      cta: "Add credits",
     },
     estimatorLabel: "Count requests with",
     estimatorNote: "Typical request: 20k input tokens and 2k output tokens. A pricier model uses up the limit faster.",
@@ -205,8 +205,8 @@ export const en = {
       ],
     },
     pay: {
-      title: "You pay in USDC.",
-      body: "Your account has its own address: what you send arrives as balance, dollar for dollar, in about half a minute. The plan is bought with that balance, lasts 30 days and doesn't renew on its own.",
+      title: "You pay in USDC or Bitcoin.",
+      body: "With USDC, what you send to your own address arrives as balance, dollar for dollar, in about half a minute. With Bitcoin, the price stays fixed for {minutes} minutes and it's credited once the network confirms it. The plan is bought with that balance, lasts 30 days and doesn't renew on its own.",
       cta: "How to deposit",
     },
     usage: {
@@ -223,7 +223,7 @@ export const en = {
     },
     paySteps: {
       title: "How you pay.",
-      description: "With USDC on Solana or Base. No card, no automatic charges and no chargebacks.",
+      description: "With USDC on Solana or Base, or with Bitcoin. No card, no automatic charges and no chargebacks.",
       steps: [
         {
           title: "Copy your address",
@@ -238,6 +238,10 @@ export const en = {
           body: "In about half a minute it arrives as balance, dollar for dollar. Use it directly or buy a plan with it.",
         },
       ],
+      bitcoin: {
+        title: "Or pay with Bitcoin",
+        body: "In Credits you pick how much, from {btcMin}, and we give you the amount in BTC with the price fixed for {minutes} minutes. It's credited once the network confirms it: about 10 minutes, sometimes up to an hour.",
+      },
     },
     faqTitle: "Billing questions.",
     faqDescription: "The ones we get most about prices and plans.",
@@ -320,19 +324,23 @@ export const en = {
       },
       howPay: {
         q: "How do I pay?",
-        a: "With USDC on Solana or Base, from {min}. What you send becomes balance, dollar for dollar, and works for any model or to buy a plan. We don't take cards yet.",
+        a: "With USDC on Solana or Base, from {min}, or with Bitcoin, from {btcMin}. What you send becomes balance and works for any model or to buy a plan. We don't take cards yet.",
+      },
+      bitcoin: {
+        q: "How does paying with Bitcoin work?",
+        a: "In Credits you pick how much, from {btcMin}, and we give you the exact amount in BTC with the price fixed for {minutes} minutes. If the payment reaches the network later, it's credited at the price of that moment. Only on the Bitcoin network: Lightning isn't supported yet.",
       },
       howLong: {
-        q: "How long does a deposit take?",
-        a: "About half a minute with the dashboard open. What you send is credited in full, dollar for dollar.",
+        q: "How long does a payment take to be credited?",
+        a: "With USDC, about half a minute with the dashboard open, and it's credited in full, dollar for dollar. With Bitcoin, once the network confirms the payment: about 10 minutes, sometimes up to an hour.",
       },
       cards: {
         q: "Do you take cards?",
-        a: "Not yet. For now, USDC is the only way to pay.",
+        a: "Not yet. For now, you can pay with USDC or Bitcoin.",
       },
       wrongToken: {
         q: "What if I send another token or use another network?",
-        a: "It isn't credited automatically. Send only USDC, and only on Solana or Base.",
+        a: "It isn't credited automatically. To your USDC addresses, send only USDC, on Solana or Base. To your Bitcoin address, send only Bitcoin on its own network: not Lightning or a wrapped BTC.",
       },
       refunds: {
         q: "Are credits refundable?",
