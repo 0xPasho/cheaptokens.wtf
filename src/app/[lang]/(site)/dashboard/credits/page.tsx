@@ -2,17 +2,20 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { ModelLogo } from "@/components/catalog/provider-logo";
+import { actionErrors } from "@/components/dashboard/action-errors";
+import { BitcoinPanel } from "@/components/dashboard/bitcoin-panel";
+import { BitcoinPendingNotice } from "@/components/dashboard/bitcoin-pending-notice";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
-import { DepositPanel } from "@/components/dashboard/deposit-panel";
+import { DepositPanel, emptyDepositView } from "@/components/dashboard/deposit-panel";
 import { PaymentsNotice } from "@/components/dashboard/payments-notice";
 import { PageHeader, SectionHeader } from "@/components/page-header";
 import { Price } from "@/components/price";
 import { Stat } from "@/components/stat";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { type PlanId, PLANS } from "@/lib/billing/plans";
+import { isPlanId, type PlanId, PLANS } from "@/lib/billing/plans";
 import { getLiveCatalog } from "@/lib/catalog/live";
 import { getAccount, listPacks, listPayments } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
@@ -21,6 +24,7 @@ import { formatDate, formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
+import { loadBitcoinPending, loadBitcoinView } from "@/lib/payments/bitcoin/load";
 import { paymentsAvailable as cryptoPaymentsAvailable, readCryptoConfig } from "@/lib/payments/crypto/config";
 import { depositChains, getDepositState } from "@/lib/payments/crypto/deposits";
 import { depositView } from "@/lib/payments/crypto/view";
@@ -47,11 +51,14 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const db = getDb();
   const crypto = readCryptoConfig();
   const chains = depositChains(crypto);
-  const paymentsAvailable = cryptoPaymentsAvailable(crypto);
-  const [account, packs, history, deposit] = await Promise.all([
+  const usdcAvailable = cryptoPaymentsAvailable(crypto);
+  const [account, packs, history, deposit, bitcoin, bitcoinPending] = await Promise.all([
     getAccount(db, workspaceId, now), listPacks(db, workspaceId), listPayments(db, workspaceId),
-    paymentsAvailable ? getDepositState(db, chains, workspaceId, now) : null,
+    usdcAvailable ? getDepositState(db, chains, workspaceId, now) : null,
+    loadBitcoinView(db, workspaceId, now),
+    loadBitcoinPending(db, workspaceId),
   ]);
+  const paymentsAvailable = usdcAvailable || bitcoin !== null;
   const d = dict.dashboard.credits;
   const catalog = await getLiveCatalog();
   const names = new Map(catalog.map((model) => [model.id, model.name]));
@@ -60,24 +67,46 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     const { kind, item } = payment;
     if (kind === "subscription" && item && item in PLANS) return t(d.kinds.subscription, { plan: dict.dashboard.plans[item as PlanId].name });
     if (kind === "pack" && item) return t(d.kinds.pack, { model: names.get(item) ?? item });
+    if (payment.paymentProvider.startsWith("bitcoin")) return d.bitcoinPaid;
     return payment.paymentProvider.startsWith("usdc-") ? d.deposited : d.kinds.topup;
   };
 
   return (
     <div className="flex flex-col gap-8">
-      <PaymentsNotice available={paymentsAvailable} simulate={crypto.simulate} labels={dict.dashboard.payments} />
+      <PaymentsNotice available={paymentsAvailable} simulate={crypto.simulate || bitcoin?.simulate === true} labels={dict.dashboard.payments} />
+      <BitcoinPendingNotice
+        pending={bitcoinPending}
+        planName={(id) => (isPlanId(id) ? dict.dashboard.plans[id].name : null)}
+        labels={dict.dashboard.bitcoin}
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>{dict.dashboard.deposit.title}</CardTitle>
           <CardDescription>{dict.dashboard.deposit.description}</CardDescription>
-          <CardAction><Badge variant="outline">USDC</Badge></CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <Stat label={d.balance} value={<Price micros={Number(account.balanceMicroUsd)} locale={locale} />} hint={d.balanceHint} />
-          {deposit
-            ? <DepositPanel initial={depositView(crypto, chains, deposit)} locale={locale} labels={dict.dashboard.deposit} />
-            : null}
+          {deposit || bitcoin ? (
+            <DepositPanel
+              initial={deposit ? depositView(crypto, chains, deposit) : emptyDepositView(account.balanceMicroUsd.toString())}
+              locale={locale}
+              labels={dict.dashboard.deposit}
+              bitcoin={bitcoin ? {
+                label: dict.dashboard.bitcoin.tab,
+                active: bitcoin.order?.intent === "topup" && bitcoin.order.outcome === null,
+                content: (
+                  <BitcoinPanel
+                    initial={bitcoin}
+                    locale={locale}
+                    labels={dict.dashboard.bitcoin}
+                    purpose={{ kind: "topup" }}
+                    errors={actionErrors(dict)}
+                  />
+                ),
+              } : undefined}
+            />
+          ) : null}
         </CardContent>
       </Card>
 

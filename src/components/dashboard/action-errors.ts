@@ -13,5 +13,9 @@ export function actionErrors(dict: Dictionary): Record<ActionError, string> {
     tooMany: dashboard.keys.tooMany,
     planActive: dashboard.payments.planActive,
     insufficientBalance: dashboard.payments.insufficientBalance,
+    bitcoinRate: dashboard.bitcoin.rateUnavailable,
+    bitcoinAmount: dashboard.bitcoin.amountInvalid,
+    bitcoinCovered: dashboard.bitcoin.covered,
+    bitcoinTooMany: dashboard.bitcoin.tooMany,
   };
 }

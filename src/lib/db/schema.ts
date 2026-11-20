@@ -40,6 +40,10 @@ export const subscriptionStatus = pgEnum("subscription_status", ["active", "past
 export const paymentKind = pgEnum("payment_kind", ["topup", "subscription", "pack"]);
 /** Un barrido se acredita solo cuando su transacción queda confirmada en la cadena (ADR-0058). */
 export const sweepStatus = pgEnum("sweep_status", ["pending", "confirmed", "failed"]);
+/** Para qué es una cotización en Bitcoin (ADR-0063): créditos o un plan. */
+export const bitcoinOrderIntent = pgEnum("bitcoin_order_intent", ["topup", "plan"]);
+/** `seen`: está en la red y su precio ya quedó fijo. `credited`: confirmado y acreditado. `dropped`: desapareció sin confirmarse. */
+export const bitcoinReceiptStatus = pgEnum("bitcoin_receipt_status", ["seen", "credited", "dropped"]);
 
 export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey().$defaultFn(uuidv7),
@@ -303,6 +307,100 @@ export const depositScans = pgTable("deposit_scans", {
   /** La última vez que el cron revisó los fondos de la wallet de comisiones. */
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
+
+/**
+ * Una dirección de Bitcoin de un workspace (ADR-0063): la de recibir número `derivation_index` de la xpub. Sale
+ * de la xpub, así que aquí no hay ningún secreto. Cada workspace tiene a lo más una sin usar: cuando recibe un
+ * pago, la siguiente cotización usa otra. Las usadas se siguen revisando y lo que llega se acredita igual.
+ */
+export const bitcoinAddresses = pgTable("bitcoin_addresses", {
+  /** `mainnet`, `testnet4` o `signet`. */
+  network: text("network").notNull(),
+  /** `m/84'/<moneda>'/<cuenta>'/0/<índice>`. Se asignan en orden, sin saltos. */
+  derivationIndex: integer("derivation_index").notNull(),
+  address: text("address").notNull(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  /** La primera vez que se vio un pago: desde entonces deja de ser la dirección vigente. */
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  /** Mientras no pase, se revisa en cada corrida del cron: hay una cotización o un pago reciente. */
+  watchUntil: timestamp("watch_until", { withTimezone: true }),
+  /** La última vez que se leyó en la cadena. */
+  checkedAt: timestamp("checked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.network, table.derivationIndex] }),
+  uniqueIndex("bitcoin_addresses_address_unique").on(table.address),
+  // Una sola dirección sin usar por workspace: así el hueco de índices sin uso de la wallet no crece solo.
+  uniqueIndex("bitcoin_addresses_unused_unique").on(table.network, table.workspaceId).where(sql`${table.usedAt} is null`),
+  index("bitcoin_addresses_workspace_idx").on(table.workspaceId, table.network),
+  index("bitcoin_addresses_watch_idx").on(table.network, table.watchUntil),
+  index("bitcoin_addresses_checked_idx").on(table.network, table.checkedAt.asc().nullsFirst()),
+  check("bitcoin_addresses_index_check", sql`${table.derivationIndex} >= 0`),
+]);
+
+/**
+ * Una cotización en Bitcoin (ADR-0063): cuánto en USD, cuántos sats, a qué precio y para qué. El precio vale
+ * hasta `expires_at`. Una cotización nueva del workspace reemplaza a la anterior.
+ */
+export const bitcoinOrders = pgTable("bitcoin_orders", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  network: text("network").notNull(),
+  address: text("address").notNull(),
+  intent: bitcoinOrderIntent("intent").notNull(),
+  /** Con `intent = plan`: el plan y lo que iba a pasar al comprarlo (`activate`, `extend` o `upgrade`). */
+  planId: text("plan_id"),
+  planMode: text("plan_mode"),
+  amountMicroUsd: bigint("amount_micro_usd", { mode: "bigint" }).notNull(),
+  amountSats: bigint("amount_sats", { mode: "bigint" }).notNull(),
+  /** µUSD por BTC. */
+  rateMicroUsd: bigint("rate_micro_usd", { mode: "bigint" }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
+  /** `plan`: se compró el plan. `balance`: lo recibido quedó como saldo. `replaced`: otra cotización la reemplazó. */
+  outcome: text("outcome"),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("bitcoin_orders_workspace_created_idx").on(table.workspaceId, table.createdAt.desc()),
+  index("bitcoin_orders_address_created_idx").on(table.address, table.createdAt.desc()),
+  check("bitcoin_orders_amount_check", sql`${table.amountMicroUsd} > 0 and ${table.amountSats} > 0 and ${table.rateMicroUsd} > 0`),
+  check("bitcoin_orders_plan_check", sql`(${table.intent} = 'plan') = (${table.planId} is not null and ${table.planMode} is not null)`),
+]);
+
+/**
+ * Una salida de una transacción que paga una dirección nuestra (ADR-0063). El precio queda fijo al verla; se
+ * acredita una sola vez, cuando tiene las confirmaciones. `bitcoin:<txid>:<vout>` es el `external_id` del pago.
+ */
+export const bitcoinReceipts = pgTable("bitcoin_receipts", {
+  id: uuid("id").primaryKey().$defaultFn(uuidv7),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  network: text("network").notNull(),
+  address: text("address").notNull(),
+  /** La cotización a la que corresponde; null si llegó sin ninguna. */
+  orderId: uuid("order_id").references(() => bitcoinOrders.id),
+  txid: text("txid").notNull(),
+  vout: integer("vout").notNull(),
+  amountSats: bigint("amount_sats", { mode: "bigint" }).notNull(),
+  /** µUSD por BTC: el de la cotización (`quote`) o el del momento en que se vio (`market`). */
+  rateMicroUsd: bigint("rate_micro_usd", { mode: "bigint" }).notNull(),
+  rateSource: text("rate_source").notNull(),
+  /** Lo que se acredita: los sats a ese precio, hacia abajo. */
+  amountMicroUsd: bigint("amount_micro_usd", { mode: "bigint" }).notNull(),
+  status: bitcoinReceiptStatus("status").notNull().default("seen"),
+  seenAt: timestamp("seen_at", { withTimezone: true }).notNull(),
+  blockHeight: integer("block_height"),
+  /** Sin confirmar y ya no aparece en la red: a los 30 minutos se da por perdido. */
+  missingSince: timestamp("missing_since", { withTimezone: true }),
+  creditedAt: timestamp("credited_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("bitcoin_receipts_output_unique").on(table.network, table.txid, table.vout),
+  index("bitcoin_receipts_workspace_seen_idx").on(table.workspaceId, table.seenAt.desc()),
+  index("bitcoin_receipts_order_idx").on(table.orderId),
+  index("bitcoin_receipts_open_idx").on(table.network, table.address).where(sql`${table.status} = 'seen'`),
+  check("bitcoin_receipts_amount_check", sql`${table.amountSats} > 0 and ${table.rateMicroUsd} > 0 and ${table.amountMicroUsd} >= 0`),
+]);
 
 /**
  * Un plan abierto por un socio por la puerta de socios (docs/17): un workspace propio con su suscripción.

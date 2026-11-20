@@ -19,6 +19,7 @@ import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Stat } from "@/components/stat";
 import { UsageMeter } from "@/components/usage-meter";
 import { AccountMenu } from "@/components/dashboard/account-menu";
+import { BitcoinQuote, BitcoinStatusLine } from "@/components/dashboard/bitcoin-panel";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { PlanMeters } from "@/components/dashboard/plan-meters";
 import { PLANS } from "@/lib/billing/plans";
@@ -504,6 +505,40 @@ function TopUpPattern() {
   );
 }
 
+/** Una cotización de ejemplo: la primera dirección de la frase pública de BIP84. Nadie debe enviarle nada. */
+const SAMPLE_BTC_ADDRESS = "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu";
+
+function BitcoinPattern() {
+  const labels = getDictionary(LOCALE).dashboard.bitcoin;
+  return (
+    <Section
+      title="Pago en Bitcoin"
+      description="BitcoinQuote es la cotización: QR con el monto (BIP21), el monto exacto, la dirección y cuánto le queda al precio fijo. BitcoinStatusLine cuenta qué pasa con el pago: esperando, visto en la red, acreditado o un aviso (ADR-0063)."
+    >
+      <div className="flex max-w-2xl flex-col gap-4 text-sm">
+        <BitcoinQuote
+          address={SAMPLE_BTC_ADDRESS}
+          amountSats={BigInt(41_235)}
+          rateMicroUsd={BigInt(94_580_000_000)}
+          remainingMs={12 * 60_000 + 48_000}
+          testnet={false}
+          locale={LOCALE}
+          labels={labels}
+        />
+        <BitcoinStatusLine tone="waiting" title={labels.waiting} hint={labels.waitingHint} />
+        <BitcoinStatusLine
+          tone="seen"
+          title={labels.seen.replace("{amount}", "0.00041235")}
+          hint={`${labels.seenQuoteHint.replace("{usd}", formatUsd(39_000_000, LOCALE))} ${labels.confirming.replace("{count}", "1")}`}
+          link={{ href: "#", label: labels.viewTransaction }}
+        />
+        <BitcoinStatusLine tone="credited" title={labels.credited.replace("{amount}", formatUsd(39_000_000, LOCALE))} />
+        <BitcoinStatusLine tone="warning" title={labels.expired} hint={labels.expiredHint} action={<Button variant="outline" size="sm">{labels.newQuote}</Button>} />
+      </div>
+    </Section>
+  );
+}
+
 /** Instante fijo: así las capturas de la ventana y la semana no cambian entre corridas. */
 const SAMPLE_NOW = Date.UTC(2026, 10, 15, 15, 20);
 
@@ -580,6 +615,7 @@ export function ProductPatterns() {
       <FeedbackPattern />
       <ApiKeyPatterns />
       <TopUpPattern />
+      <BitcoinPattern />
       <EmptyPattern />
     </Group>
   );

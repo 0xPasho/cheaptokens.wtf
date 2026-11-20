@@ -5,10 +5,13 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { count, eq, sql } from "drizzle-orm";
+import { and, count, eq, isNull, sql } from "drizzle-orm";
 
 import { closeDb, getDb } from "../src/lib/db/client";
-import { depositAddresses, depositSweeps } from "../src/lib/db/schema";
+import { bitcoinAddresses, bitcoinReceipts, depositAddresses, depositSweeps } from "../src/lib/db/schema";
+import { readBitcoinConfig } from "../src/lib/payments/bitcoin/config";
+import { bitcoinDeps, scanBitcoin } from "../src/lib/payments/bitcoin/orders";
+import { BitcoinAccount } from "../src/lib/payments/bitcoin/xpub";
 import { readCryptoConfig } from "../src/lib/payments/crypto/config";
 import { checkFeeWallets, depositChains, scanDeposits } from "../src/lib/payments/crypto/deposits";
 import { SolanaChain } from "../src/lib/payments/crypto/solana";
@@ -23,7 +26,8 @@ function units(value: bigint, decimals: number): string {
 
 /**
  * Estado de los pagos en USDC (ADR-0058): qué redes están activas, qué wallets hay que fondear para las
- * comisiones y si hay barridos sin resolver.
+ * comisiones y si hay barridos sin resolver. Y de Bitcoin (ADR-0063): la primera dirección de la xpub, para
+ * compararla con la wallet, y cuántas direcciones sin usar hay, para el gap limit.
  *
  *   pnpm payments:status              el estado
  *   pnpm payments:status --new-seed   genera una semilla para CRYPTO_DEPOSIT_SEED
@@ -44,10 +48,13 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<numb
 
   const config = readCryptoConfig();
   const chains = depositChains(config);
-  if (chains.length === 0) {
-    console.log("USDC payments are off. Set CRYPTO_DEPOSIT_SEED and CRYPTO_SOLANA_ADDRESS and/or CRYPTO_BASE_ADDRESS.");
+  const bitcoin = readBitcoinConfig();
+  if (chains.length === 0 && !bitcoin) {
+    console.log("Payments are off. Set CRYPTO_DEPOSIT_SEED and CRYPTO_SOLANA_ADDRESS and/or CRYPTO_BASE_ADDRESS for USDC,");
+    console.log("and/or CRYPTO_BITCOIN_XPUB for Bitcoin.");
     return 1;
   }
+  if (chains.length === 0) console.log("USDC payments are off. Set CRYPTO_DEPOSIT_SEED and CRYPTO_SOLANA_ADDRESS and/or CRYPTO_BASE_ADDRESS.\n");
   if (config.simulate) console.log("Local development: example addresses, deposits are simulated.\n");
 
   let problems = 0;
@@ -77,24 +84,55 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<numb
     }
   }
 
-  if (chains.some((chain) => chain.live)) {
+  if (bitcoin) {
+    const account = new BitcoinAccount(bitcoin.xpub, bitcoin.network);
+    console.log(`bitcoin${bitcoin.network === "mainnet" ? "" : ` (${bitcoin.network})`}${bitcoin.simulate ? ": example xpub, payments are simulated" : ""}`);
+    console.log(`  account       #${account.accountNumber}${account.accountNumber === 0 ? " (the wallet's first account: make sure nothing else receives there)" : ""}`);
+    console.log(`  first address ${account.address(0)}`);
+    console.log("                it must match the first receive address your wallet shows for this account");
+    if (!bitcoin.simulate) console.log(`  esplora       ${new URL(bitcoin.esploraUrl).host}`);
+    console.log(`  confirmations ${bitcoin.confirmations}`);
+  } else {
+    console.log("Bitcoin payments are off. Set CRYPTO_BITCOIN_XPUB.");
+  }
+
+  const bitcoinLive = bitcoin !== null && !bitcoin.simulate;
+  if (chains.some((chain) => chain.live) || bitcoinLive) {
     try {
       const db = getDb();
-      if (values.scan) {
+      if (bitcoinLive) {
+        const network = bitcoin.network;
+        if (values.scan) {
+          const report = await scanBitcoin(db, bitcoinDeps(bitcoin)!, Date.now());
+          console.log(`\nBitcoin scan: ${JSON.stringify(report)}`);
+          if (report.error) problems++;
+        }
+        const [[assigned], [unused], [pending]] = await Promise.all([
+          db.select({ value: count() }).from(bitcoinAddresses).where(eq(bitcoinAddresses.network, network)),
+          db.select({ value: count() }).from(bitcoinAddresses).where(and(eq(bitcoinAddresses.network, network), isNull(bitcoinAddresses.usedAt))),
+          db.select({ value: count() }).from(bitcoinReceipts).where(and(eq(bitcoinReceipts.network, network), eq(bitcoinReceipts.status, "seen"))),
+        ]);
+        console.log(`\nBitcoin addresses: ${assigned.value}, ${unused.value} without payments`);
+        console.log(`  set your wallet's gap limit above ${unused.value + 20}, or it will not show payments to the newest ones`);
+        console.log(`Bitcoin payments waiting for confirmations: ${pending.value}`);
+      }
+      if (chains.some((chain) => chain.live) && values.scan) {
         const reports = await scanDeposits(db, chains, Date.now());
         await checkFeeWallets(chains, reports);
         console.log(`\nScan: ${JSON.stringify(reports)}`);
         problems += reports.filter((report) => report.error).length;
       }
-      const [[addresses], [pending], [failed]] = await Promise.all([
-        db.select({ value: count() }).from(depositAddresses),
-        db.select({ value: count() }).from(depositSweeps).where(eq(depositSweeps.status, "pending")),
-        db.select({ value: count() }).from(depositSweeps)
-          .where(sql`${depositSweeps.status} = 'failed' and ${depositSweeps.settledAt} > now() - interval '24 hours'`),
-      ]);
-      console.log(`\nDeposit addresses: ${addresses.value}`);
-      console.log(`Sweeps in flight: ${pending.value}`);
-      console.log(`Sweeps failed in the last 24 hours: ${failed.value}`);
+      if (chains.some((chain) => chain.live)) {
+        const [[addresses], [pending], [failed]] = await Promise.all([
+          db.select({ value: count() }).from(depositAddresses),
+          db.select({ value: count() }).from(depositSweeps).where(eq(depositSweeps.status, "pending")),
+          db.select({ value: count() }).from(depositSweeps)
+            .where(sql`${depositSweeps.status} = 'failed' and ${depositSweeps.settledAt} > now() - interval '24 hours'`),
+        ]);
+        console.log(`\nDeposit addresses: ${addresses.value}`);
+        console.log(`Sweeps in flight: ${pending.value}`);
+        console.log(`Sweeps failed in the last 24 hours: ${failed.value}`);
+      }
     } finally {
       await closeDb();
     }

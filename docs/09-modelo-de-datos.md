@@ -18,6 +18,9 @@ erDiagram
   workspaces ||--o{ payments : paga
   workspaces ||--o{ deposit_addresses : "deposita en"
   workspaces ||--o{ deposit_sweeps : "recibe"
+  workspaces ||--o{ bitcoin_addresses : "paga en"
+  workspaces ||--o{ bitcoin_orders : cotiza
+  bitcoin_orders ||--o{ bitcoin_receipts : "se paga con"
   model_packs ||--o{ requests : paga
   models ||--o{ model_packs : "es de"
   api_keys ||--o{ requests : autentica
@@ -277,6 +280,68 @@ Un barrido: la transacción que mueve el USDC de una dirección de depósito a l
 ## `deposit_scans`
 
 Quién está barriendo cada red: una fila por red con `leased_until`. Un solo proceso a la vez, para no cruzar los nonces del relayer de Base.
+
+## `bitcoin_addresses`
+
+Una dirección de Bitcoin de un workspace ([ADR-0063](./adr/0063-pagos-en-bitcoin.md)): la de recibir número `derivation_index` de `CRYPTO_BITCOIN_XPUB`. No guarda ningún secreto.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `network` | text | PK compuesta. `mainnet`, `testnet4` o `signet` |
+| `derivation_index` | integer, check ≥ 0 | PK compuesta. `m/84'/<moneda>'/<cuenta>'/0/<índice>`, en orden y sin saltos |
+| `address` | text | Única |
+| `workspace_id` | uuid FK | |
+| `used_at` | timestamptz, null | El primer pago visto. Desde entonces el workspace cotiza en otra dirección; esta se sigue revisando |
+| `watch_until` | timestamptz, null | Mientras no pase, el cron la lee en cada corrida: hay una cotización o un pago reciente |
+| `checked_at` | timestamptz, null | La última vez que se leyó en la cadena |
+| `created_at` | timestamptz | |
+
+Índices: único en `address`; único en `(network, workspace_id)` entre las que no tienen `used_at` (a lo más una sin usar por workspace); `(workspace_id, network)`; `(network, watch_until)`; `(network, checked_at NULLS FIRST)`.
+
+## `bitcoin_orders`
+
+Una cotización en Bitcoin: el precio queda fijo hasta `expires_at` (15 minutos). Una nueva del workspace reemplaza a la anterior.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `network`, `address` | text | Dónde se paga |
+| `intent` | enum `topup \| plan` | Créditos o un plan |
+| `plan_id`, `plan_mode` | text, null | Con `plan`: el plan y lo que iba a pasar (`activate`, `extend`, `upgrade`). Un CHECK los exige juntos |
+| `amount_micro_usd` | bigint | Lo cotizado. Para un plan, lo que faltaba después del saldo |
+| `amount_sats` | bigint | Lo que hay que enviar, hacia arriba |
+| `rate_micro_usd` | bigint | µUSD por BTC |
+| `expires_at` | timestamptz | |
+| `replaced_at` | timestamptz, null | Otra cotización la reemplazó |
+| `outcome` | text, null | `plan`, `balance` o `replaced` |
+| `settled_at` | timestamptz, null | Cuándo quedó resuelta. Un plan sin resolver espera otro pago a la misma cotización |
+| `created_at` | timestamptz | |
+
+Índices: `(workspace_id, created_at DESC)`; `(address, created_at DESC)`.
+
+## `bitcoin_receipts`
+
+Una salida de una transacción que paga una dirección nuestra. El precio queda fijo al verla; se acredita una sola vez, con las confirmaciones.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `workspace_id` | uuid FK | |
+| `network`, `address` | text | |
+| `order_id` | uuid FK, null | La última cotización de esa dirección; null si llegó sin ninguna |
+| `txid`, `vout` | text, integer | `bitcoin:<txid>:<vout>` es el `external_id` del pago |
+| `amount_sats` | bigint | |
+| `rate_micro_usd` | bigint | El precio aplicado |
+| `rate_source` | text | `quote` (llegó a tiempo y no pasa de lo cotizado + 10 %) o `market` (el del momento en que se vio) |
+| `amount_micro_usd` | bigint, check ≥ 0 | Lo que se acredita: los sats a ese precio, hacia abajo |
+| `status` | enum `seen \| credited \| dropped` | `dropped`: desapareció sin confirmarse por 30 minutos |
+| `seen_at` | timestamptz | Cuándo se vio; la hora del bloque si ya estaba confirmado |
+| `block_height` | integer, null | |
+| `missing_since` | timestamptz, null | Sin confirmar y ya no aparece en la red |
+| `credited_at`, `created_at` | timestamptz | |
+
+Índices: único en `(network, txid, vout)`; `(workspace_id, seen_at DESC)`; `order_id`; las `seen`, por `(network, address)`.
 
 ## Invariantes
 

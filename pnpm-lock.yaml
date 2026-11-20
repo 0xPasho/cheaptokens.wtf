@@ -26,6 +26,15 @@ importers:
       '@formatjs/intl-localematcher':
         specifier: ^0.10.1
         version: 0.10.1
+      '@noble/hashes':
+        specifier: 1.8.0
+        version: 1.8.0
+      '@scure/base':
+        specifier: 1.2.6
+        version: 1.2.6
+      '@scure/bip32':
+        specifier: 1.7.0
+        version: 1.7.0
       '@solana-program/compute-budget':
         specifier: ^0.20.0
         version: 0.20.0(@solana/kit@8.6.0(typescript@5.9.3))
@@ -84,6 +93,9 @@ importers:
       '@playwright/test':
         specifier: ^1.65.0
         version: 1.65.0
+      '@scure/bip39':
+        specifier: 1.6.0
+        version: 1.6.0
       '@tailwindcss/turbopack':
         specifier: ^4
         version: 4.3.5

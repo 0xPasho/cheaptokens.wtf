@@ -71,6 +71,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0057](./0057-varias-cuentas-por-upstream.md) | Un upstream puede tener varias cuentas: el gateway rota entre ellas y, si una falla por su key, saldo o rate limit, prueba la siguiente | Aceptada | Usuario + Default |
 | [0058](./0058-deposito-por-cuenta-y-saldo.md) | Cada cuenta deposita USDC en su propia dirección y el sistema lo barre a la wallet principal; el depósito es saldo para cualquier modelo, los planes se pagan con saldo y ya no se venden paquetes por modelo | Aceptada | Usuario + Default |
 | [0059](./0059-servidor-propio-con-pm2-y-nginx.md) | La app corre en un servidor propio con pm2 y nginx, detrás de Cloudflare | Aceptada | Usuario |
+| [0063](./0063-pagos-en-bitcoin.md) | También se cobra en Bitcoin on-chain: el servidor solo tiene una xpub, cada compra se cotiza con el precio fijo 15 minutos y un plan se compra solo al confirmarse | Aceptada | Usuario + Default |
 
 ## Plantilla
 

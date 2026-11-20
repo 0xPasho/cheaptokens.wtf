@@ -7,7 +7,7 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 1. **Plan** con un límite cada 5 horas y otro cada semana. Se paga por 30 días.
 2. **Créditos:** saldo prepagado en USD, para cualquier modelo. Cada request los descuenta.
 
-- **Lo único que entra de fuera son depósitos en USDC.** Un depósito se vuelve saldo dólar por dólar; el plan se compra con ese saldo.
+- **Lo que entra de fuera son depósitos en USDC y pagos en Bitcoin** ([ADR-0063](./adr/0063-pagos-en-bitcoin.md)). Los dos se vuelven saldo; el plan se compra con ese saldo.
 - **Todo el dinero se guarda como enteros en µUSD** (1 USD = 1,000,000 µUSD) ([ADR-0007](./adr/0007-dinero-en-micro-dolares.md)). Nunca se usan floats para dinero.
 - **No hay créditos gratis** al registrarse ([ADR-0018](./adr/0018-sin-creditos-gratis.md)).
 - **No hay pospago.**
@@ -46,6 +46,36 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 - `USDC_LIVE=1 pnpm test:live` comprueba los adaptadores contra mainnet solo con lecturas y simulaciones: no envía nada ni necesita fondos.
 - Fuera de Vercel, sin `APP_ENV` ni `VERCEL_ENV`, la app se considera de desarrollo. Un servidor propio debe poner `APP_ENV=production`.
 
+<a id="bitcoin"></a>
+
+## Pagos en Bitcoin
+
+([ADR-0063](./adr/0063-pagos-en-bitcoin.md). Solo on-chain; Lightning queda para una segunda fase.)
+
+- **El servidor solo tiene la xpub de una cuenta BIP84** (`CRYPTO_BITCOIN_XPUB`). Las direcciones salen de ahí y lo que llega ya está en la wallet del dueño: no hay barrido, ni wallet de comisiones, ni llaves en el servidor.
+- **Cada workspace tiene una dirección vigente, y cambia cuando recibe un pago.** Las anteriores siguen funcionando y se acreditan al mismo workspace.
+- **Cada compra abre una cotización:** cuánto en USD, cuántos sats, a qué precio y para qué. **El precio queda fijo 15 minutos.** Créditos desde $10 hasta $10,000; para un plan, lo que falta después del saldo.
+- **El precio es la mediana de Coinbase, Kraken y Bitstamp,** sin margen. Si no hay dos fuentes que coincidan dentro de 1 %, no se cotiza.
+- **Lo que se ve en la red a tiempo** (hasta 2 minutos después del vencimiento, y sin pasar de lo cotizado + 10 %) **usa el precio cotizado. Lo que llega después, el del momento en que se ve.**
+- **Se acredita con 1 confirmación** (`CRYPTO_BITCOIN_CONFIRMATIONS`), nunca con 0: con full-RBF un pago sin confirmar se puede redirigir. Unos 10 minutos, a veces hasta una hora.
+- **Un plan se compra solo al confirmarse, aunque se haya cerrado el diálogo.** Si al saldo le falta hasta 2 % del precio, el plan entra igual y la diferencia queda como ajuste (`credit_transactions`, `external_id = bitcoin-tolerance:<cotización>`). Si falta más, lo recibido queda como saldo y otro pago a la misma cotización vuelve a intentarlo. Si el plan vigente cambió desde la cotización, el pago queda como saldo.
+- **Cuándo se revisa:** con el diálogo abierto, cada 10 segundos (cada 30 después de 10 minutos). El cron de cada minuto lee las direcciones con cotización o pago en las últimas 24 horas y un turno de 20 de las demás. Se lee con mempool.space (`CRYPTO_BITCOIN_ESPLORA_URL`).
+- **Un pago que desaparece sin confirmarse** (reemplazado o expulsado del mempool) deja de mostrarse a los 30 minutos.
+- El código vive en `src/lib/payments/bitcoin/`.
+
+### Operación
+
+- **La xpub tiene que ser de una cuenta dedicada a cheapllm.wtf,** exportada como `zpub` o `xpub` desde Sparrow o la hardware wallet. Una llave privada, de otra red o que no es de una cuenta se rechaza al arrancar.
+- **Antes de cobrar,** `pnpm payments:status` muestra la primera dirección que da la xpub: tiene que coincidir con la primera de recibir de la wallet.
+- **Gap limit:** la wallet solo ve direcciones hasta cierto hueco sin uso. `pnpm payments:status` dice cuántas direcciones sin usar hay; en Sparrow el gap limit se sube en Settings › Advanced. Si no se sube, los pagos no se pierden: aparecen al subirlo.
+- **Lo cobrado en BTC se queda en BTC** hasta convertirlo a mano. A InferHub se le paga en USDC.
+- **Alertas en los logs:** `bitcoin_address_mismatch` (`severity: critical`), `bitcoin_scan_failed` y `bitcoin_address_scan_failed`.
+
+### Desarrollo local
+
+- **Sin xpub y con `APP_ENV=development`,** la dirección sale de la xpub pública de ejemplo de BIP84 en signet, el precio es fijo ($90,000) y el diálogo trae «Simular el pago» y «Simular la confirmación».
+- **Para probar contra una cadena:** `CRYPTO_BITCOIN_NETWORK=testnet4` o `signet`, con la `tpub` o `vpub` de una wallet de prueba.
+
 ## Planes
 
 | Plan | Precio por 30 días | Ventana de 5 horas | Semana | Requests por minuto |
@@ -60,7 +90,7 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 - **El plan vale** mientras la suscripción esté `active` y no haya pasado `current_period_end`, aunque se haya pedido cancelar al final del periodo.
 - **Subir de plan** aplica ya y cobra la diferencia prorrateada por lo que queda del periodo. Lo usado cuenta sobre el límite nuevo.
 - **Se paga con saldo, 30 días a la vez,** y no se renueva solo ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md)). Pagar el plan vigente suma 30 días al final del periodo actual.
-- **Si el saldo no alcanza,** el diálogo de compra muestra el depósito y completa la compra cuando llega, mientras siga abierto.
+- **Si el saldo no alcanza,** el diálogo de compra muestra el depósito y completa la compra cuando llega, mientras siga abierto. **Con Bitcoin la completa el servidor al confirmarse**, aunque el diálogo se cierre.
 - **Bajar de plan:** el plan más barato se compra cuando termina el vigente. No hay cancelación: el plan vence solo.
 
 ## Orden de cobro y excedente
@@ -163,7 +193,7 @@ No hacemos reserva previa: no sabemos cuánto va a costar un request hasta que t
 
 ## Fraude, reembolsos y contracargos
 
-- **Un depósito en USDC no tiene contracargo:** desaparece el riesgo de la tarjeta robada que quema créditos.
+- **Un depósito en USDC o un pago en Bitcoin no tienen contracargo:** desaparece el riesgo de la tarjeta robada que quema créditos.
 - **Reembolsos:** a mano, enviando USDC desde la wallet principal, y con un ajuste negativo en `credit_transactions`.
 - **Suspender un workspace** (`suspended_at`) sigue disponible para abusos: las keys responden `403 account_suspended`.
 - **Si se filtra la semilla,** quien la tenga puede mover los depósitos que todavía no se barrieron (lo de uno o dos minutos). Lo ya barrido está en la wallet principal, fuera de su alcance.
@@ -173,7 +203,7 @@ No hacemos reserva previa: no sabemos cuánto va a costar un request hasta que t
 
 Lo tiene que validar un contador ([preguntas abiertas](./12-preguntas-abiertas.md)):
 
-- **Ingresos en USDC:** cómo se registran, a qué tipo de cambio y cuándo se reconoce el ingreso. Cada pago queda con su transacción en `payments.receipt_url`.
+- **Ingresos en USDC y en Bitcoin:** cómo se registran, a qué tipo de cambio y cuándo se reconoce el ingreso. Cada pago queda con su transacción en `payments.receipt_url`; los de Bitcoin, además, con el precio aplicado y su fuente en `bitcoin_receipts`.
 - **IVA de cada cliente:** sin MoR, nadie lo calcula ni lo cobra por nosotros.
 - **Compras a upstreams extranjeros:** pagar servicios del extranjero (InferHub, en USDC) tiene implicaciones de IVA para una empresa mexicana.
 - **Clientes mexicanos que necesiten CFDI:** los tendríamos que emitir nosotros.
