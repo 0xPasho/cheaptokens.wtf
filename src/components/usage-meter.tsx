@@ -10,6 +10,7 @@ export function UsageMeter({
   fraction,
   status,
   details,
+  locale,
   className,
 }: {
   label: React.ReactNode;
@@ -19,6 +20,8 @@ export function UsageMeter({
   status: React.ReactNode;
   /** Reinicio y valor usado, debajo de la barra. */
   details?: React.ReactNode[];
+  /** Idioma del `aria-valuetext` («34 %» o «34%»): sin él, servidor y navegador pueden formatearlo distinto. */
+  locale?: string;
   className?: string;
 }) {
   const value = Math.round(Math.min(1, Math.max(0, fraction)) * 1000) / 10;
@@ -27,6 +30,7 @@ export function UsageMeter({
     <div className={cn("flex flex-col gap-2", className)}>
       <Progress
         value={value}
+        locale={locale}
         className={cn(warning && "[&_[data-slot=progress-indicator]]:bg-warning")}
       >
         <ProgressLabel>{label}</ProgressLabel>

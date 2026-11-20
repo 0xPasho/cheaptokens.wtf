@@ -27,84 +27,89 @@ export const en = {
     faq: "FAQ",
     docs: "Docs",
     howItWorks: "How it works",
+    menu: "Menu",
     getKey: "Get your API key",
+  },
+  status: {
+    notFound: {
+      title: "This page doesn't exist",
+      body: "The link may be broken, or the page moved. Everything else is still here.",
+      home: "Go to home",
+      models: "Browse models",
+    },
+    error: {
+      title: "Something went wrong",
+      body: "We couldn't load this part. Nothing was charged. Try again in a moment.",
+      retry: "Try again",
+      home: "Go to home",
+    },
   },
   theme: { trigger: "Theme", light: "Light", dark: "Dark", system: "System" },
   copy: { copy: "Copy", copied: "Copied" },
   language: { label: "Language", en: "English", es: "Español" },
   home: {
     hero: {
-      badge: "Compatible with the OpenAI API",
-      title: "One endpoint. Every model.",
-      emphasis: "Up to {discount} off.",
-      subtitle:
-        "cheapllm.wtf gives you one URL, one API key and one balance to use Claude, GPT, Gemini and open models, for much less than the official price.",
+      title: "Paying the official price is optional.",
+      subtitle: "{models} models from {authors} labs behind one OpenAI-compatible API. Same model, same code, smaller bill.",
       primary: "Get your API key",
       secondary: "See all {count} models",
-      authors: "{count} authors, one balance",
-      live: "Prices follow cost, every minute",
-      privacy: "We don't store your prompts",
-      snippetCaption: "Only the two highlighted lines change. The rest of your code stays the same.",
+      baseUrl: "Base URL",
+      model: "Model",
+      perMillion: "per 1M output tokens",
+      official: "Official price",
+      ours: "cheapllm.wtf price",
+      savings: "You save {amount}",
     },
-    strip: {
-      eyebrow: "Price at a glance",
-      title: "Same models. Different price.",
-      description: "The official price struck through and the cheapllm.wtf price next to it, per 1M output tokens.",
-      input: "Per 1M output tokens · input at {price}",
-      footnote: "Median catalog discount: {discount}. The published price is the maximum: if cost drops, you pay less.",
-      sortLink: "Sort everything by discount",
-    },
-    how: {
-      eyebrow: "How it works",
-      title: "You pick the model. We handle the rest.",
-      description:
-        "cheapllm.wtf sits between your code and the models. It speaks the same language as the OpenAI API, so your code doesn't change.",
-      codeLabel: "Your code",
-      codeTitle: "The SDK you already use",
-      codeBody: "OpenAI, LangChain, Vercel AI SDK or your editor. You change the base URL and the API key.",
-      gatewayTitle: "One endpoint",
-      gatewaySteps: [
-        "Checks your API key and your balance.",
-        "Sends your request down the cheapest route for that model.",
-        "Returns the response, streamed if you ask for it.",
-        "Charges what it cost. Never more than the published price.",
-      ],
-      modelsLabel: "The model",
-      modelsTitle: "{models} models, {authors} authors",
-      modelsBody: "Claude, GPT, Gemini, DeepSeek, Kimi, Qwen and more. You call each one by its ID, like `{example}`.",
-      stepsTitle: "Your first request in three steps",
-      steps: [
-        { title: "Add balance", body: "Deposit USDC from {min}, or pick a plan if you use models every day." },
-        { title: "Create an API key", body: "One key for every model. You decide where it charges, how much it can spend and which models it uses." },
-        { title: "Change two lines", body: "Point your SDK at `{url}` and pick the model by its ID. Done." },
-      ],
-      promises: [
-        "We don't store your prompts or responses",
-        "If the provider fails, you're not charged",
-        "No surprise charges, no automatic billing",
-      ],
-    },
-    peek: {
-      eyebrow: "Catalog at a glance",
-      title: "Find the model for what you need.",
-      description: "The same groups as in Models. Pick one to see a few, or jump straight into the catalog with the filter on.",
-      groupBy: "Group by",
-      byTag: "By capability",
-      byAuthor: "By author",
-      groups: "Groups",
+    prices: {
+      eyebrow: "Today's prices, per 1M tokens",
+      title: "Compare for yourself",
+      description: "The official price struck through, ours next to it. It's a cap: if the cost drops, you pay less.",
+      groups: "Model groups",
+      popular: "Popular",
       blurbs: {
+        popular: "The most requested, from the main labs.",
         reasoning: "They think before answering. For multi-step problems, math and planning.",
         coding: "Trained to write and review code. For agents and editors.",
         cheap: "Output at {price} or less per 1M tokens. For volume, classification and extraction.",
         vision: "They understand images as well as text.",
-        fast: "They answer quickly. For live chat and autocomplete.",
       },
-      authorOne: "{count} model from {author}, {max} off the official price.",
-      authorOther: "{count} models from {author}, from {max} to {min} off the official price.",
-      showing: "Showing {shown} of {total}",
+      columns: { model: "Model", context: "Context", input: "Input", output: "Output", discount: "Discount" },
       viewGroup: "See all {count} in {group}",
       viewAll: "See all {count} models",
-      perOutput: "/ 1M output",
+      distribution: "Median discount across all {count} models",
+      distributionRange: "They range from {min} to {max}. The line marks the median.",
+      median: "median",
+    },
+    why: {
+      eyebrow: "Why it costs less",
+      title: "How can it cost this little?",
+      items: [
+        {
+          term: "Capacity bought in advance",
+          body: "We buy tokens from providers that sell below the official price, and pass most of that saving on to you.",
+        },
+        {
+          term: "We never swap your model",
+          body: "You ask for a model by its ID and that model answers. We only pick the cheapest route that serves it at that moment.",
+        },
+        {
+          term: "The listed price is a cap",
+          body: "Each request is billed at what it cost. If the cost drops, you pay less; never more than the listed price.",
+        },
+        {
+          term: "If it fails, you don't pay",
+          body: "If the provider doesn't respond, nothing is charged. Your prompts and responses are not stored.",
+        },
+      ],
+    },
+    switchTo: {
+      eyebrow: "Switch",
+      title: "Your code won't even notice",
+      description: "Keep the OpenAI SDK you already use: change the base URL and the API key, nothing else.",
+      diffLabel: "Changes in your code",
+      stepsLabel: "To get started",
+      steps: ["Add balance from {min} in USDC", "Create an API key", "Change those two lines"],
+      toolsLabel: "Works with",
     },
     uses: {
       eyebrow: "Ways to use it",
@@ -124,7 +129,7 @@ export const en = {
         {
           who: "Your app in production or your CI",
           title: "Pay per use, no windows",
-          body: "It doesn't spend your plan or stop when the 5-hour window runs out. Give it a spend limit and sleep at night.",
+          body: "It doesn't spend your plan or stop when the 5-hour window runs out. Give it a spend limit: when it gets there, it stops.",
         },
         {
           who: "A script, a prototype or someone else",
@@ -144,7 +149,7 @@ export const en = {
     faq: {
       eyebrow: "Questions",
       title: "What everyone asks before starting.",
-      description: "The seven we get most. There's more about plans, payments and the API on the questions page.",
+      description: "The ones we get most. There's more about plans, payments and the API on the questions page.",
       allLink: "See all questions",
     },
     final: {
@@ -156,7 +161,7 @@ export const en = {
   },
   pricing: {
     eyebrow: "Pricing",
-    title: "Two ways to pay. The same API key.",
+    title: "A plan, credits or both",
     description:
       "A plan if you use models every day and want a fixed spend. Credits if you'd rather pay only for what you use. You can have both.",
     detailLink: "What each model spends and how to pay",
@@ -196,7 +201,7 @@ export const en = {
         },
         {
           title: "At the limit, you choose",
-          body: "Keep going on credits without cutting anything, or wait for the window to reset. The request that crosses the limit finishes in full.",
+          body: "Keep going on credits, or wait for the window to reset. Near the limit, a request only generates the output that fits in what you have left.",
         },
         {
           title: "With a cap you set",
@@ -308,7 +313,7 @@ export const en = {
       },
       limitReached: {
         q: "What happens when I reach the plan limit?",
-        a: "The request that crosses the limit finishes in full. After that you keep going on credits or wait for the window to reset, depending on your settings.",
+        a: "A request only starts if its maximum cost fits in what you have left: if the full output does not fit, its max_tokens is lowered. After that you keep going on credits or wait for the window to reset, depending on your settings.",
       },
       autoRenew: {
         q: "Does the plan renew on its own?",
@@ -391,6 +396,7 @@ export const en = {
     searchLabel: "Search models",
     searchPlaceholder: "Search by name or author",
     filterLabel: "Filter by capability",
+    filters: "Filters",
     sortLabel: "Sort by",
     sort: { discount: "Biggest discount", output: "Output price", name: "Name" },
     columns: {
@@ -778,6 +784,7 @@ export const en = {
       step1: "Choose a plan or top up credits",
       step2: "Create an API key",
       step3: "Copy this snippet and make your first request",
+      stepDone: "(done)",
       lowBalanceTitle: "You have {amount} of credits left",
       lowBalanceBody: "Top up before your requests start to fail.",
     },
@@ -862,6 +869,7 @@ export const en = {
       deposited: "USDC deposit",
       balanceHint: "Works with every model",
       yourPacksHint: "Model packs are no longer sold. The ones you have are used after your plan and before your credits.",
+      packLeftLabel: "{model} pack left",
       kinds: {
         topup: "Credit top-up",
         subscription: "{plan} plan",
@@ -898,11 +906,13 @@ export const en = {
       key: "Key",
       used: "Used",
       noLimit: "No limit",
+      spendLabel: "{name} spending limit",
       created: "Created",
       lastUsed: "Last used",
       never: "Never",
       actions: "Actions",
       everyModel: "All",
+      modelCountOne: "{count} model",
       modelCount: "{count} models",
       rotate: "Rotate",
       rotateTitle: "Rotate “{name}”?",
@@ -946,6 +956,7 @@ export const en = {
       previous: "Previous",
       next: "Next",
       page: "Page {page} of {pages}",
+      pagination: "Pages",
     },
     settings: {
       title: "Settings",
@@ -961,6 +972,7 @@ export const en = {
     },
     loading: "Loading",
     error: "Something went wrong. Try again.",
+    close: "Close",
   },
   tags: {
     fast: "Fast",

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { formatUsd } from "@/lib/format";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { usdcDecimal } from "@/lib/payments/crypto/usdc";
 import type { DepositView } from "@/lib/payments/crypto/view";
 import { cn } from "@/lib/utils";
@@ -119,6 +119,7 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
   const buy = useCallback(() => {
     if (buying.current) return;
     buying.current = true;
+    setError(null);
     startTransition(async () => {
       try {
         const outcome = await buyPlanAction(request.planId);
@@ -132,6 +133,9 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
         } else {
           setError(outcome.error);
         }
+      } catch {
+        // Sesión vencida o un fallo del servidor: el error genérico deja volver a intentar.
+        setError("error");
       } finally {
         buying.current = false;
       }
@@ -143,7 +147,7 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
   useEffect(() => {
     if (!needsDeposit) return;
     let cancelled = false;
-    void depositStatusAction().then((status) => {
+    depositStatusAction().then((status) => {
       if (cancelled) return;
       if (!status.ok) {
         setError(status.error);
@@ -155,6 +159,9 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
       // Solo se completa sola si de verdad hubo que esperar un depósito. Si el saldo ya alcanzaba (la
       // página tenía uno viejo), la persona confirma con el botón como siempre.
       if (current < price) setWaitedForDeposit(true);
+    }, () => {
+      // Sin esto el diálogo se queda cargando para siempre.
+      if (!cancelled) setError("error");
     });
     return () => {
       cancelled = true;
@@ -199,20 +206,21 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
       </dl>
       {error ? <p role="alert" className="text-destructive">{errors[error]}</p> : null}
       {missing === ZERO ? (
-        <Button onClick={buy} disabled={pending || error !== null}>
-          {pending ? <Spinner data-icon="inline-start" /> : null}
-          {pending ? (waitedForDeposit ? labels.completing : labels.paying) : labels.pay.replace("{amount}", money(price))}
+        // Con el error genérico se puede volver a intentar; los demás no cambian por intentar otra vez.
+        <Button onClick={buy} disabled={pending || (error !== null && error !== "error")}>
+          {pending ? <Spinner data-icon="inline-start" aria-hidden /> : null}
+          {pending ? (waitedForDeposit ? labels.completing : labels.paying) : t(labels.pay, { amount: money(price) })}
         </Button>
       ) : deposit ? (
         <>
           <p>
-            {labels.depositFirst.replace("{amount}", usdcDecimal(missing))}{" "}
+            {t(labels.depositFirst, { amount: usdcDecimal(missing) })}{" "}
             <span className="text-muted-foreground">{labels.depositLater}</span>
           </p>
-          <DepositPanel initial={deposit} locale={locale} labels={depositLabels} needMicroUsd={missing} onUpdate={onDeposit} />
+          <DepositPanel initial={deposit} locale={locale} labels={depositLabels} errorLabel={errors.error} needMicroUsd={missing} onUpdate={onDeposit} />
         </>
       ) : error ? null : (
-        <p className="flex items-center gap-2 py-8 text-muted-foreground" aria-live="polite"><Spinner />{labels.loading}</p>
+        <p className="flex items-center gap-2 py-8 text-muted-foreground" aria-live="polite"><Spinner aria-hidden />{labels.loading}</p>
       )}
     </div>
   );

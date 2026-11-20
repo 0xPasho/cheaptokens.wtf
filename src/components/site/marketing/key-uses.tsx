@@ -10,7 +10,7 @@ type Source = keyof Dictionary["dashboard"]["sources"];
 const USES: { source: Source; limitMicroUsd: number | null; model: string | null }[] = [
   { source: "plan_then_prepaid", limitMicroUsd: null, model: null },
   { source: "prepaid_only", limitMicroUsd: 50_000_000, model: null },
-  { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek-v4.1-flash" },
+  { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek/deepseek-v4.1-flash" },
 ];
 
 /** 06 · Una key para cada uso: las formas de funcionar según cómo cobra cada API key. ADR-0060. */
@@ -35,14 +35,6 @@ export function KeyUses({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           );
         })}
       </div>
-      <ul className="nr-mk-tools" aria-label={d.toolsLabel}>
-        <li aria-hidden>{d.toolsLabel}</li>
-        <li>{d.tools.openai}</li>
-        <li>{d.tools.langchain}</li>
-        <li>{d.tools.vercel}</li>
-        <li>{d.tools.editors}</li>
-        <li data-soon>{d.tools.claudeCode}</li>
-      </ul>
     </MarketingSection>
   );
 }

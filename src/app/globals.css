@@ -70,7 +70,7 @@
   --navigation-surface: rgb(255 255 255 / 0.88);
   --toolbar-surface: rgb(247 247 247 / 0.92);
   --surface-search: #ededed;
-  --surface-pressed: #ededed;
+  --surface-pressed: #e5e5e5;
   --text-label: #5c5c5c;
   --surface-subtle: #ededed;
   --text-navigation: #5c5c5c;
@@ -78,7 +78,7 @@
   --surface-selected: #ededed;
   --surface-tag: #ededed;
   --text-tag: #5c5c5c;
-  --surface-tag-active: #ededed;
+  --surface-tag-active: #e2e2e2;
   --text-description: #5c5c5c;
   --surface-pill: #ededed;
   --text-pill: #5c5c5c;
@@ -104,14 +104,15 @@
   --syntax-property: #7b4b20;
   --text-response: #5c5c5c;
   --surface-action: #ededed;
-  --surface-action-hover: #ededed;
+  /* Claro: hover, presionado y activo bajan un escalón respecto a su base, como suben en oscuro. Iguales no se notan. */
+  --surface-action-hover: #e2e2e2;
   --text-inverse: #f3f3f3;
-  --surface-primary-hover: #ededed;
+  --surface-primary-hover: #2e2e2e;
   --text-capability: #5c5c5c;
   --text-resource: #5c5c5c;
-  --text-bright: #5c5c5c;
+  --text-bright: #111111;
   --surface-switch: #ededed;
-  --surface-switch-active: #ededed;
+  --surface-switch-active: #ffffff;
   --text-footnote: #5c5c5c;
 
   --background: oklch(1 0 0);
@@ -241,7 +242,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
+  /* El blanco del texto: un gris claro en el botón principal se veía apagado sobre el negro. */
+  --primary: oklch(0.964 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.209 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -430,8 +432,9 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 :where(.nr-site a:focus-visible) { border-radius: 6px; }
 /* Donde el contenedor recorta lo que sobresale, el contorno va por dentro. */
 .nr-site :is([data-slot="tabs-trigger"], [data-slot="tabs-content"]):focus-visible, .nr-site .nr-sidebar :is(a, button):focus-visible { outline-offset: -2px; }
-/* Sin anillos de foco al pulsar controles de formulario: el caret y el estado abierto bastan. */
-.nr-site :is(input, select):focus-visible { outline: none; }
+/* Sin anillos de foco al pulsar campos de texto: el caret basta. Un <select> no tiene caret: lleva el contorno del sitio. */
+.nr-site input:focus-visible { outline: none; }
+.nr-site select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .nr-site :is(input, select, textarea):focus-visible { border-color: transparent; box-shadow: none; }
 /* El texto seleccionado sigue la paleta neutra del sitio en vez del azul del sistema. */
 .nr-site ::selection { background: color-mix(in oklch, var(--foreground) 22%, transparent); }
@@ -452,7 +455,8 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
   flex: 1;
   min-width: 0;
   padding: 16px;
-  border-radius: 22px;
+  /* Concéntrico con la base: 28 px de radio menos 8 px de margen. */
+  border-radius: 20px;
   background: var(--surface-model-front);
 }
 .nr-model-card-front .nr-desc { margin-top: 12px; }
@@ -483,8 +487,6 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-view-toggle [data-slot="toggle-group-item"][aria-pressed="true"] { background: var(--surface-selected); color: var(--foreground); }
 .nr-view-toggle svg { width: 17px; height: 17px; }
 .nr-task, .nr-pills span { line-height: 1.5; }
-.nr-grid.nr-list .nr-model-meta, .nr-grid.nr-list .nr-pills { display: none; }
-.nr-grid.nr-list .nr-model-card-footer { display: none; }
 .nr-site .nr-model-link:focus-visible, .nr-model-link:focus-visible { outline: none; }
 :is(.nr-model-card, .nr-mk-price-tile):has(.nr-model-link:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .nr-grid .nr-model-id img { width: 18px; height: 18px; object-fit: contain; }
@@ -495,8 +497,8 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-code-column [data-slot="tabs"] { gap: 0; height: 100%; }
 .nr-code-column [data-slot="tabs-content"] { margin: 0; }
 .nr-detail-button[data-slot="button"] { height: auto; box-shadow: none; }
-.nr-pill-button[data-slot="button"], .nr-pill-button.group\/button { height: auto; box-shadow: none; line-height: 1.5; }
-.nr-topbar .nr-icon-button[data-slot="button"] { width: 36px; height: 36px; background: none; border-radius: 9px; box-shadow: none; }
+.nr-pill-button[data-slot="button"], .nr-pill-button.group\/button { height: var(--nr-topbar-control, 36px); box-shadow: none; line-height: 1.5; }
+.nr-topbar .nr-icon-button[data-slot="button"] { width: var(--nr-topbar-control); height: var(--nr-topbar-control); background: none; border-radius: 9px; box-shadow: none; }
 .nr-topbar .nr-icon-button:hover { background: var(--secondary); }
 .nr-site-footer { margin: 0 20px; padding: 48px 0 32px; color: var(--muted-foreground); font-size: 12.5px; }
 .nr-footer-row { display: flex; justify-content: space-between; gap: 24px; }
@@ -538,7 +540,8 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
   min-width: 0;
   gap: 0;
   padding: 0;
-  border-radius: 22px;
+  /* Concéntrico con la tarjeta: 28 px de radio menos 8 px de margen, igual que el catálogo y la ventana de acceso. */
+  border-radius: 20px;
   background: var(--surface-model-front);
 }
 .nr-layered-panel-front > [data-slot="tabs"] { gap: 0; }

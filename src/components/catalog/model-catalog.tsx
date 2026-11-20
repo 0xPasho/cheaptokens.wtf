@@ -3,6 +3,7 @@ import LayoutGridIcon from "kubai-icons-react/icons/grid";
 import ListIcon from "kubai-icons-react/icons/list";
 import SearchXIcon from "kubai-icons-react/icons/search";
 import Link from "next/link";
+import { useId, useState } from "react";
 import { CatalogSidebar } from "@/components/catalog/catalog-sidebar";
 import { ModelLogo, ProviderLogo, providerName } from "@/components/catalog/provider-logo";
 import { Button } from "@/components/ui/button";
@@ -22,17 +23,27 @@ export function ModelCatalog({ models, locale, dict }: {
 }) {
   const filters = useCatalogFilters();
   const { catalog } = dict;
+  // En pantallas angostas los filtros se abren con un botón, como en el detalle de modelo: sin caja con scroll propio.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const sidebarId = useId();
+  const activeFilters = filters.tags.length + (filters.author ? 1 : 0);
   const results = filterModels(models.filter((model) => !filters.author || model.author === filters.author), {
     query: filters.query, tags: filters.tags, sort: filters.sort,
   });
   const sortItems = (["discount", "output", "name"] as const).map((value) => ({ value, label: catalog.sort[value] }));
   const count = t(plural(locale, results.length, catalog.resultsOne, catalog.resultsOther), { count: formatCount(results.length, locale) });
   return (
-    <div className="nr-layout nr-catalog">
-      <CatalogSidebar models={models} locale={locale} dict={dict} />
+    <div className="nr-layout nr-catalog nr-model-catalog">
+      <Button variant="secondary" className="nr-detail-button nr-catalog-filters-toggle" aria-expanded={filtersOpen} aria-controls={sidebarId}
+        onClick={() => setFiltersOpen(!filtersOpen)}>
+        {catalog.filters}
+        {activeFilters ? <span className="nr-filter-count">{formatCount(activeFilters, locale)}</span> : null}
+      </Button>
+      <CatalogSidebar models={models} locale={locale} dict={dict} open={filtersOpen} sidebarId={sidebarId} />
       <section className="min-w-0" aria-label={catalog.tableLabel}>
         <div className="nr-section-head">
-          <h1 className="nr-list-label">{catalog.tableLabel}<span>{formatCount(results.length, locale)}</span></h1>
+          {/* El espacio separa las dos palabras para los lectores de pantalla («Modelos 94», no «Modelos94»). */}
+          <h1 className="nr-list-label">{catalog.tableLabel}{" "}<span>{formatCount(results.length, locale)}</span></h1>
           <div className="nr-section-controls">
             <div className="nr-sort">
               <Select items={sortItems} value={filters.sort} onValueChange={(value) => value && filters.update({ sort: value })}>
@@ -46,7 +57,8 @@ export function ModelCatalog({ models, locale, dict }: {
             </ToggleGroup>
           </div>
         </div>
-        <p className="nr-status" role="status">{count}{CATALOG_IS_SAMPLE ? ` · ${catalog.sample}` : ""}</p>
+        {/* El título ya muestra la cuenta: esta línea solo anuncia el cambio de resultados al filtrar. */}
+        <p className="sr-only" role="status">{count}{CATALOG_IS_SAMPLE ? ` · ${catalog.sample}` : ""}</p>
         {results.length ? (
           <div className={`nr-grid${filters.view === "list" ? " nr-list" : ""}`}>
             {results.map((model) => (
@@ -57,9 +69,9 @@ export function ModelCatalog({ models, locale, dict }: {
                   </h2>
                   <p className="nr-desc">{model.description[locale] ?? model.description.en}</p>
                   <div className="nr-pills">
-                    <span>{formatTokens(model.contextLength, locale)} {catalog.columns.context.toLowerCase()}</span>
+                    <span className="nr-pill-context">{formatTokens(model.contextLength, locale)} {catalog.columns.context.toLowerCase()}</span>
                     {model.allTags.filter((tag) => tag !== "long-context").slice(0, 3).map((tag) => <span key={tag}>{dict.tags[tag]}</span>)}
-                    <span>{formatDiscount(model.discountBps, locale)}</span>
+                    <span className="nr-pill-discount">{formatDiscount(model.discountBps, locale)}</span>
                     {model.status === "deprecated" ? <span>{catalog.deprecated}</span> : null}
                   </div>
                 </div>

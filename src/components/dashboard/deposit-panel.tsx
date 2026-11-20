@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatCount, formatUsd } from "@/lib/format";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { walletUrlWithAmount } from "@/lib/payments/crypto/usdc";
 import type { DepositNetworkView, DepositView } from "@/lib/payments/crypto/view";
 import { cn } from "@/lib/utils";
@@ -37,10 +37,12 @@ const ZERO = BigInt(0);
  * llegando. Pregunta sola por el depósito mientras la pestaña está a la vista; lo que se acredita aparece
  * aquí y refresca la página.
  */
-export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, className }: {
+export function DepositPanel({ initial, locale, labels, errorLabel, needMicroUsd, onUpdate, className }: {
   initial: DepositView;
   locale: string;
   labels: DepositLabels;
+  /** El error genérico del dashboard: si una consulta falla, se ve en vez de romper la página. */
+  errorLabel: string;
   /** Lo que falta para una compra: va puesto en el link de wallet y es lo que deposita la simulación. */
   needMicroUsd?: bigint;
   /** Cada lectura nueva del depósito: el diálogo de compra espera aquí a que alcance el saldo. */
@@ -50,6 +52,7 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
   const [deposit, setDeposit] = useState(initial);
   const [network, setNetwork] = useState<DepositNetworkView["id"]>(initial.networks[0]?.id ?? "solana");
   const [fresh, setFresh] = useState<DepositView["credits"]>([]);
+  const [failed, setFailed] = useState(false);
   const [checking, startChecking] = useTransition();
   const router = useRouter();
   const known = useRef(new Set(initial.credits.map((credit) => credit.id)));
@@ -59,7 +62,10 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
     notify.current = onUpdate;
   }, [onUpdate]);
 
-  const apply = useCallback((next: DepositView) => {
+  /** Cada lectura del depósito; `null` es una consulta que falló. */
+  const apply = useCallback((next: DepositView | null) => {
+    setFailed(next === null);
+    if (!next) return;
     setDeposit(next);
     const added = next.credits.filter((credit) => !known.current.has(credit.id));
     if (added.length > 0) {
@@ -75,12 +81,10 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
     if (pace.current.busy) return;
     pace.current.busy = true;
     pace.current.lastCheck = Date.now();
-    try {
-      const result = await depositStatusAction();
-      if (result.ok) apply(result.deposit);
-    } finally {
-      pace.current.busy = false;
-    }
+    // Si falla (sesión vencida, servidor caído) se avisa; la próxima consulta lo vuelve a intentar sola.
+    const result = await depositStatusAction().catch(() => null);
+    pace.current.busy = false;
+    apply(result?.ok ? result.deposit : null);
   }, [apply]);
 
   useEffect(() => {
@@ -122,6 +126,7 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
         minimum={minimum}
         minLabel={minLabel}
         checking={checking}
+        error={failed ? errorLabel : null}
         onCheck={() => startChecking(async () => {
           pace.current.fastUntil = Date.now() + FAST_FOR_MS;
           await check();
@@ -144,7 +149,7 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
               </>
             ) : null}
             <dt className="text-muted-foreground">{labels.exchangeAmount}</dt>
-            <dd className="font-medium">{labels.exchangeAmountValue.replace("{min}", minLabel)}</dd>
+            <dd className="font-medium">{t(labels.exchangeAmountValue, { min: minLabel })}</dd>
           </dl>
           <p className="mt-3 text-muted-foreground">{labels.exchangeHint[current.id]}</p>
         </Disclosure>
@@ -154,9 +159,9 @@ export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, 
 
       {deposit.simulate ? (
         <Button variant="outline" disabled={checking} onClick={() => startChecking(async () => {
-          const result = await simulateDepositAction(simulated.toString());
-          if (result.ok) apply(result.deposit);
-        })}>{labels.simulate.replace("{amount}", formatUsd(Number(simulated), locale))}</Button>
+          const result = await simulateDepositAction(simulated.toString()).catch(() => null);
+          apply(result?.ok ? result.deposit : null);
+        })}>{t(labels.simulate, { amount: formatUsd(Number(simulated), locale) })}</Button>
       ) : null}
     </div>
   );
@@ -178,7 +183,7 @@ function NetworkPanel({ network, minLabel, needMicroUsd, labels }: {
       <div className="flex flex-col items-center gap-3">
         <QrCode
           value={mode === "wallet" ? walletUrl : network.address}
-          label={(mode === "wallet" ? labels.qrWalletLabel : labels.qrAddressLabel).replace("{network}", networkName)}
+          label={t(mode === "wallet" ? labels.qrWalletLabel : labels.qrAddressLabel, { network: networkName })}
           className="size-44"
         />
         <ToggleGroup
@@ -210,7 +215,7 @@ function NetworkPanel({ network, minLabel, needMicroUsd, labels }: {
           </div>
         </div>
         <p className="text-muted-foreground">
-          {labels.addressHint} {labels.only.replace("{network}", networkName).replace("{min}", minLabel)}
+          {labels.addressHint} {t(labels.only, { network: networkName, min: minLabel })}
         </p>
         <a href={walletUrl} className={cn(buttonVariants({ variant: "outline" }), "self-start")}>
           <WalletIcon data-icon="inline-start" />{labels.openWallet}
@@ -221,12 +226,13 @@ function NetworkPanel({ network, minLabel, needMicroUsd, labels }: {
 }
 
 /** Lo que pasa con el depósito: lo acreditado desde que se abrió, lo que viene en camino o la espera. */
-function DepositStatus({ deposit, fresh, minimum, minLabel, checking, onCheck, locale, labels }: {
+function DepositStatus({ deposit, fresh, minimum, minLabel, checking, error, onCheck, locale, labels }: {
   deposit: DepositView;
   fresh: DepositView["credits"];
   minimum: bigint;
   minLabel: string;
   checking: boolean;
+  error: string | null;
   onCheck: () => void;
   locale: string;
   labels: DepositLabels;
@@ -238,7 +244,7 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, onCheck, l
         <div key={credit.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/20">
           <p className="flex items-center gap-3 font-medium">
             <CircleCheckIcon size={20} aria-hidden />
-            {labels.credited.replace("{amount}", formatUsd(Number(credit.amountMicroUsd), locale))}
+            {t(labels.credited, { amount: formatUsd(Number(credit.amountMicroUsd), locale) })}
           </p>
           {credit.url ? (
             <a href={credit.url} target="_blank" rel="noreferrer" className="nr-documentation-link inline-flex items-center gap-1">
@@ -255,10 +261,10 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, onCheck, l
             <Spinner className="mt-0.5 text-muted-foreground" aria-hidden />
             <div className="flex flex-col gap-0.5">
               <p className="font-medium">
-                {labels.incoming.replace("{amount}", formatUsd(Number(amount), locale)).replace("{network}", labels.networks[network.id])}
+                {t(labels.incoming, { amount: formatUsd(Number(amount), locale), network: labels.networks[network.id] })}
               </p>
               <p className="text-muted-foreground">
-                {waitsForMinimum ? labels.belowMinimumHint.replace("{min}", minLabel) : labels.incomingHint}
+                {waitsForMinimum ? t(labels.belowMinimumHint, { min: minLabel }) : labels.incomingHint}
               </p>
             </div>
           </div>
@@ -278,6 +284,7 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, onCheck, l
           </Button>
         </div>
       ) : null}
+      {error ? <p role="alert" className="text-destructive">{error}</p> : null}
     </div>
   );
 }

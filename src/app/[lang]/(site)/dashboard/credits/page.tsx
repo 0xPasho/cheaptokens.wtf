@@ -76,7 +76,7 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         <CardContent className="flex flex-col gap-6">
           <Stat label={d.balance} value={<Price micros={Number(account.balanceMicroUsd)} locale={locale} />} hint={d.balanceHint} />
           {deposit
-            ? <DepositPanel initial={depositView(crypto, chains, deposit)} locale={locale} labels={dict.dashboard.deposit} />
+            ? <DepositPanel initial={depositView(crypto, chains, deposit)} locale={locale} labels={dict.dashboard.deposit} errorLabel={dict.dashboard.error} />
             : null}
         </CardContent>
       </Card>
@@ -118,7 +118,11 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <TableRow key={pack.id}>
                     <TableCell><span className="flex items-center gap-2 font-medium"><ModelLogo modelId={pack.modelId} />{names.get(pack.modelId) ?? pack.modelId}</span></TableCell>
                     <TableCell className="min-w-48">
-                      <Progress value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100}>
+                      <Progress
+                        value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100}
+                        aria-label={t(d.packLeftLabel, { model: names.get(pack.modelId) ?? pack.modelId })}
+                        locale={locale}
+                      >
                         <span className="text-sm tabular-nums">{money(pack.balanceMicroUsd)}</span>
                         <span className="ml-auto text-sm text-muted-foreground tabular-nums">{money(pack.grantedMicroUsd)}</span>
                       </Progress>

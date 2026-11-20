@@ -56,7 +56,7 @@ async function Settings({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             <CardDescription>{d.dataBody}</CardDescription>
           </CardHeader>
           <CardFooter>
-            <ExportDataButton label={d.download} />
+            <ExportDataButton label={d.download} errorLabel={dict.dashboard.error} />
           </CardFooter>
         </Card>
       </div>

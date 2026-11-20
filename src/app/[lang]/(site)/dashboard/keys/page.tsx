@@ -19,7 +19,7 @@ import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
 import { formatCount, formatDate, formatDateTime, formatDuration, totalKind } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
-import { type Dictionary, t } from "@/lib/i18n/dictionaries";
+import { type Dictionary, plural, t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
 import { API_BASE_URL } from "@/lib/site";
 
@@ -51,7 +51,7 @@ function keyLabels(dict: Dictionary): KeyLabels {
     rotatedDescription: d.rotatedDescription, done: d.done, keyLabel: d.keyLabel, cancel: d.cancel, rotate: d.rotate, rotateTitle: d.rotateTitle,
     rotateBody: d.rotateBody, rotateConfirm: d.rotateConfirm, revoke: d.revoke, revokeTitle: d.revokeTitle, revokeBody: d.revokeBody,
     revokeConfirm: d.revokeConfirm, sources: dict.dashboard.sources, sourceDescriptions: dict.dashboard.sourceDescriptions,
-    copy: dict.copy.copy, copied: dict.copy.copied,
+    copy: dict.copy.copy, copied: dict.copy.copied, close: dict.dashboard.close,
   };
 }
 
@@ -107,7 +107,8 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                 <TableRow key={key.id} className={live ? undefined : "text-muted-foreground"}>
                   <TableCell>
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{key.name}</span>
+                      {/* Recibe el foco al revocar la key, cuando la fila se queda sin botones. */}
+                      <span id={`key-${key.id}`} tabIndex={-1} className="rounded-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)">{key.name}</span>
                       {key.revokedAt ? <Badge variant="secondary">{d.revoked}</Badge> : null}
                       {!key.revokedAt && expired ? <Badge variant="secondary">{d.replaced}</Badge> : null}
                       {live && key.expiresAt ? <Badge variant="warning">{t(d.rotated, { duration: formatDuration(key.expiresAt.getTime() - now, locale) })}</Badge> : null}
@@ -118,13 +119,17 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <TableCell>
                     {key.allowedModels === null
                       ? d.everyModel
-                      : <span title={key.allowedModels.map((id) => names.get(id) ?? id).join(", ")}>{t(d.modelCount, { count: formatCount(key.allowedModels.length, locale) })}</span>}
+                      : <span title={key.allowedModels.map((id) => names.get(id) ?? id).join(", ")}>{t(plural(locale, key.allowedModels.length, d.modelCountOne, d.modelCount), { count: formatCount(key.allowedModels.length, locale) })}</span>}
                   </TableCell>
                   <TableCell className="min-w-40">
                     {key.spendLimitMicroUsd === null ? (
                       <span className="flex flex-col"><Price micros={Number(key.spentMicroUsd)} locale={locale} kind={totalKind(Number(key.spentMicroUsd))} /><span className="text-xs text-muted-foreground">{d.noLimit}</span></span>
                     ) : (
-                      <Progress value={Math.min(100, (Number(key.spentMicroUsd) / Math.max(1, Number(key.spendLimitMicroUsd))) * 100)}>
+                      <Progress
+                        value={Math.min(100, (Number(key.spentMicroUsd) / Math.max(1, Number(key.spendLimitMicroUsd))) * 100)}
+                        aria-label={t(d.spendLabel, { name: key.name })}
+                        locale={locale}
+                      >
                         <Price micros={Number(key.spentMicroUsd)} locale={locale} kind={totalKind(Number(key.spentMicroUsd))} className="text-sm" />
                         <span className="ml-auto text-sm text-muted-foreground"><Price micros={Number(key.spendLimitMicroUsd)} locale={locale} /></span>
                       </Progress>
@@ -133,9 +138,17 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <TableCell>{formatDate(key.createdAt, locale)}</TableCell>
                   <TableCell>{key.lastUsedAt ? formatDateTime(key.lastUsedAt, locale) : d.never}</TableCell>
                   <TableCell>
-                    {key.revokedAt === null ? (
-                      <KeyActions keyId={key.id} name={key.name} canRotate={key.expiresAt === null} labels={labels} errors={errors} snippet={snippet} />
-                    ) : null}
+                    {/* También en las revocadas: el diálogo que acaba de revocar tiene que terminar de cerrarse. */}
+                    <KeyActions
+                      keyId={key.id}
+                      name={key.name}
+                      revoked={key.revokedAt !== null}
+                      canRotate={key.expiresAt === null}
+                      focusId={`key-${key.id}`}
+                      labels={labels}
+                      errors={errors}
+                      snippet={snippet}
+                    />
                   </TableCell>
                 </TableRow>
               );

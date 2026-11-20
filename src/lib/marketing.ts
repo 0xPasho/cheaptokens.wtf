@@ -18,6 +18,14 @@ export const PRICE_STRIP_MODELS = [
   "deepseek/deepseek-v4.1-flash",
 ] as const;
 
+/** Los modelos que se pueden elegir en el código del hero: uno por autor, el primero se ve al cargar. Caben cuatro. */
+export const HERO_MODELS = [
+  "anthropic/claude-sonnet-5.5",
+  "openai/gpt-6.1-sol",
+  "google/gemini-4-argon",
+  "deepseek/deepseek-v4.1-flash",
+] as const;
+
 /** Modelos con los que se calculan las requests típicas de cada plan. El primero es el de referencia del dashboard. */
 export const ESTIMATOR_MODELS = [
   "anthropic/claude-sonnet-5.5",
@@ -67,6 +75,49 @@ export function medianDiscountBps(models: readonly CatalogModel[]): number {
   if (!models.length) return 0;
   const sorted = models.map((model) => model.discountBps).toSorted((a, b) => a - b);
   return sorted[Math.floor((sorted.length - 1) / 2)];
+}
+
+// ── Tabla de precios de la landing ──
+
+/** Los grupos de la tabla además de «Populares». Los mismos criterios que el vistazo: sin `fast` (casi vacío). */
+export const PRICE_TABLE_TAGS = ["reasoning", "coding", "cheap", "vision"] as const satisfies readonly ModelTag[];
+/** Filas por grupo: el resto está a un link, en /models con el filtro puesto. */
+export const PRICE_TABLE_ROWS = 8;
+
+/**
+ * Las filas de un grupo: los modelos insignia primero (el precio oficial de salida más alto) y uno por autor antes
+ * de repetir. Ordenar por descuento dejaría solo filas de −90 %, que no representan el catálogo.
+ */
+export function priceTableRows(members: readonly CatalogModel[], size = PRICE_TABLE_ROWS): CatalogModel[] {
+  const sorted = members.toSorted((a, b) => b.officialOutput - a.officialOutput || a.name.localeCompare(b.name));
+  const picked: CatalogModel[] = [];
+  const authors = new Set<string>();
+  for (const model of sorted) {
+    if (picked.length === size) break;
+    if (authors.has(model.author)) continue;
+    picked.push(model);
+    authors.add(model.author);
+  }
+  for (const model of sorted) {
+    if (picked.length === size) break;
+    if (!picked.includes(model)) picked.push(model);
+  }
+  return picked;
+}
+
+/** Cuántos modelos hay en cada tramo de 5 puntos de descuento, del menor tramo con modelos al mayor. */
+export function discountHistogram(models: readonly CatalogModel[], step = 5) {
+  const percents = models.map((model) => model.discountBps / 100);
+  if (!percents.length) return { buckets: [] as { from: number; count: number }[], minBps: 0, maxBps: 0 };
+  const low = Math.floor(Math.min(...percents) / step) * step;
+  const high = Math.floor(Math.max(...percents) / step) * step;
+  const buckets = Array.from({ length: (high - low) / step + 1 }, (_, index) => ({ from: low + index * step, count: 0 }));
+  for (const percent of percents) buckets[Math.floor((percent - low) / step)].count++;
+  return {
+    buckets,
+    minBps: Math.min(...models.map((model) => model.discountBps)),
+    maxBps: Math.max(...models.map((model) => model.discountBps)),
+  };
 }
 
 // ── Vistazo al catálogo ──
@@ -137,6 +188,7 @@ export const FAQ_TOPICS: readonly { id: FaqTopicId; items: readonly FaqId[] }[] 
 ];
 
 /** Las siete de la landing. */
-export const HOME_FAQ: readonly FaqId[] = ["whyCheaper", "compatible", "howPay", "limitReached", "prompts", "failedRequest", "pricesChange"];
+/** «Por qué cuesta menos» ya es una sección de la landing: aquí van las otras dudas de antes de empezar. */
+export const HOME_FAQ: readonly FaqId[] = ["compatible", "howPay", "limitReached", "pricesChange", "failedRequest"];
 /** Las de cobro, en /pricing. */
 export const PRICING_FAQ: readonly FaqId[] = ["howCharged", "limitsInDollars", "autoRenew", "howPay", "failedRequest"];
