@@ -157,3 +157,13 @@ export function formatMilliseconds(ms: number, locale: string) {
     () => new Intl.NumberFormat(locale, { style: "unit", unit: "millisecond", unitDisplay: "short", maximumFractionDigits: 0 }),
   ).format(ms);
 }
+
+/** Cuenta regresiva de minutos y segundos: `14:32`, `0:07`. Hacia arriba: nunca muestra `0:00` mientras quede algo. */
+export function formatCountdown(ms: number, locale: string) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const seconds = cached(
+    `countdown:${locale}`,
+    () => new Intl.NumberFormat(locale, { minimumIntegerDigits: 2, useGrouping: false }),
+  ).format(total % 60);
+  return `${formatCount(Math.floor(total / 60), locale)}:${seconds}`;
+}

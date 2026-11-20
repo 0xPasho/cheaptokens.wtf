@@ -76,6 +76,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0062](./0062-lo-que-el-sitio-promete.md) | El sitio publica los límites de los planes y dice que el precio publicado es un máximo | Aceptada | Usuario + Default |
 | [0063](./0063-una-sola-ventana-de-acceso.md) | Una sola ventana para entrar o crear cuenta, con código por correo | Aceptada | Usuario + Default |
 | [0064](./0064-foco-de-teclado-visible.md) | El foco de teclado se ve en todo el sitio, con su propio token `--focus-ring` | Aceptada | Default |
+| [0065](./0065-pagos-en-bitcoin.md) | También se cobra en Bitcoin on-chain: el servidor solo tiene una xpub, cada compra se cotiza con el precio fijo 15 minutos y un plan se compra solo al confirmarse | Aceptada | Usuario + Default |
 
 ## Plantilla
 

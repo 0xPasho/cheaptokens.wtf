@@ -36,6 +36,13 @@
       "when": 1794956018698,
       "tag": "0004_sad_carmella_unuscione",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794972277825,
+      "tag": "0005_bitcoin_payments",
+      "breakpoints": true
     }
   ]
 }

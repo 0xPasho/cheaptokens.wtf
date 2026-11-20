@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { closeDb, getDb } from "@/lib/db/client";
 import { migrateNodePostgres } from "@/lib/db/migrate";
-import { apiKeys, creditTransactions, modelUpstreams, models, requests, upstreams, workspaces, subscriptions, usageWindows, modelPacks, payments, partnerPlans, partnerIdempotencyKeys, partnerRuns, partnerPlanCaps, depositAddresses, depositSweeps, depositScans } from "@/lib/db/schema";
+import { apiKeys, creditTransactions, modelUpstreams, models, requests, upstreams, workspaces, subscriptions, usageWindows, modelPacks, payments, partnerPlans, partnerIdempotencyKeys, partnerRuns, partnerPlanCaps, depositAddresses, depositSweeps, depositScans, bitcoinAddresses, bitcoinOrders, bitcoinReceipts } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 import { uuidv7 } from "@/lib/db/uuid";
 
@@ -77,17 +77,17 @@ describe("Postgres schema and migrations", () => {
     await testDb?.close();
   });
 
-  it("applies the migrations independently of cwd with all eighteen tables and records them", async () => {
+  it("applies the migrations independently of cwd with all twenty-one tables and records them", async () => {
     const { db } = testDb;
     for (const table of [
       workspaces, apiKeys, models, upstreams, modelUpstreams, requests, creditTransactions,
       subscriptions, usageWindows, modelPacks, payments, partnerPlans, partnerIdempotencyKeys, partnerRuns, partnerPlanCaps,
-      depositAddresses, depositSweeps, depositScans,
+      depositAddresses, depositSweeps, depositScans, bitcoinAddresses, bitcoinOrders, bitcoinReceipts,
     ]) {
       expect(await db.select().from(table)).toEqual([]);
     }
     expect(await db.execute(sql`select count(*)::int as count from drizzle.__drizzle_migrations`))
-      .toMatchObject({ rows: [{ count: 5 }] });
+      .toMatchObject({ rows: [{ count: 6 }] });
   });
 
   it("stores a catalog description without a Spanish translation", async () => {

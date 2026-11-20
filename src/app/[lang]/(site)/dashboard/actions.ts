@@ -12,6 +12,13 @@ import { actionSession } from "@/lib/dashboard/session";
 import { exportWorkspace } from "@/lib/dashboard/queries";
 import { getDb } from "@/lib/db/client";
 import { apiKeys, workspaces } from "@/lib/db/schema";
+import { readBitcoinConfig } from "@/lib/payments/bitcoin/config";
+import {
+  BitcoinAddressMismatchError, bitcoinDeps, type BitcoinDeps, createBitcoinQuote, ensureBitcoinAddress, getBitcoinState, QuoteError,
+  type QuoteRequest, scanBitcoin, simulateBitcoinConfirmation, simulateBitcoinPayment,
+} from "@/lib/payments/bitcoin/orders";
+import { RateUnavailableError } from "@/lib/payments/bitcoin/rates";
+import { type BitcoinView, bitcoinView } from "@/lib/payments/bitcoin/view";
 import { paymentsAvailable, readCryptoConfig } from "@/lib/payments/crypto/config";
 import {
   depositChains, ensureDepositAddresses, getDepositState, MIN_DEPOSIT_MICRO_USD, scanDeposits, simulateDeposit,
@@ -20,7 +27,8 @@ import { type DepositView, depositView } from "@/lib/payments/crypto/view";
 
 /** Los errores son claves de `dashboard.*` o `dashboard.keys.*`: el cliente los traduce. */
 export type ActionError =
-  | "error" | "paymentsUnavailable" | "nameRequired" | "limitInvalid" | "pickOne" | "tooMany" | "planActive" | "insufficientBalance";
+  | "error" | "paymentsUnavailable" | "nameRequired" | "limitInvalid" | "pickOne" | "tooMany" | "planActive" | "insufficientBalance"
+  | "bitcoinRate" | "bitcoinAmount" | "bitcoinCovered" | "bitcoinTooMany";
 
 export type ActionResult = { ok: true } | { ok: false; error: ActionError };
 export type KeyResult = { ok: true; key: string; name: string } | { ok: false; error: ActionError } | null;
@@ -134,6 +142,68 @@ export async function simulateDepositAction(amount: string): Promise<DepositResu
   const chains = depositChains(config);
   await simulateDeposit(getDb(), workspaceId, micros, Date.now());
   return { ok: true, deposit: depositView(config, chains, await getDepositState(getDb(), chains, workspaceId, Date.now())) };
+}
+
+export type BitcoinResult = { ok: true; bitcoin: BitcoinView } | { ok: false; error: ActionError };
+
+const QUOTE_ERRORS: Record<QuoteError["code"], ActionError> = {
+  amount: "bitcoinAmount", covered: "bitcoinCovered", plan: "planActive", tooMany: "bitcoinTooMany",
+};
+
+/** Corre `work` con lo de Bitcoin y devuelve el estado del workspace. Una dirección que ya no sale de la xpub apaga Bitcoin. */
+async function withBitcoin(workspaceId: string, work: (deps: BitcoinDeps, now: number) => Promise<void>): Promise<BitcoinResult> {
+  const deps = bitcoinDeps(readBitcoinConfig());
+  if (!deps) return { ok: false, error: "paymentsUnavailable" };
+  const db = getDb();
+  try {
+    await work(deps, Date.now());
+    const now = Date.now();
+    return { ok: true, bitcoin: bitcoinView(deps, await getBitcoinState(db, deps, workspaceId, now), now) };
+  } catch (error) {
+    if (error instanceof BitcoinAddressMismatchError) return { ok: false, error: "paymentsUnavailable" };
+    if (error instanceof RateUnavailableError) return { ok: false, error: "bitcoinRate" };
+    if (error instanceof QuoteError) return { ok: false, error: QUOTE_ERRORS[error.code] };
+    throw error;
+  }
+}
+
+/**
+ * El pago en Bitcoin del workspace (ADR-0065): su dirección, la cotización vigente y lo que va en camino.
+ * Antes lee sus direcciones en la cadena y acredita lo confirmado; el diálogo la llama cada pocos segundos.
+ */
+export async function bitcoinStatusAction(): Promise<BitcoinResult> {
+  const { workspaceId } = await actionSession();
+  return withBitcoin(workspaceId, async (deps, now) => {
+    await ensureBitcoinAddress(getDb(), deps, workspaceId);
+    await scanBitcoin(getDb(), deps, now, { workspaceId });
+  });
+}
+
+/** Abre una cotización: de créditos por un monto, o de lo que falta para un plan. El precio lo pone el servidor. */
+export async function bitcoinQuoteAction(input: { intent: "topup"; amount: string } | { intent: "plan"; planId: string }): Promise<BitcoinResult> {
+  const { workspaceId } = await actionSession();
+  let request: QuoteRequest;
+  if (input.intent === "topup") {
+    if (!/^\d{1,13}$/.test(input.amount)) return { ok: false, error: "bitcoinAmount" };
+    request = { intent: "topup", amountMicroUsd: BigInt(input.amount) };
+  } else {
+    if (!isPlanId(input.planId)) return { ok: false, error: "error" };
+    request = { intent: "plan", planId: input.planId };
+  }
+  return withBitcoin(workspaceId, async (deps, now) => {
+    await createBitcoinQuote(getDb(), deps, workspaceId, request, now);
+  });
+}
+
+/** Solo en desarrollo local: un pago visto en la red, o su confirmación, sin cadena. */
+export async function simulateBitcoinAction(stage: "seen" | "confirmed"): Promise<BitcoinResult> {
+  const { workspaceId } = await actionSession();
+  const config = readBitcoinConfig();
+  if (!config?.simulate) return { ok: false, error: "error" };
+  return withBitcoin(workspaceId, async (deps, now) => {
+    if (stage === "seen") await simulateBitcoinPayment(getDb(), deps, workspaceId, now);
+    else await simulateBitcoinConfirmation(getDb(), deps, workspaceId, now);
+  });
 }
 
 export type PurchaseResult =
