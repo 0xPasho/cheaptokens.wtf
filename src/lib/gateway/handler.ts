@@ -101,7 +101,7 @@ async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId
   });
 }
 
-/** La reserva del request (ADR-0065): se libera después de su cobro, o al fallar antes de agendarlo. */
+/** La reserva del request (ADR-0066): se libera después de su cobro, o al fallar antes de agendarlo. */
 interface HoldState {
   release: () => void;
   /** True cuando ya hay una tarea en `after()` que cobra y después libera. */
@@ -140,7 +140,7 @@ async function processChatCompletion(
   }
   if (rawBody === null) return reject("request_too_large");
 
-  // Antes de leer saldos: lo que otros requests liberen después todavía no está en lo que leamos (ADR-0065).
+  // Antes de leer saldos: lo que otros requests liberen después todavía no está en lo que leamos (ADR-0066).
   const holdMark = deps.holds.mark();
   const auth = await authenticate(request.headers.get("authorization"), deps.db, deps.now());
   if (!auth.ok) return reject(auth.code);
@@ -174,7 +174,7 @@ async function processChatCompletion(
   if (!admission.ok) {
     return errorResponse(admission.code, { requestId, retryAfterSeconds: retryAfter(admission.retryAt) });
   }
-  // Solo se admite lo que cabe en lo que queda, descontado lo que reservan los requests en curso (ADR-0065).
+  // Solo se admite lo que cabe en lo que queda, descontado lo que reservan los requests en curso (ADR-0066).
   // Desde aquí hasta `hold()` no hay await: dos requests no pueden reservar el mismo saldo.
   const held = deps.holds.held(context.workspaceId, context.apiKeyId, holdMark);
   const workspaceBudget = admission.budgetMicroUsd - held.workspace;

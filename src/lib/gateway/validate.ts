@@ -1,7 +1,7 @@
 type ChatRequestValidation =
   | {
       ok: true; body: Record<string, unknown>; model: string; stream: boolean; includeUsage: boolean;
-      /** El menor de `max_tokens` y `max_completion_tokens`, o null si no vino ninguno (ADR-0065). */
+      /** El menor de `max_tokens` y `max_completion_tokens`, o null si no vino ninguno (ADR-0066). */
       maxOutputTokens: number | null;
       /** `n`, o 1. */
       choices: number;
@@ -16,7 +16,7 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
-/** Definen el costo máximo que se reserva (ADR-0065): se validan aquí en vez de dejárselos al upstream. */
+/** Definen el costo máximo que se reserva (ADR-0066): se validan aquí en vez de dejárselos al upstream. */
 const SIZE_FIELDS = ["max_tokens", "max_completion_tokens", "n"] as const;
 
 export function validateChatRequest(body: unknown): ChatRequestValidation {

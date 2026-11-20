@@ -1,4 +1,4 @@
-# ADR-0065: Cada request reserva su costo máximo antes de llamar al upstream
+# ADR-0066: Cada request reserva su costo máximo antes de llamar al upstream
 
 - **Estado:** Aceptada. Reemplaza «Los créditos pueden quedar levemente negativos» y el acotamiento de lo absorbido de [ADR-0049](./0049-suscripcion-con-limites.md), y la reserva previa descartada en [ADR-0008](./0008-creditos-prepagados.md).
 - **Fecha:** 2026-11-19

@@ -4,7 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatCount, formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
-import { DEFAULT_OVERFLOW_CAP_MICRO_USD } from "@/lib/marketing";
+import { BITCOIN_QUOTE_MINUTES, DEFAULT_OVERFLOW_CAP_MICRO_USD } from "@/lib/marketing";
 
 /** Cuánto llena cada medidor del dibujo: plan a medias, plan lleno y el excedente en su tope. */
 const METERS = [72, 100, 28];
@@ -40,13 +40,16 @@ export function BillingFlow({ locale, dict, withHead = true }: {
   );
 }
 
-/** Cómo se paga, en una línea: USDC en Solana o Base, dirección propia y saldo dólar por dólar (ADR-0058). */
+/**
+ * Cómo se paga, en pocas líneas: USDC en Solana o Base, con dirección propia y saldo dólar por dólar (ADR-0058),
+ * o Bitcoin, con el precio fijo por unos minutos (ADR-0065).
+ */
 export function PayNote({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const d = dict.pricing.pay;
   return (
     <div className="nr-mk-pay">
-      <ul className="nr-mk-pay-nets"><li>USDC · Solana</li><li>USDC · Base</li></ul>
-      <p><b>{d.title}</b> {d.body}</p>
+      <ul className="nr-mk-pay-nets"><li>USDC · Solana</li><li>USDC · Base</li><li>Bitcoin</li></ul>
+      <p><b>{d.title}</b> {t(d.body, { minutes: formatCount(BITCOIN_QUOTE_MINUTES, locale) })}</p>
       <Link href={`/${locale}/dashboard/credits`} className={buttonVariants({ variant: "secondary", className: "nr-mk-button" })}>{d.cta}</Link>
     </div>
   );

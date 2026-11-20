@@ -80,7 +80,7 @@ export interface GatewayModel {
   /** Precio oficial, µUSD por 1M. Para `official_cost_micro_usd`. */
   officialInputPer1M: MicroUsd;
   officialOutputPer1M: MicroUsd;
-  /** Tokens de contexto: acota el prompt y la salida que se reservan (ADR-0065). */
+  /** Tokens de contexto: acota el prompt y la salida que se reservan (ADR-0066). */
   contextLength: number;
   /** Salida máxima del modelo si se conoce (`models.max_output_tokens`). Null: la por defecto del gateway. */
   maxOutputTokens: number | null;
@@ -256,12 +256,12 @@ export type CheckAccount = (
 export type BudgetedAdmission = (Extract<Admission, { ok: true }> & { budgetMicroUsd: MicroUsd }) | AdmissionFailure;
 
 /**
- * Plan, paquetes y créditos (ADR-0049, ADR-0065). `wantedMicroUsd` es lo máximo que puede costar el request:
+ * Plan, paquetes y créditos (ADR-0049, ADR-0066). `wantedMicroUsd` es lo máximo que puede costar el request:
  * si el plan lo cubre, no se consultan paquetes ni el excedente de socio.
  */
 export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number, wantedMicroUsd: MicroUsd) => Promise<BudgetedAdmission>;
 
-// ─── Reservas (ADR-0065) ──────────────────────────────────────────────────────
+// ─── Reservas (ADR-0066) ──────────────────────────────────────────────────────
 
 /** Lo reservado por los requests en curso. En memoria y por instancia, como el rate limiter. */
 export interface HoldBook {
@@ -291,7 +291,7 @@ export interface Logger {
 export interface GatewayDeps {
   db: Db;
   rateLimiter: RateLimiter;
-  /** Una por instancia: las reservas de todos los requests en curso (ADR-0065). */
+  /** Una por instancia: las reservas de todos los requests en curso (ADR-0066). */
   holds: HoldBook;
   catalog: CatalogSource;
   /** Una por instancia, igual que el rate limiter: la rotación y las pausas se comparten entre requests. */

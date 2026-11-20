@@ -4,13 +4,16 @@ import CircleCheckIcon from "kubai-icons-react/icons/circle-check";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 
-import { type ActionError, buyPlanAction, depositStatusAction } from "@/app/[lang]/(site)/dashboard/actions";
-import { type DepositLabels, DepositPanel } from "@/components/dashboard/deposit-panel";
+import { type ActionError, type BitcoinResult, bitcoinStatusAction, buyPlanAction, depositStatusAction } from "@/app/[lang]/(site)/dashboard/actions";
+import { type BitcoinLabels, BitcoinPanel } from "@/components/dashboard/bitcoin-panel";
+import { type DepositLabels, DepositPanel, emptyDepositView } from "@/components/dashboard/deposit-panel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { formatUsd } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
+import type { BitcoinView } from "@/lib/payments/bitcoin/view";
 import { usdcDecimal } from "@/lib/payments/crypto/usdc";
 import type { DepositView } from "@/lib/payments/crypto/view";
 import { cn } from "@/lib/utils";
@@ -19,6 +22,8 @@ export type PurchaseLabels = Dictionary["dashboard"]["purchase"];
 
 interface PurchaseRequest {
   planId: string;
+  /** El nombre del plan, para el aviso de Bitcoin («Pro se activa al confirmarse»). */
+  planName: string;
   /** µUSD como texto: el precio cuando se renderizó la página. El servidor lo vuelve a calcular al cobrar. */
   priceMicroUsd: string;
   title: string;
@@ -32,15 +37,17 @@ const ZERO = BigInt(0);
 
 /**
  * El diálogo de compra de un plan (ADR-0058): se paga con el saldo y, si no alcanza, muestra el depósito y
- * completa la compra cuando llega. Vive aquí arriba y no en cada botón: al comprar un plan, su botón
- * desaparece de la página y se llevaría el diálogo con la confirmación.
+ * completa la compra cuando llega. Con Bitcoin (ADR-0065) la compra la completa el servidor al confirmarse,
+ * aunque se cierre el diálogo. Vive aquí arriba y no en cada botón: al comprar un plan, su botón desaparece
+ * de la página y se llevaría el diálogo con la confirmación.
  */
-export function PurchaseProvider({ balanceMicroUsd, locale, labels, depositLabels, errors, children }: {
+export function PurchaseProvider({ balanceMicroUsd, locale, labels, depositLabels, bitcoinLabels, errors, children }: {
   /** µUSD como texto: el saldo cuando se renderizó la página. */
   balanceMicroUsd: string;
-  locale: string;
+  locale: Locale;
   labels: PurchaseLabels;
   depositLabels: DepositLabels;
+  bitcoinLabels: BitcoinLabels;
   errors: Record<ActionError, string>;
   children: React.ReactNode;
 }) {
@@ -68,6 +75,7 @@ export function PurchaseProvider({ balanceMicroUsd, locale, labels, depositLabel
                   locale={locale}
                   labels={labels}
                   depositLabels={depositLabels}
+                  bitcoinLabels={bitcoinLabels}
                   errors={errors}
                 />
               ) : null}
@@ -95,18 +103,20 @@ export function PurchaseButton({ label, variant = "default", disabled, className
   );
 }
 
-function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels, errors }: {
+function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels, bitcoinLabels, errors }: {
   request: PurchaseRequest;
   balanceMicroUsd: string;
-  locale: string;
+  locale: Locale;
   labels: PurchaseLabels;
   depositLabels: DepositLabels;
+  bitcoinLabels: BitcoinLabels;
   errors: Record<ActionError, string>;
 }) {
   const router = useRouter();
   const [price, setPrice] = useState(() => BigInt(request.priceMicroUsd));
   const [balance, setBalance] = useState(() => BigInt(balanceMicroUsd));
   const [deposit, setDeposit] = useState<DepositView | null>(null);
+  const [bitcoin, setBitcoin] = useState<BitcoinView | null>(null);
   const [error, setError] = useState<ActionError | null>(null);
   const [paid, setPaid] = useState<bigint | null>(null);
   const [pending, startTransition] = useTransition();
@@ -147,14 +157,17 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
   useEffect(() => {
     if (!needsDeposit) return;
     let cancelled = false;
-    depositStatusAction().then((status) => {
+    // USDC y Bitcoin a la vez: basta con que uno de los dos esté disponible.
+    const bitcoinStatus = bitcoinStatusAction().catch((): BitcoinResult => ({ ok: false, error: "error" }));
+    void Promise.all([depositStatusAction(), bitcoinStatus]).then(([status, btc]) => {
       if (cancelled) return;
-      if (!status.ok) {
+      if (!status.ok && !btc.ok) {
         setError(status.error);
         return;
       }
-      const current = BigInt(status.deposit.balanceMicroUsd);
-      setDeposit(status.deposit);
+      const current = BigInt(status.ok ? status.deposit.balanceMicroUsd : btc.ok ? btc.bitcoin.balanceMicroUsd : "0");
+      setDeposit(status.ok ? status.deposit : emptyDepositView(current.toString()));
+      setBitcoin(btc.ok ? btc.bitcoin : null);
       setBalance(current);
       // Solo se completa sola si de verdad hubo que esperar un depósito. Si el saldo ya alcanzaba (la
       // página tenía uno viejo), la persona confirma con el botón como siempre.
@@ -175,6 +188,11 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
   }, [completes, buy]);
 
   const onDeposit = useCallback((next: DepositView) => setBalance(BigInt(next.balanceMicroUsd)), []);
+  // El servidor ya compró el plan al confirmarse el pago en Bitcoin: no se vuelve a comprar aquí.
+  const onBitcoinPlan = useCallback(() => {
+    setPaid(price);
+    router.refresh();
+  }, [price, router]);
   const rows = [
     [labels.price, money(price)],
     [labels.balance, money(balance)],
@@ -212,13 +230,34 @@ function PurchaseBody({ request, balanceMicroUsd, locale, labels, depositLabels,
           {pending ? (waitedForDeposit ? labels.completing : labels.paying) : t(labels.pay, { amount: money(price) })}
         </Button>
       ) : deposit ? (
-        <>
-          <p>
-            {t(labels.depositFirst, { amount: usdcDecimal(missing) })}{" "}
-            <span className="text-muted-foreground">{labels.depositLater}</span>
-          </p>
-          <DepositPanel initial={deposit} locale={locale} labels={depositLabels} errorLabel={errors.error} needMicroUsd={missing} onUpdate={onDeposit} />
-        </>
+        <DepositPanel
+          initial={deposit}
+          locale={locale}
+          labels={depositLabels}
+          errorLabel={errors.error}
+          needMicroUsd={missing}
+          onUpdate={onDeposit}
+          usdcIntro={(
+            <p>
+              {t(labels.depositFirst, { amount: usdcDecimal(missing) })}{" "}
+              <span className="text-muted-foreground">{labels.depositLater}</span>
+            </p>
+          )}
+          bitcoin={bitcoin ? {
+            label: bitcoinLabels.tab,
+            active: bitcoin.order?.intent === "plan" && bitcoin.order.planId === request.planId && bitcoin.order.outcome === null,
+            content: (
+              <BitcoinPanel
+                initial={bitcoin}
+                locale={locale}
+                labels={bitcoinLabels}
+                purpose={{ kind: "plan", planId: request.planId, planName: request.planName, missingMicroUsd: missing }}
+                errors={errors}
+                onPlanDone={onBitcoinPlan}
+              />
+            ),
+          } : undefined}
+        />
       ) : error ? null : (
         <p className="flex items-center gap-2 py-8 text-muted-foreground" aria-live="polite"><Spinner aria-hidden />{labels.loading}</p>
       )}

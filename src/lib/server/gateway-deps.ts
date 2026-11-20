@@ -10,7 +10,7 @@ import { createMemoryRateLimiter } from "@/lib/rate-limit/memory";
 
 // Por instancia; Upstash sustituirá este limiter en el plan de deploy.
 const rateLimiter = createMemoryRateLimiter();
-// Por instancia, como el limiter: las reservas de los requests en curso de este proceso (ADR-0065).
+// Por instancia, como el limiter: las reservas de los requests en curso de este proceso (ADR-0066).
 const holds = createHoldBook();
 // Por instancia: cada una rota entre las cuentas de cada upstream y recuerda cuáles fallaron (docs/07).
 const accounts = createAccountRotation();

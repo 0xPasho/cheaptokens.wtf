@@ -1,7 +1,4 @@
-import { formatUsd } from "@/lib/format";
-import type { Locale } from "@/lib/i18n/config";
-import { type Dictionary, t } from "@/lib/i18n/dictionaries";
-import { MIN_DEPOSIT_MICRO_USD } from "@/lib/marketing";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { API_BASE_URL } from "@/lib/site";
 
 import { MarketingSection } from "./section";
@@ -26,7 +23,7 @@ const SIGN = { same: " ", removed: "-", added: "+" } as const;
  * 04 · Cambiarse, en vez del diagrama de flechas: el diff exacto, los tres pasos en una línea y con qué funciona.
  * El diff usa tonos neutros, no rojo y verde: en este sistema el verde es solo dinero (docs/13 › Color).
  */
-export function SwitchDiff({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function SwitchDiff({ dict }: { dict: Dictionary }) {
   const d = dict.home.switchTo;
   const tools = dict.home.uses.tools;
   return (
@@ -46,7 +43,7 @@ export function SwitchDiff({ locale, dict }: { locale: Locale; dict: Dictionary 
             {d.steps.map((step, index) => (
               <li key={step}>
                 <span aria-hidden>{index + 1}</span>
-                {t(step, { min: formatUsd(MIN_DEPOSIT_MICRO_USD, locale, "whole") })}
+                {step}
               </li>
             ))}
           </ol>

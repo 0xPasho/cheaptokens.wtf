@@ -13,7 +13,7 @@ interface Released {
 }
 
 /**
- * Reservas de los requests en curso, en memoria y por instancia (ADR-0065), igual que el rate limiter. Si el
+ * Reservas de los requests en curso, en memoria y por instancia (ADR-0066), igual que el rate limiter. Si el
  * proceso muere, sus requests en curso mueren con él: no quedan reservas huérfanas que liberar.
  *
  * Una reserva se libera después de que su cobro quedó en la base. Un request que leyó la base antes de ese cobro

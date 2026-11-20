@@ -13,7 +13,7 @@ import { getLiveCatalog } from "@/lib/catalog/live";
 import { formatCount, formatUsd } from "@/lib/format";
 import { t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
-import { MIN_DEPOSIT_MICRO_USD, PRICING_FAQ } from "@/lib/marketing";
+import { BITCOIN_QUOTE_MINUTES, MIN_BITCOIN_ORDER_MICRO_USD, MIN_DEPOSIT_MICRO_USD, PRICING_FAQ } from "@/lib/marketing";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [, dict] = await getLocaleAndDictionary();
@@ -52,6 +52,16 @@ export default async function PricingPage() {
           locale={locale}
           steps={d.paySteps.steps.map((step) => ({ title: step.title, body: t(step.body, { min: formatUsd(MIN_DEPOSIT_MICRO_USD, locale, "whole") }) }))}
         />
+        {/* Bitcoin no sigue los tres pasos del depósito: se cotiza un monto y el precio queda fijo (ADR-0065). */}
+        <div className="nr-mk-step nr-mk-step-wide">
+          <h3>{d.paySteps.bitcoin.title}</h3>
+          <p>
+            {t(d.paySteps.bitcoin.body, {
+              btcMin: formatUsd(MIN_BITCOIN_ORDER_MICRO_USD, locale, "whole"),
+              minutes: formatCount(BITCOIN_QUOTE_MINUTES, locale),
+            })}
+          </p>
+        </div>
       </MarketingSection>
       <MarketingSection
         id="billing-questions"

@@ -19,7 +19,7 @@ const DEFAULT_MESSAGES: Record<GatewayErrorCode, string> = {
   upstream_timeout: "The model timed out while processing the request.",
 };
 
-/** Queda algo, pero no alcanza para el costo máximo de este request (ADR-0065). */
+/** Queda algo, pero no alcanza para el costo máximo de este request (ADR-0066). */
 export const HOLD_MESSAGES = {
   usage_limit_reached: "The plan usage left does not cover this request. Lower max_tokens or the prompt size, wait for requests in progress to finish, or retry after the reset.",
   insufficient_credits: "Your credits do not cover this request. Lower max_tokens or the prompt size, wait for requests in progress to finish, or top up at https://cheapllm.wtf/dashboard/credits",

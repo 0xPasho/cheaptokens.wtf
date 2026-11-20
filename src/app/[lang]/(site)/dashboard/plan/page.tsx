@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ModelDetailPanel } from "@/components/catalog/model-detail-panel";
 import { ModelLogo } from "@/components/catalog/provider-logo";
 import { actionErrors } from "@/components/dashboard/action-errors";
+import { BitcoinPendingNotice } from "@/components/dashboard/bitcoin-pending-notice";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { PaymentsNotice } from "@/components/dashboard/payments-notice";
 import { OverflowForm } from "@/components/dashboard/plan-controls";
@@ -15,7 +16,7 @@ import { Price, PriceComparison } from "@/components/price";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PLAN_IDS, type PlanId, PLANS } from "@/lib/billing/plans";
+import { isPlanId, PLAN_IDS, type PlanId, PLANS } from "@/lib/billing/plans";
 import { planQuote } from "@/lib/billing/purchases";
 import { typicalRequestsIn, usageMultiplier } from "@/lib/billing/typical";
 import { getLiveCatalog } from "@/lib/catalog/live";
@@ -26,6 +27,8 @@ import { formatCount, formatDate, formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
+import { readBitcoinConfig } from "@/lib/payments/bitcoin/config";
+import { loadBitcoinPending } from "@/lib/payments/bitcoin/load";
 import { paymentsAvailable as cryptoPaymentsAvailable, readCryptoConfig } from "@/lib/payments/crypto/config";
 
 /** Modelos de ejemplo en cada plan: caro, referencia y barato. */
@@ -50,12 +53,13 @@ export default async function PlanPage() {
 
 async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { workspaceId, now } = await requireDashboard(locale, "/plan");
-  const account = await getAccount(getDb(), workspaceId, now);
+  const [account, bitcoinPending] = await Promise.all([getAccount(getDb(), workspaceId, now), loadBitcoinPending(getDb(), workspaceId)]);
   const d = dict.dashboard.plan;
   const errors = actionErrors(dict);
   const current = account.plan?.plan ?? null;
   const subscription = account.subscription;
   const crypto = readCryptoConfig();
+  const bitcoin = readBitcoinConfig();
   const active = current && subscription ? { planId: current.id, periodEnd: subscription.periodEnd.getTime() } : null;
   const catalog = (await getLiveCatalog()).filter((model) => model.status === "active");
   const samples = SAMPLE_MODELS.flatMap((id) => catalog.filter((model) => model.id === id));
@@ -77,10 +81,20 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       locale={locale}
       labels={dict.dashboard.purchase}
       depositLabels={dict.dashboard.deposit}
+      bitcoinLabels={dict.dashboard.bitcoin}
       errors={errors}
     >
       <div className="flex flex-col gap-8">
-        <PaymentsNotice available={cryptoPaymentsAvailable(crypto)} simulate={crypto.simulate} labels={dict.dashboard.payments} />
+        <PaymentsNotice
+          available={cryptoPaymentsAvailable(crypto) || bitcoin !== null}
+          simulate={crypto.simulate || bitcoin?.simulate === true}
+          labels={dict.dashboard.payments}
+        />
+        <BitcoinPendingNotice
+          pending={bitcoinPending}
+          planName={(id) => (isPlanId(id) ? planName(id) : null)}
+          labels={dict.dashboard.bitcoin}
+        />
 
         {current && subscription && account.plan ? (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]">
@@ -91,6 +105,7 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <span>{t(d.rateLimit, { count: formatCount(current.rateLimitRpm, locale) })}</span>
                   <PurchaseButton
                     planId={current.id}
+                    planName={planName(current.id)}
                     priceMicroUsd={current.priceMicroUsd.toString()}
                     label={d.extend}
                     variant="outline"
@@ -189,7 +204,7 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                     {isCurrent || !quote ? (
                       <Badge variant="secondary" className="h-9 w-full">{isCurrent ? d.yourPlan : d.downgradeLater}</Badge>
                     ) : (
-                      <PurchaseButton planId={id} priceMicroUsd={quote.amountMicroUsd.toString()} {...purchase} />
+                      <PurchaseButton planId={id} planName={planName(id)} priceMicroUsd={quote.amountMicroUsd.toString()} {...purchase} />
                     )}
                   </CardFooter>
                 </Card>

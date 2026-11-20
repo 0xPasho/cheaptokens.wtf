@@ -55,6 +55,10 @@ export const USAGE_TABLE_MODELS = [
 export const DEFAULT_RATE_LIMIT_RPM = 60;
 /** Depósito mínimo: el mismo `MIN_DEPOSIT_MICRO_USD` de los depósitos en USDC (ADR-0058). Lo comprueba una prueba. */
 export const MIN_DEPOSIT_MICRO_USD = 1_000_000;
+/** Compra mínima en Bitcoin: el mismo `MIN_BITCOIN_ORDER_MICRO_USD` de las cotizaciones (ADR-0065). Lo comprueba una prueba. */
+export const MIN_BITCOIN_ORDER_MICRO_USD = 10_000_000;
+/** Minutos que queda fijo el precio de una cotización en Bitcoin: el `QUOTE_WINDOW_MS` de las cotizaciones. Lo comprueba una prueba. */
+export const BITCOIN_QUOTE_MINUTES = 15;
 /** Tope mensual del excedente con el que empieza cada cuenta: el default de `workspaces.overflow_cap_micro_usd`. */
 export const DEFAULT_OVERFLOW_CAP_MICRO_USD = 25_000_000;
 /** El monto de ejemplo de la tarjeta de créditos: «10 US$ ≈ N requests». */
@@ -182,7 +186,7 @@ export const FAQ_TOPICS: readonly { id: FaqTopicId; items: readonly FaqId[] }[] 
   { id: "product", items: ["whatIs", "whyCheaper", "whoPicks", "freeTier", "whoRuns"] },
   { id: "billing", items: ["howCharged", "pricesChange", "failedRequest", "whereSpend"] },
   { id: "plans", items: ["whatPlan", "limitsInDollars", "limitsReset", "limitReached", "autoRenew", "changePlan"] },
-  { id: "payments", items: ["howPay", "howLong", "cards", "wrongToken", "refunds"] },
+  { id: "payments", items: ["howPay", "bitcoin", "howLong", "cards", "wrongToken", "refunds"] },
   { id: "api", items: ["compatible", "endpoints", "rateLimit", "keyLimits"] },
   { id: "privacy", items: ["prompts", "export", "signOut"] },
 ];

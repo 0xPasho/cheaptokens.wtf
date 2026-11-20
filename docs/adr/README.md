@@ -60,7 +60,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0046](./0046-catalogo-desde-la-lista-oficial.md) | Importar modelos, precios y rutas desde la lista oficial de InferHub | Aceptada | Usuario |
 | [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
 | [0048](./0048-modo-retro-konami.md) | El código Konami (↑↑↓↓←→←→BA Enter) activa el modo retro de toda la web | Aceptada | Usuario |
-| [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada (precios y límites cambiados por 0052; renovación y paquetes cambiados por 0058; admisión con reserva por 0065) | Usuario |
+| [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada (precios y límites cambiados por 0052; renovación y paquetes cambiados por 0058; admisión con reserva por 0066) | Usuario |
 | [0050](./0050-login-clerk-y-modo-desarrollo.md) | Login con Clerk cuando está configurado, y un modo de desarrollo solo en local | Aceptada (pantalla de acceso cambiada por 0063) | Usuario |
 | [0051](./0051-marca-cheapllm-wtf.md) | La marca es `cheapllm.wtf`, con la web en `cheapllm.wtf` y la API en `api.cheapllm.wtf` | Aceptada | Usuario |
 | [0052](./0052-precios-de-los-planes.md) | Plus, Pro y Max cuestan $9, $39 y $99 al mes, con la ventana al 14 % y la semana al 60 % del precio | Aceptada | Usuario + Default |
@@ -76,7 +76,8 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0062](./0062-lo-que-el-sitio-promete.md) | El sitio publica los límites de los planes y dice que el precio publicado es un máximo | Aceptada | Usuario + Default |
 | [0063](./0063-una-sola-ventana-de-acceso.md) | Una sola ventana para entrar o crear cuenta, con código por correo | Aceptada | Usuario + Default |
 | [0064](./0064-foco-de-teclado-visible.md) | El foco de teclado se ve en todo el sitio, con su propio token `--focus-ring` | Aceptada | Default |
-| [0065](./0065-reserva-por-request.md) | Cada request reserva su costo máximo antes de llamar al upstream; `max_tokens` se recorta a lo que alcanza | Aceptada | Usuario |
+| [0065](./0065-pagos-en-bitcoin.md) | También se cobra en Bitcoin on-chain: el servidor solo tiene una xpub, cada compra se cotiza con el precio fijo 15 minutos y un plan se compra solo al confirmarse | Aceptada | Usuario + Default |
+| [0066](./0066-reserva-por-request.md) | Cada request reserva su costo máximo antes de llamar al upstream; `max_tokens` se recorta a lo que alcanza | Aceptada | Usuario |
 
 ## Plantilla
 

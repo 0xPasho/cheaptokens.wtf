@@ -121,7 +121,7 @@ export function admit(input: AdmissionInput): Admission {
 }
 
 /**
- * Lo máximo que se le puede cobrar a un request sin absorber nada ni dejar el saldo negativo (ADR-0065): lo que
+ * Lo máximo que se le puede cobrar a un request sin absorber nada ni dejar el saldo negativo (ADR-0066): lo que
  * queda del plan, más el paquete y los créditos que la key puede usar. En el excedente, los créditos se acotan
  * también con lo que queda del tope del mes.
  */
@@ -138,7 +138,7 @@ export function admissionBudget(input: AdmissionInput): bigint {
 }
 
 /**
- * El request no cabe en lo que queda, aunque quede algo (ADR-0065). Mismo código que si no quedara nada. Con plan,
+ * El request no cabe en lo que queda, aunque quede algo (ADR-0066). Mismo código que si no quedara nada. Con plan,
  * vuelve a caber cuando se reinicia la primera ventana activa.
  */
 export function budgetShortfall(source: BillingSource, plan: PlanUsage | null, now: number): AdmissionFailure & { code: "usage_limit_reached" | "insufficient_credits" } {
@@ -166,7 +166,7 @@ export interface SplitInput {
 }
 
 /**
- * Después del request: reparte el costo plan → paquete → créditos. El request no se corta: desde ADR-0065 se
+ * Después del request: reparte el costo plan → paquete → créditos. El request no se corta: desde ADR-0066 se
  * admite solo si su costo máximo cabe en `admissionBudget` (descontadas las reservas en curso), así que lo que
  * queda para `absorbed` o para un saldo negativo es lo que el upstream cobre por encima de esa estimación.
  */

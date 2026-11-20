@@ -98,7 +98,7 @@ export const checkAccount: CheckAccount = (context, modelId) => {
 
 export const admitUsage: AdmitUsage = async (context, modelId, db, now, wantedMicroUsd) => {
   const { billingSource: source, plan, overflow } = context;
-  // El plan alcanza si cubre lo máximo que puede costar el request (ADR-0065): entonces sobran las dos queries.
+  // El plan alcanza si cubre lo máximo que puede costar el request (ADR-0066): entonces sobran las dos queries.
   const planCovers = source !== "prepaid_only" && plan !== null && planRemaining(plan, now) >= wantedMicroUsd;
   const needsPacks = !planCovers && prepaidRules(source, plan !== null, overflow).packs;
   const input = {

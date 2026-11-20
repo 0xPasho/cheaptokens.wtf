@@ -4,7 +4,7 @@
  * admite con lo que le queda del tope mensual. El cobro no cambia: `splitCharge` ya acota los créditos del
  * excedente con el tope, así que el saldo del workspace baja de cero y eso es lo que debe el socio.
  *
- * La admisión solo la llama cuando el plan no cubre lo máximo que puede costar el request (ADR-0065). Consulta
+ * La admisión solo la llama cuando el plan no cubre lo máximo que puede costar el request (ADR-0066). Consulta
  * la base cuando además el excedente con créditos está prendido, queda tope y el saldo no es positivo. En
  * cualquier otro caso devuelve el saldo tal cual.
  */

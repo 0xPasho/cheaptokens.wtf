@@ -1,5 +1,5 @@
 /**
- * Lo máximo que puede costar un request antes de mandarlo (ADR-0065): el prompt estimado hacia arriba y la
+ * Lo máximo que puede costar un request antes de mandarlo (ADR-0066): el prompt estimado hacia arriba y la
  * salida máxima, a los precios más altos con que se le puede cobrar. Funciones puras: las usa el handler para
  * reservar ese monto mientras el request está en curso.
  */

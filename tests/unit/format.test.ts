@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCount, formatDate, formatDateTime, formatDiscount, formatDuration, formatMilliseconds, formatPercent, formatTokens, formatUsd, totalKind } from "@/lib/format";
+import { formatCount, formatCountdown, formatDate, formatDateTime, formatDiscount, formatDuration, formatMilliseconds, formatPercent, formatTokens, formatUsd, totalKind } from "@/lib/format";
 
 // Intl usa espacios no separables (U+00A0, U+202F). Se normalizan para comparar.
 const plain = (text: string) => text.replace(/[  ]/g, " ");
@@ -79,6 +79,12 @@ describe("formatos del dashboard", () => {
     expect(formatDuration(3 * 86_400_000 + 4 * 3_600_000, "es")).toBe("3d 4h");
     expect(formatDuration(30_000, "en")).toBe("1m");
     expect(formatMilliseconds(1234, "en")).toBe("1,234 ms");
+  });
+
+  it("cuenta regresiva de una cotización: minutos y segundos, hacia arriba", () => {
+    expect(formatCountdown(14 * 60_000 + 32_000, "en")).toBe("14:32");
+    expect(formatCountdown(6_100, "es")).toBe("0:07");
+    expect(formatCountdown(-5_000, "en")).toBe("0:00");
   });
 
   it("fecha con hora en UTC para que servidor y navegador coincidan", () => {

@@ -29,7 +29,7 @@ export default async function HomePage() {
       <HomeHero models={models} locale={locale} dict={dict} />
       <PriceTable models={models} locale={locale} dict={dict} />
       <WhyCheaper dict={dict} />
-      <SwitchDiff locale={locale} dict={dict} />
+      <SwitchDiff dict={dict} />
       <MarketingSection
         id="pricing"
         eyebrow={pricing.eyebrow}
