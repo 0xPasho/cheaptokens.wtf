@@ -1,5 +1,5 @@
 /**
- * Direcciones de recibir de una cuenta BIP84 a partir de su llave pública extendida (ADR-0063). El servidor
+ * Direcciones de recibir de una cuenta BIP84 a partir de su llave pública extendida (ADR-0065). El servidor
  * solo conoce la xpub: puede dar direcciones nuevas, pero no mover lo que llega a ellas.
  *
  * La derivación no se cambia nunca: `m/84'/<moneda>'/<cuenta>'/0/<índice>`, P2WPKH (`bc1q…`). Cambiarla

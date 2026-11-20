@@ -46,7 +46,7 @@ function parseDollars(text: string): bigint | null {
 }
 
 /**
- * Pagar con Bitcoin on-chain (ADR-0063): elegir cuánto, cotizar con el precio fijo 15 minutos, enviar y ver
+ * Pagar con Bitcoin on-chain (ADR-0065): elegir cuánto, cotizar con el precio fijo 15 minutos, enviar y ver
  * cómo se confirma. Pregunta sola por el pago mientras la pestaña está a la vista. Con un plan, el servidor lo
  * compra al confirmarse; aquí solo se avisa con `onPlanDone`.
  */

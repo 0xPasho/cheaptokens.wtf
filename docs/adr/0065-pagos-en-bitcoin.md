@@ -1,4 +1,4 @@
-# ADR-0063: Se cobra también en Bitcoin on-chain, con cotización de 15 minutos y una xpub de solo lectura
+# ADR-0065: Se cobra también en Bitcoin on-chain, con cotización de 15 minutos y una xpub de solo lectura
 
 - **Estado:** Aceptada. Suma un medio de pago a [ADR-0058](./0058-deposito-por-cuenta-y-saldo.md), que sigue en pie para USDC. Cambia una regla de ADR-0058 solo para Bitcoin: un pago en Bitcoin puede completar la compra de un plan aunque se haya cerrado el diálogo, porque la orden guarda qué se compró. Retoma lo que [ADR-0056](./0056-pagos-en-usdc.md) dejó para después.
 - **Fecha:** 2026-11-17

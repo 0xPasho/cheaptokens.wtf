@@ -37,7 +37,7 @@ const ZERO = BigInt(0);
 
 /**
  * El diálogo de compra de un plan (ADR-0058): se paga con el saldo y, si no alcanza, muestra el depósito y
- * completa la compra cuando llega. Con Bitcoin (ADR-0063) la compra la completa el servidor al confirmarse,
+ * completa la compra cuando llega. Con Bitcoin (ADR-0065) la compra la completa el servidor al confirmarse,
  * aunque se cierre el diálogo. Vive aquí arriba y no en cada botón: al comprar un plan, su botón desaparece
  * de la página y se llevaría el diálogo con la confirmación.
  */

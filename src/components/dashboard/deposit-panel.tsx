@@ -32,7 +32,7 @@ const FAST_FOR_MS = 10 * 60 * 1000;
 const SIMULATED_MICRO_USD = BigInt(25_000_000);
 const ZERO = BigInt(0);
 
-/** La pestaña de Bitcoin (ADR-0063): la arma quien usa el panel, con su propia revisión. */
+/** La pestaña de Bitcoin (ADR-0065): la arma quien usa el panel, con su propia revisión. */
 export interface BitcoinTab {
   label: string;
   content: React.ReactNode;
@@ -48,7 +48,7 @@ export function emptyDepositView(balanceMicroUsd: string): DepositView {
 /**
  * El depósito en USDC (ADR-0058): la dirección propia del workspace en cada red, con su QR, y lo que va
  * llegando. Pregunta sola por el depósito mientras la pestaña está a la vista; lo que se acredita aparece
- * aquí y refresca la página. Con `bitcoin` suma la pestaña de Bitcoin (ADR-0063).
+ * aquí y refresca la página. Con `bitcoin` suma la pestaña de Bitcoin (ADR-0065).
  */
 export function DepositPanel({ initial, locale, labels, needMicroUsd, onUpdate, bitcoin, usdcIntro, className }: {
   initial: DepositView;

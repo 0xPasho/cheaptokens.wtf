@@ -1,5 +1,5 @@
 /**
- * Montos y links de Bitcoin, sin nada del servidor: los usan las cotizaciones y el diálogo de pago (ADR-0063).
+ * Montos y links de Bitcoin, sin nada del servidor: los usan las cotizaciones y el diálogo de pago (ADR-0065).
  * Un BTC son 100 millones de sats. Los precios viajan en µUSD por BTC: 1 BTC = $94,580 es `94_580_000_000`.
  */
 

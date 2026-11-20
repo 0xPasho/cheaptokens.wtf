@@ -9,7 +9,7 @@ import { hasInternalSecret } from "@/lib/server/internal-auth";
 export const maxDuration = 60;
 
 /**
- * Barre los depósitos en USDC de Solana y Base (ADR-0058) y revisa los pagos en Bitcoin (ADR-0063), y
+ * Barre los depósitos en USDC de Solana y Base (ADR-0058) y revisa los pagos en Bitcoin (ADR-0065), y
  * acredita lo que ya se confirmó. La llama el cron del servidor cada minuto (deploy/cron.sh); el diálogo de
  * pago abierto revisa por su cuenta las direcciones de su workspace, así que el cron cubre a quien paga sin
  * tener el dashboard abierto.

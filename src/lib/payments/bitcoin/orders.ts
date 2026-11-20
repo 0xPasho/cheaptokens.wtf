@@ -1,5 +1,5 @@
 /**
- * Pagos en Bitcoin on-chain (ADR-0063). Cada workspace tiene una dirección vigente que sale de la xpub; una
+ * Pagos en Bitcoin on-chain (ADR-0065). Cada workspace tiene una dirección vigente que sale de la xpub; una
  * cotización fija el precio 15 minutos. Lo que llega a una dirección nuestra:
  *
  * 1. se ve en la red y su precio queda fijo: el cotizado si llegó a tiempo, el del momento si no;
@@ -426,7 +426,7 @@ async function fulfillOrder(tx: Db, orderId: string, seenAt: number, now: number
       amountMicroUsd: missing,
       paymentProvider: "bitcoin",
       externalId: `bitcoin-tolerance:${order.id}`,
-      note: "Bitcoin: difference absorbed so the plan goes through (ADR-0063)",
+      note: "Bitcoin: difference absorbed so the plan goes through (ADR-0065)",
     });
     await tx.update(workspaces).set({ balanceMicroUsd: sql`${workspaces.balanceMicroUsd} + ${missing}` })
       .where(eq(workspaces.id, order.workspaceId));

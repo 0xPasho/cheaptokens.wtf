@@ -1,5 +1,5 @@
 /**
- * Lo que la detección de pagos necesita de la cadena (ADR-0063), leído de una API Esplora: mempool.space por
+ * Lo que la detección de pagos necesita de la cadena (ADR-0065), leído de una API Esplora: mempool.space por
  * default, o una instancia propia. Las pruebas usan una cadena falsa con la misma forma.
  */
 

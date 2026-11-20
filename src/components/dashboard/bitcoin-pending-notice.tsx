@@ -5,7 +5,7 @@ import { t } from "@/lib/i18n/dictionaries";
 import { btcDecimal } from "@/lib/payments/bitcoin/amounts";
 
 /**
- * Un pago en Bitcoin visto en la red que todavía no se confirma (ADR-0063). Va arriba de Plan y Créditos: la
+ * Un pago en Bitcoin visto en la red que todavía no se confirma (ADR-0065). Va arriba de Plan y Créditos: la
  * confirmación tarda de 10 a 60 minutos y para entonces el diálogo de pago suele estar cerrado.
  */
 export function BitcoinPendingNotice({ pending, planName, labels }: {

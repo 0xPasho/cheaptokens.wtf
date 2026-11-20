@@ -45,7 +45,7 @@ Solicitar cuenta en Polar y en Paddle con la descripción exacta del negocio y p
 ### 3. Validación legal y fiscal en México
 
 - **Abogado:** términos de servicio, política de uso aceptable trasladada y aviso de privacidad (LFPDPPP, más GDPR si hay usuarios en la UE) ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)).
-- **Contador:** cómo se registran los ingresos en USDC y en Bitcoin sin MoR ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md), [ADR-0063](./adr/0063-pagos-en-bitcoin.md)), a qué tipo de cambio se reconoce un pago en BTC que se queda en BTC y el IVA de cada cliente; si vuelve un MoR, la facturación a él (probable exportación de servicios); IVA por los servicios que compramos a upstreams extranjeros, y qué pasa con los clientes mexicanos que pidan CFDI.
+- **Contador:** cómo se registran los ingresos en USDC y en Bitcoin sin MoR ([ADR-0058](./adr/0058-deposito-por-cuenta-y-saldo.md), [ADR-0065](./adr/0065-pagos-en-bitcoin.md)), a qué tipo de cambio se reconoce un pago en BTC que se queda en BTC y el IVA de cada cliente; si vuelve un MoR, la facturación a él (probable exportación de servicios); IVA por los servicios que compramos a upstreams extranjeros, y qué pasa con los clientes mexicanos que pidan CFDI.
 
 *Sin default: lo tienen que revisar ellos.*
 

@@ -26,7 +26,7 @@ function units(value: bigint, decimals: number): string {
 
 /**
  * Estado de los pagos en USDC (ADR-0058): qué redes están activas, qué wallets hay que fondear para las
- * comisiones y si hay barridos sin resolver. Y de Bitcoin (ADR-0063): la primera dirección de la xpub, para
+ * comisiones y si hay barridos sin resolver. Y de Bitcoin (ADR-0065): la primera dirección de la xpub, para
  * compararla con la wallet, y cuántas direcciones sin usar hay, para el gap limit.
  *
  *   pnpm payments:status              el estado

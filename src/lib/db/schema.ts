@@ -40,7 +40,7 @@ export const subscriptionStatus = pgEnum("subscription_status", ["active", "past
 export const paymentKind = pgEnum("payment_kind", ["topup", "subscription", "pack"]);
 /** Un barrido se acredita solo cuando su transacción queda confirmada en la cadena (ADR-0058). */
 export const sweepStatus = pgEnum("sweep_status", ["pending", "confirmed", "failed"]);
-/** Para qué es una cotización en Bitcoin (ADR-0063): créditos o un plan. */
+/** Para qué es una cotización en Bitcoin (ADR-0065): créditos o un plan. */
 export const bitcoinOrderIntent = pgEnum("bitcoin_order_intent", ["topup", "plan"]);
 /** `seen`: está en la red y su precio ya quedó fijo. `credited`: confirmado y acreditado. `dropped`: desapareció sin confirmarse. */
 export const bitcoinReceiptStatus = pgEnum("bitcoin_receipt_status", ["seen", "credited", "dropped"]);
@@ -309,7 +309,7 @@ export const depositScans = pgTable("deposit_scans", {
 });
 
 /**
- * Una dirección de Bitcoin de un workspace (ADR-0063): la de recibir número `derivation_index` de la xpub. Sale
+ * Una dirección de Bitcoin de un workspace (ADR-0065): la de recibir número `derivation_index` de la xpub. Sale
  * de la xpub, así que aquí no hay ningún secreto. Cada workspace tiene a lo más una sin usar: cuando recibe un
  * pago, la siguiente cotización usa otra. Las usadas se siguen revisando y lo que llega se acredita igual.
  */
@@ -339,7 +339,7 @@ export const bitcoinAddresses = pgTable("bitcoin_addresses", {
 ]);
 
 /**
- * Una cotización en Bitcoin (ADR-0063): cuánto en USD, cuántos sats, a qué precio y para qué. El precio vale
+ * Una cotización en Bitcoin (ADR-0065): cuánto en USD, cuántos sats, a qué precio y para qué. El precio vale
  * hasta `expires_at`. Una cotización nueva del workspace reemplaza a la anterior.
  */
 export const bitcoinOrders = pgTable("bitcoin_orders", {
@@ -369,7 +369,7 @@ export const bitcoinOrders = pgTable("bitcoin_orders", {
 ]);
 
 /**
- * Una salida de una transacción que paga una dirección nuestra (ADR-0063). El precio queda fijo al verla; se
+ * Una salida de una transacción que paga una dirección nuestra (ADR-0065). El precio queda fijo al verla; se
  * acredita una sola vez, cuando tiene las confirmaciones. `bitcoin:<txid>:<vout>` es el `external_id` del pago.
  */
 export const bitcoinReceipts = pgTable("bitcoin_receipts", {

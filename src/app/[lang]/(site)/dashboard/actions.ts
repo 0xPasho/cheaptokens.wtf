@@ -168,7 +168,7 @@ async function withBitcoin(workspaceId: string, work: (deps: BitcoinDeps, now: n
 }
 
 /**
- * El pago en Bitcoin del workspace (ADR-0063): su dirección, la cotización vigente y lo que va en camino.
+ * El pago en Bitcoin del workspace (ADR-0065): su dirección, la cotización vigente y lo que va en camino.
  * Antes lee sus direcciones en la cadena y acredita lo confirmado; el diálogo la llama cada pocos segundos.
  */
 export async function bitcoinStatusAction(): Promise<BitcoinResult> {

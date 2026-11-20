@@ -1,5 +1,5 @@
 /**
- * Pagos en Bitcoin on-chain (ADR-0063). El servidor solo tiene la xpub de una cuenta: da una dirección por
+ * Pagos en Bitcoin on-chain (ADR-0065). El servidor solo tiene la xpub de una cuenta: da una dirección por
  * workspace, que cambia cuando recibe un pago, y lo que llega ya está en la wallet del dueño.
  */
 import { isLocalDevelopment } from "@/lib/auth/mode";
@@ -26,7 +26,7 @@ export const QUOTE_GRACE_MS = 2 * 60 * 1000;
 /** Compra mínima y máxima de créditos en una cotización. */
 export const MIN_BITCOIN_ORDER_MICRO_USD = BigInt(10_000_000);
 export const MAX_BITCOIN_ORDER_MICRO_USD = BigInt(10_000_000_000);
-/** Lo que se absorbe para que entre un plan: 2 % de su precio (ADR-0063). */
+/** Lo que se absorbe para que entre un plan: 2 % de su precio (ADR-0065). */
 export const PLAN_TOLERANCE_BPS = BigInt(200);
 
 const ESPLORA_DEFAULTS: Record<BitcoinNetworkId, string> = {

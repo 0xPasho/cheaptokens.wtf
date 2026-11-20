@@ -1,4 +1,4 @@
-/** Lo de Bitcoin que las páginas del dashboard cargan en el servidor (ADR-0063). Sin leer la cadena. */
+/** Lo de Bitcoin que las páginas del dashboard cargan en el servidor (ADR-0065). Sin leer la cadena. */
 import type { Db } from "@/lib/db/types";
 
 import { readBitcoinConfig } from "./config";

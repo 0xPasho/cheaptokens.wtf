@@ -283,7 +283,7 @@ Quién está barriendo cada red: una fila por red con `leased_until`. Un solo pr
 
 ## `bitcoin_addresses`
 
-Una dirección de Bitcoin de un workspace ([ADR-0063](./adr/0063-pagos-en-bitcoin.md)): la de recibir número `derivation_index` de `CRYPTO_BITCOIN_XPUB`. No guarda ningún secreto.
+Una dirección de Bitcoin de un workspace ([ADR-0065](./adr/0065-pagos-en-bitcoin.md)): la de recibir número `derivation_index` de `CRYPTO_BITCOIN_XPUB`. No guarda ningún secreto.
 
 | Columna | Tipo | Notas |
 |---|---|---|

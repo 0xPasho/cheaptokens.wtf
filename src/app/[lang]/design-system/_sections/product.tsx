@@ -513,7 +513,7 @@ function BitcoinPattern() {
   return (
     <Section
       title="Pago en Bitcoin"
-      description="BitcoinQuote es la cotización: QR con el monto (BIP21), el monto exacto, la dirección y cuánto le queda al precio fijo. BitcoinStatusLine cuenta qué pasa con el pago: esperando, visto en la red, acreditado o un aviso (ADR-0063)."
+      description="BitcoinQuote es la cotización: QR con el monto (BIP21), el monto exacto, la dirección y cuánto le queda al precio fijo. BitcoinStatusLine cuenta qué pasa con el pago: esperando, visto en la red, acreditado o un aviso (ADR-0065)."
     >
       <div className="flex max-w-2xl flex-col gap-4 text-sm">
         <BitcoinQuote

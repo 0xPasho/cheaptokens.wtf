@@ -1,5 +1,5 @@
 /**
- * El precio de BTC en USD para cotizar y acreditar (ADR-0063): la mediana de Coinbase, Kraken y Bitstamp.
+ * El precio de BTC en USD para cotizar y acreditar (ADR-0065): la mediana de Coinbase, Kraken y Bitstamp.
  * Hacen falta al menos dos fuentes que no difieran más de 1 %; si no, no se cotiza. Sin margen encima.
  */
 

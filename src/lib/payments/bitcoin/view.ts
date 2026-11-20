@@ -1,5 +1,5 @@
 /**
- * Lo que el pago en Bitcoin necesita en el cliente (ADR-0063): sin bigint y sin la xpub. El cliente solo
+ * Lo que el pago en Bitcoin necesita en el cliente (ADR-0065): sin bigint y sin la xpub. El cliente solo
  * importa los tipos; los links salen de `amounts.ts`, que no trae nada del servidor.
  */
 import { bitcoinTxUrl, isBitcoinTestNetwork, MAX_BITCOIN_ORDER_MICRO_USD, MIN_BITCOIN_ORDER_MICRO_USD, QUOTE_WINDOW_MS } from "./config";

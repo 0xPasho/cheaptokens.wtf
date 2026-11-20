@@ -7,7 +7,7 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 1. **Plan** con un límite cada 5 horas y otro cada semana. Se paga por 30 días.
 2. **Créditos:** saldo prepagado en USD, para cualquier modelo. Cada request los descuenta.
 
-- **Lo que entra de fuera son depósitos en USDC y pagos en Bitcoin** ([ADR-0063](./adr/0063-pagos-en-bitcoin.md)). Los dos se vuelven saldo; el plan se compra con ese saldo.
+- **Lo que entra de fuera son depósitos en USDC y pagos en Bitcoin** ([ADR-0065](./adr/0065-pagos-en-bitcoin.md)). Los dos se vuelven saldo; el plan se compra con ese saldo.
 - **Todo el dinero se guarda como enteros en µUSD** (1 USD = 1,000,000 µUSD) ([ADR-0007](./adr/0007-dinero-en-micro-dolares.md)). Nunca se usan floats para dinero.
 - **No hay créditos gratis** al registrarse ([ADR-0018](./adr/0018-sin-creditos-gratis.md)).
 - **No hay pospago.**
@@ -50,7 +50,7 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 
 ## Pagos en Bitcoin
 
-([ADR-0063](./adr/0063-pagos-en-bitcoin.md). Solo on-chain; Lightning queda para una segunda fase.)
+([ADR-0065](./adr/0065-pagos-en-bitcoin.md). Solo on-chain; Lightning queda para una segunda fase.)
 
 - **El servidor solo tiene la xpub de una cuenta BIP84** (`CRYPTO_BITCOIN_XPUB`). Las direcciones salen de ahí y lo que llega ya está en la wallet del dueño: no hay barrido, ni wallet de comisiones, ni llaves en el servidor.
 - **Cada workspace tiene una dirección vigente, y cambia cuando recibe un pago.** Las anteriores siguen funcionando y se acreditan al mismo workspace.
