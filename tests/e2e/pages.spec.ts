@@ -1,10 +1,12 @@
+import { PLANS } from "../../src/lib/billing/plans";
+import { typicalRequestsIn } from "../../src/lib/billing/typical";
 import { getCatalog, requestCost } from "../../src/lib/catalog/queries";
-import { formatUsd } from "../../src/lib/format";
+import { formatCount, formatUsd } from "../../src/lib/format";
 import { expect, type Page, test } from "@playwright/test";
 
 import { axeScan, type Theme, THEMES } from "./helpers";
 
-/** Landing, catálogo, detalle de modelo (plan en docs/14) y docs (docs/02 › Docs). */
+/** Landing (ADR-0060), catálogo, detalle de modelo (plan en docs/14), precios, preguntas (ADR-0061), docs (docs/02 › Docs) y acceso (ADR-0063). */
 
 const LOCALES = ["en", "es"] as const;
 const PAGES = [
@@ -12,6 +14,11 @@ const PAGES = [
   { name: "modelos", path: "/models" },
   { name: "detalle", path: "/models/anthropic/claude-sonnet-4.6" },
   { name: "docs", path: "/docs" },
+  { name: "precios", path: "/pricing" },
+  { name: "preguntas", path: "/faq" },
+  // La ventana de acceso, en el modo de desarrollo con el que corre el servidor de pruebas (ADR-0063).
+  { name: "entrar", path: "/sign-in" },
+  { name: "crear-cuenta", path: "/sign-up" },
 ] as const;
 
 async function open(page: Page, url: string, theme: Theme = "light") {
@@ -66,6 +73,108 @@ test.describe("idioma", () => {
     // La cookie gana sobre Accept-Language (es-MX en la config).
     await page.goto("/");
     await expect(page).toHaveURL(/\/en$/);
+  });
+});
+
+test.describe("landing en anchos difíciles", () => {
+  for (const width of [320, 880, 1000]) {
+    test(`a ${width} px nada se sale: ni los precios en español ni la cabecera`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await open(page, "/es");
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+      // Los descuentos se quedan dentro de su tarjeta.
+      const escaped = await page.locator(".nr-mk-price-tile").evaluateAll((tiles) => tiles.filter((tile) => {
+        const badge = tile.querySelector(".nr-mk-price-row > :last-child");
+        return badge ? badge.getBoundingClientRect().right > tile.getBoundingClientRect().right : false;
+      }).length);
+      expect(escaped).toBe(0);
+      if (width > 860) {
+        // «Iniciar sesión» no se parte en dos líneas.
+        const account = (await page.locator(".nr-account-link").boundingBox())!;
+        expect(account.height).toBeLessThan(40);
+      }
+    });
+  }
+});
+
+test.describe("landing", () => {
+  test("el vistazo cambia de grupo y lleva al catálogo con el filtro puesto", async ({ page }) => {
+    await open(page, "/es");
+    const peek = page.locator("#models");
+    const coding = getCatalog().filter((model) => model.allTags.includes("coding")).length;
+    await peek.getByRole("button", { name: /^Código/ }).click();
+    await expect(peek.getByRole("link", { name: `Ver los ${coding} de Código` })).toHaveAttribute("href", "/es/models?tags=coding");
+    await expect(peek.locator("article")).toHaveCount(Math.min(4, coding));
+
+    await peek.getByRole("button", { name: "Por autor" }).click();
+    await peek.getByRole("button", { name: /^Anthropic/ }).click();
+    const anthropic = getCatalog().filter((model) => model.author === "anthropic").length;
+    await peek.getByRole("link", { name: `Ver los ${anthropic} de Anthropic` }).click();
+    await expect(page).toHaveURL(/\/es\/models\?author=anthropic$/);
+    await expect(page.getByRole("region", { name: "Modelos" }).locator("article")).toHaveCount(anthropic);
+  });
+
+  test("el selector de modelo recalcula las requests típicas de los planes", async ({ page }) => {
+    await open(page, "/es");
+    const plus = page.locator("#pricing").getByRole("article").filter({ has: page.getByRole("heading", { name: "Plus" }) });
+    const fits = (id: string) => formatCount(typicalRequestsIn(PLANS.plus.fiveHourLimitMicroUsd, getCatalog().find((model) => model.id === id)!), "es");
+    await expect(plus).toContainText(`≈ ${fits("anthropic/claude-sonnet-5.5")} requests`);
+    await page.getByRole("combobox", { name: "Calcula las requests con" }).click();
+    await page.getByRole("option", { name: "Claude Opus 5.5" }).click();
+    await expect(plus).toContainText(`≈ ${fits("anthropic/claude-opus-5.5")} requests`);
+    await expect(plus).toContainText("con Claude Opus 5.5");
+  });
+
+  test("Precios va en la cabecera y Preguntas frecuentes en el footer", async ({ page }) => {
+    await open(page, "/es");
+    await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Precios" }).click();
+    await expect(page).toHaveURL(/\/es\/pricing$/);
+    await expect(page).toHaveTitle("Precios · cheapllm.wtf");
+    await page.getByRole("contentinfo").getByRole("link", { name: "Preguntas frecuentes" }).click();
+    await expect(page).toHaveURL(/\/es\/faq$/);
+    await page.getByRole("button", { name: "¿Qué incluye un plan?" }).click();
+    await expect(page.getByText(`Plus cuesta ${formatUsd(Number(PLANS.plus.priceMicroUsd), "es", "whole")}`)).toBeVisible();
+  });
+});
+
+test.describe("foco de teclado (ADR-0064)", () => {
+  /** El control enfocado, o la tarjeta que su link cubre entera, lleva un contorno de al menos 2 px. */
+  const focusIsVisible = (page: Page) => page.evaluate(() => {
+    const element = document.activeElement as HTMLElement;
+    const ringed = (el: Element | null) => {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      return style.outlineStyle !== "none" && parseFloat(style.outlineWidth) >= 2;
+    };
+    // Los campos de texto no llevan contorno: la búsqueda de la cabecera se ensancha al enfocarla.
+    if (element.tagName === "INPUT") return true;
+    return ringed(element) || ringed(element.closest(".nr-model-card, .nr-mk-price-tile"));
+  });
+
+  for (const path of ["/es", "/es/pricing", "/en/models"]) {
+    test(`${path}: cada parada de Tab muestra dónde está el foco`, async ({ page }) => {
+      await open(page, path);
+      const hidden: string[] = [];
+      for (let stop = 0; stop < 45; stop++) {
+        await page.keyboard.press("Tab");
+        const name = await page.evaluate(() => (document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent || "").trim().slice(0, 40));
+        if (!(await focusIsVisible(page))) hidden.push(name);
+      }
+      expect(hidden).toEqual([]);
+    });
+  }
+
+  test("«Saltar al contenido» es la primera parada, aparece al enfocarla y lleva al contenido", async ({ page }) => {
+    await open(page, "/es");
+    await page.keyboard.press("Tab");
+    const skip = page.getByRole("link", { name: "Saltar al contenido" });
+    await expect(skip).toBeFocused();
+    const box = (await skip.boundingBox())!;
+    expect(box.width).toBeGreaterThan(100);
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/#main-content$/);
   });
 });
 

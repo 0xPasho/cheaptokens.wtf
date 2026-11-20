@@ -10,6 +10,7 @@ import SearchIcon from "kubai-icons-react/icons/search";
 import TriangleAlertIcon from "kubai-icons-react/icons/triangle-alert";
 import CircleAlertIcon from "kubai-icons-react/icons/circle-alert";
 
+import { AuthWindowView } from "@/components/auth/auth-window";
 import { CopyButton } from "@/components/copy-button";
 import { DiscountBadge } from "@/components/discount-badge";
 import { ModelId } from "@/components/model-id";
@@ -83,7 +84,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MODEL_TAGS } from "@/lib/catalog/tags";
 import { formatCount, formatDate, formatTokens, formatUsd } from "@/lib/format";
 
-import { RevokeKeyDemo } from "../_components/demos";
+import { AuthWindowDemo, RevokeKeyDemo } from "../_components/demos";
 import { Group, Section } from "../_components/section";
 import {
   LOCALE,
@@ -554,6 +555,46 @@ function DashboardChromePattern() {
   );
 }
 
+/** Los estados de la ventana de acceso, uno al lado del otro. */
+function AccessPattern() {
+  const dict = getDictionary(LOCALE);
+  const labels = dict.auth;
+  const base = { locale: LOCALE, labels, titleAs: "h4", view: "sign-in", identifier: "", code: "" } as const;
+  const frames = [
+    { title: "1 · Iniciar sesión", note: "La entrada por defecto. Un solo campo: el correo decide si entras o si se crea la cuenta.", node: <AuthWindowView {...base} step="email" /> },
+    { title: "2 · Crear cuenta", note: "El link de abajo solo cambia el título, la descripción y el propio link. El formulario es el mismo.", node: <AuthWindowView {...base} view="sign-up" step="email" /> },
+    { title: "3 · Código", note: "Se escribe o se pega. Al sexto dígito se envía solo. Reenviar se habilita a los 30 segundos.", node: <AuthWindowView {...base} step="code" identifier="ana@ejemplo.com" code="482" resendSeconds={24} /> },
+    { title: "4 · Código incorrecto", note: "El error dice cómo arreglarlo. Los seis dígitos quedan seleccionados: escribir encima los reemplaza.", node: <AuthWindowView {...base} step="code" identifier="ana@ejemplo.com" code="381920" codeMessage={{ tone: "error", text: labels.code.wrong }} /> },
+    { title: "5 · Listo, cuenta nueva", note: "Solo aquí se distingue si la cuenta era nueva o ya existía. Después, al dashboard.", node: <AuthWindowView {...base} step="done" identifier="luis@ejemplo.com" outcome="new" /> },
+  ];
+  return (
+    <Section
+      title="Ventana de acceso"
+      description="AuthWindow es la única ventana para entrar o crear cuenta: correo, código de seis dígitos y listo. /sign-in y /sign-up la abren en un modo u otro, y el link de abajo solo cambia el texto. No armes otro formulario de acceso: si cambia el flujo, cambia aquí. Ver ADR-0063."
+    >
+      <div className="flex flex-col gap-3">
+        <p className="max-w-prose text-sm text-pretty text-muted-foreground">
+          Pruébala: <code className="font-mono text-xs">ana@ejemplo.com</code> ya tiene cuenta y cualquier otro correo crea una. Cualquier código de seis dígitos entra; <code className="font-mono text-xs">000000</code> es el incorrecto.
+        </p>
+        <div className="rounded-3xl border p-6 sm:p-9">
+          <AuthWindowDemo locale={LOCALE} labels={labels} />
+        </div>
+      </div>
+      <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr))]">
+        {frames.map((frame) => (
+          <figure key={frame.title} className="flex flex-col gap-3">
+            <div className="flex flex-1 items-start justify-center rounded-3xl border px-5 pt-9 pb-7">{frame.node}</div>
+            <figcaption className="text-sm text-pretty text-muted-foreground">
+              <strong className="block font-medium text-foreground">{frame.title}</strong>
+              {frame.note}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 export function ProductPatterns() {
   return (
     <Group
@@ -577,6 +618,7 @@ export function ProductPatterns() {
       <DashboardPattern />
       <PlanLimitsPattern />
       <DashboardChromePattern />
+      <AccessPattern />
       <FeedbackPattern />
       <ApiKeyPatterns />
       <TopUpPattern />

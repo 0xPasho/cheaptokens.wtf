@@ -1,9 +1,21 @@
 import { CopyButton } from "@/components/copy-button";
 import { cn } from "@/lib/utils";
 
-export function HighlightedCode({ code }: { code: string }) {
+export function HighlightedCode({ code, highlight }: { code: string; highlight?: readonly string[] }) {
+  // Con `highlight`, cada línea va en su bloque y las que contienen alguno de esos textos se resaltan.
+  if (highlight?.length) {
+    return <code>{code.split("\n").map((line, index) => (
+      <span key={index} className={cn("nr-code-line", highlight.some((text) => line.includes(text)) && "nr-code-line-highlight")}>
+        {line ? <Tokens code={line} /> : " "}
+      </span>
+    ))}</code>;
+  }
+  return <code><Tokens code={code} /></code>;
+}
+
+function Tokens({ code }: { code: string }) {
   const tokens = code.split(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:from|import|const|let|await|new|return|true|false|null|True|False|None|print)\b|\b\d+(?:\.\d+)?\b|\/\/[^\n]*|#[^\n]*|[A-Za-z_$][\w$]*)/g);
-  return <code>{tokens.map((token, index) => {
+  return <>{tokens.map((token, index) => {
     const next = tokens[index + 1]?.trimStart() ?? "";
     let kind = "punctuation";
     if (/^["']/.test(token)) kind = "string";
@@ -14,13 +26,19 @@ export function HighlightedCode({ code }: { code: string }) {
     else if (token === "OpenAI") kind = "class-name";
     else if (/^[A-Za-z_$]/.test(token) && next.startsWith(":")) kind = "property";
     return <span key={index} className={`nr-token nr-${kind}`}>{token}</span>;
-  })}</code>;
+  })}</>;
 }
 
-type CodeBlockProps = React.ComponentProps<"div"> & { code: string; copyLabel?: string; copiedLabel?: string };
-export function CodeBlock({ code, copyLabel, copiedLabel, className, ...props }: CodeBlockProps) {
+type CodeBlockProps = React.ComponentProps<"div"> & {
+  code: string;
+  copyLabel?: string;
+  copiedLabel?: string;
+  /** Resalta las líneas que contienen alguno de estos textos, como las dos que cambian en el snippet. */
+  highlight?: readonly string[];
+};
+export function CodeBlock({ code, copyLabel, copiedLabel, highlight, className, ...props }: CodeBlockProps) {
   return <div className={cn("nr-code-block", className)} {...props}>
-    <pre tabIndex={0} className="nr-code-box font-mono overflow-x-auto"><HighlightedCode code={code} /></pre>
+    <pre tabIndex={0} className="nr-code-box font-mono overflow-x-auto"><HighlightedCode code={code} highlight={highlight} /></pre>
     <CopyButton value={code} copyLabel={copyLabel} copiedLabel={copiedLabel} />
   </div>;
 }

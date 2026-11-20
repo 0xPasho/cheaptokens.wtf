@@ -23,5 +23,5 @@ export function isLocalDevelopment(source: EnvSource = process.env): boolean {
   return source.APP_ENV === "development" || (!source.APP_ENV && source.NODE_ENV === "development");
 }
 
-/** Nombre del modo de desarrollo: letras, números, `.`, `_`, `-`, `@`. El workspace queda como `dev:<nombre>`, igual que en `pnpm keys:create`. */
-export const DEV_IDENTITY_PATTERN = /^[a-z0-9._@-]{1,64}$/;
+/** El patrón del nombre de desarrollo vive en un módulo sin dependencias: también lo usa el navegador. */
+export { DEV_IDENTITY_PATTERN } from "./dev-identity";

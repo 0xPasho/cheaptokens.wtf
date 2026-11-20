@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 3100;
 
 /**
- * Pruebas en navegador real contra el build de producción (`pnpm test:e2e` construye antes).
+ * Pruebas en navegador real contra el build de producción: el servidor de pruebas construye y arranca.
  * Usa el Google Chrome instalado (`channel: "chrome"`) para no descargar navegadores.
  */
 export default defineConfig({
@@ -39,9 +39,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm start --port ${PORT}`,
+    // El build y el servidor corren como desarrollo local (`APP_ENV`): sin claves de Clerk, /sign-in abre
+    // la ventana de acceso con el modo de desarrollo y las pruebas recorren el flujo completo (ADR-0050,
+    // ADR-0063). El modo se decide al construir, por eso el build va aquí y no en el script de pnpm.
+    command: `pnpm build && pnpm start --port ${PORT}`,
+    env: { APP_ENV: "development" },
     url: `http://localhost:${PORT}/es/design-system`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 360_000,
+    stdout: "pipe",
   },
 });

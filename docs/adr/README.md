@@ -61,7 +61,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0047](./0047-retirar-la-marca-nibblerouter.md) | Retirar el logo y favicon de NibbleRouter y mostrar cheaptokens.wtf | Aceptada | Usuario |
 | [0048](./0048-modo-retro-konami.md) | El código Konami (↑↑↓↓←→←→BA Enter) activa el modo retro de toda la web | Aceptada | Usuario |
 | [0049](./0049-suscripcion-con-limites.md) | Planes mensuales con límites cada 5 horas y cada semana, con paquetes por modelo y créditos de respaldo | Aceptada (precios y límites cambiados por 0052; renovación y paquetes cambiados por 0058) | Usuario |
-| [0050](./0050-login-clerk-y-modo-desarrollo.md) | Login con Clerk cuando está configurado, y un modo de desarrollo solo en local | Aceptada | Usuario |
+| [0050](./0050-login-clerk-y-modo-desarrollo.md) | Login con Clerk cuando está configurado, y un modo de desarrollo solo en local | Aceptada (pantalla de acceso cambiada por 0063) | Usuario |
 | [0051](./0051-marca-cheapllm-wtf.md) | La marca es `cheapllm.wtf`, con la web en `cheapllm.wtf` y la API en `api.cheapllm.wtf` | Aceptada | Usuario |
 | [0052](./0052-precios-de-los-planes.md) | Plus, Pro y Max cuestan $9, $39 y $99 al mes, con la ventana al 14 % y la semana al 60 % del precio | Aceptada | Usuario + Default |
 | [0053](./0053-margen-minimo-de-30.md) | El margen mínimo sobre el costo del upstream sube de 10 % a 30 % | Aceptada | Usuario |
@@ -71,6 +71,11 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0057](./0057-varias-cuentas-por-upstream.md) | Un upstream puede tener varias cuentas: el gateway rota entre ellas y, si una falla por su key, saldo o rate limit, prueba la siguiente | Aceptada | Usuario + Default |
 | [0058](./0058-deposito-por-cuenta-y-saldo.md) | Cada cuenta deposita USDC en su propia dirección y el sistema lo barre a la wallet principal; el depósito es saldo para cualquier modelo, los planes se pagan con saldo y ya no se venden paquetes por modelo | Aceptada | Usuario + Default |
 | [0059](./0059-servidor-propio-con-pm2-y-nginx.md) | La app corre en un servidor propio con pm2 y nginx, detrás de Cloudflare | Aceptada | Usuario |
+| [0060](./0060-landing-explica-el-producto.md) | La landing explica el producto en ocho secciones; el catálogo se queda en `/models` | Aceptada | Usuario + Default |
+| [0061](./0061-paginas-de-precios-y-preguntas.md) | Precios y preguntas frecuentes tienen página propia: `/pricing` y `/faq` | Aceptada | Usuario + Default |
+| [0062](./0062-lo-que-el-sitio-promete.md) | El sitio publica los límites de los planes y dice que el precio publicado es un máximo | Aceptada | Usuario + Default |
+| [0063](./0063-una-sola-ventana-de-acceso.md) | Una sola ventana para entrar o crear cuenta, con código por correo | Aceptada | Usuario + Default |
+| [0064](./0064-foco-de-teclado-visible.md) | El foco de teclado se ve en todo el sitio, con su propio token `--focus-ring` | Aceptada | Default |
 
 ## Plantilla
 

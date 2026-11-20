@@ -14,6 +14,8 @@ type QuickstartSnippetProps = {
   defaultLanguage?: SnippetLanguage;
   copyLabel?: string;
   copiedLabel?: string;
+  /** Resalta las líneas con la base URL y la API key: lo único que cambia en código que ya usa OpenAI. */
+  highlightConnection?: boolean;
   className?: string;
 };
 
@@ -25,9 +27,11 @@ export function QuickstartSnippet({
   defaultLanguage = "python",
   copyLabel,
   copiedLabel,
+  highlightConnection = false,
   className,
 }: QuickstartSnippetProps) {
   const snippets = buildQuickstartSnippets({ baseUrl, apiKey, model });
+  const highlight = highlightConnection ? [baseUrl, apiKey] : undefined;
 
   return (
     <Tabs defaultValue={defaultLanguage} className={className}>
@@ -44,6 +48,7 @@ export function QuickstartSnippet({
             code={snippets[language]}
             copyLabel={copyLabel}
             copiedLabel={copiedLabel}
+            highlight={highlight}
           />
         </TabsContent>
       ))}

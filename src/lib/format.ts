@@ -142,6 +142,14 @@ export function formatDuration(ms: number, locale: string) {
   return unit(rest, "minute");
 }
 
+/** Cuenta atrás corta: `24s` / `24 s`. Para «Reenviar código en…». */
+export function formatSeconds(seconds: number, locale: string) {
+  return cached(
+    `seconds:${locale}`,
+    () => new Intl.NumberFormat(locale, { style: "unit", unit: "second", unitDisplay: "narrow", maximumFractionDigits: 0 }),
+  ).format(Math.max(0, seconds));
+}
+
 /** Latencia: `1,234 ms` / `1234 ms`. */
 export function formatMilliseconds(ms: number, locale: string) {
   return cached(

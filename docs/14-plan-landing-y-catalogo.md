@@ -1,5 +1,7 @@
 # 14 · Plan: landing, catálogo y detalle de modelo
 
+> **La landing de este plan la reemplazó [ADR-0060](./adr/0060-landing-explica-el-producto.md) (2026-11-17).** El catálogo y el detalle siguen como aquí se describen.
+>
 > **Estado (2026-11-08): hecho.** Los pasos 0 a 5 están implementados y probados. El paso 6 (artifact) está en `artifacts/landing-y-catalogo/`, pendiente de subir a Deska. Lo que se encontró al construir está en [Lo que salió al construir](#lo-que-salió-al-construir).
 
 Plan para construir las tres páginas públicas con el [sistema de diseño](./13-sistema-de-diseno.md) (material liquid glass, [ADR-0025](./adr/0025-material-liquid-glass.md)) y una pasada de pulido con las pautas de *better-ui*. Fecha: 2026-11-08.

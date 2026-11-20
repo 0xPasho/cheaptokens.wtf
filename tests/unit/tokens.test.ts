@@ -36,6 +36,7 @@ describe.each(["light", "dark"] as const)("tokens de color · %s", (theme) => {
       "primary-foreground",
       "border",
       "ring",
+      "focus-ring",
       "destructive",
       "success",
       "success-foreground",
@@ -63,6 +64,16 @@ describe.each(["light", "dark"] as const)("tokens de color · %s", (theme) => {
     expect(
       contrast(toSrgb(t["primary-foreground"]), toSrgb(t.primary)),
     ).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("el foco de teclado se distingue de cada superficie (3:1, ADR-0064)", () => {
+    // El contorno va por fuera del control: lo que toca es la página, una tarjeta o un fondo sutil.
+    for (const surface of ["background", "card", "secondary", "muted"]) {
+      expect(
+        contrast(toSrgb(t["focus-ring"]), toSrgb(t[surface])),
+        `focus-ring sobre ${surface}`,
+      ).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it.each(["success", "warning", "destructive"])(

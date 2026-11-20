@@ -6,7 +6,7 @@ Objetivo: la base sobre la que todo lo demás se apoya.
 
 - [x] Drizzle: esquema completo de [09 · Modelo de datos](./09-modelo-de-datos.md) y migraciones, con PGlite en local ([ADR-0032](./adr/0032-postgres-node-postgres-y-pglite.md)). Neon se conecta con el deploy.
 - [x] i18n: mover la app a `src/app/[lang]/`, diccionarios `en`/`es` y `proxy.ts` con redirección de idioma ([10 · i18n](./10-i18n.md)).
-- [x] Clerk: login y registro localizados, `clerkMiddleware` en `proxy.ts`, sesión verificada en cada página privada y creación perezosa del workspace. Se activa con las claves de Clerk; sin ellas, en desarrollo se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
+- [x] Clerk: login y registro localizados, `clerkMiddleware` en `proxy.ts`, sesión verificada en cada página privada y creación perezosa del workspace. Se activa con las claves de Clerk; sin ellas, en desarrollo se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)). Entrar y crear cuenta son una sola ventana con código por correo ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)).
 - [ ] Instancia de Clerk del dueño: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY` en Vercel, y el webhook `user.deleted` registrado con `CLERK_WEBHOOK_SIGNING_SECRET`. Necesita el dominio registrado.
 - [x] Catálogo: `catalog/models.ts`, `catalog/upstreams.ts`, `pnpm catalog:sync` con validación de margen y tags calculados.
 - [x] Página pública `/[lang]/models` con filtros por tag ([14 · Plan](./14-plan-landing-y-catalogo.md)).

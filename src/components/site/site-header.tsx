@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
+import { getKeyHref } from "@/lib/auth/redirect";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -16,6 +17,7 @@ export function SiteHeader({ locale, dict, account }: { locale: Locale; dict: Di
   const input = useRef<HTMLInputElement>(null);
   const isDocs = pathname.includes("/docs");
   const isModels = pathname.includes("/models");
+  const isPricing = pathname.endsWith("/pricing");
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -40,8 +42,9 @@ export function SiteHeader({ locale, dict, account }: { locale: Locale; dict: Di
         </Link>
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
           <Link href={`/${locale}/models`} className={isModels ? "nr-active" : undefined} aria-current={isModels ? "page" : undefined}>{dict.nav.models}</Link>
+          <Link href={`/${locale}/pricing`} className={isPricing ? "nr-active" : undefined} aria-current={isPricing ? "page" : undefined}>{dict.nav.pricing}</Link>
+          <Link href={`/${locale}#how-it-works`} className="nr-nav-anchor">{dict.nav.howItWorks}</Link>
           <Link href={`/${locale}/docs`} className={isDocs ? "nr-active" : undefined} aria-current={isDocs ? "page" : undefined}>{dict.nav.docs}</Link>
-          <Link href={`/${locale}/docs#quickstart`}>{dict.nav.howItWorks}</Link>
         </nav>
       </div>
       <form className="nr-search-box" onSubmit={(event) => { event.preventDefault(); router.push(`/${locale}/models${filters.search}`); }}>
@@ -53,7 +56,7 @@ export function SiteHeader({ locale, dict, account }: { locale: Locale; dict: Di
       </form>
       <div className="nr-header-actions">
         <ThemeToggle labels={dict.theme} className="nr-icon-button" />
-        <Link href={`/${locale}/dashboard/keys`} className={buttonVariants({ variant: "secondary", className: "nr-pill-button" })}>{dict.nav.getKey}</Link>
+        <Link href={getKeyHref(locale)} className={buttonVariants({ variant: "secondary", className: "nr-pill-button" })}>{dict.nav.getKey}</Link>
         {account}
       </div>
     </header>

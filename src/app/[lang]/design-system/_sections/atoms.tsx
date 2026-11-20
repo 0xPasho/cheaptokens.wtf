@@ -15,6 +15,7 @@ import SearchIcon from "kubai-icons-react/icons/search";
 
 import { Price } from "@/components/price";
 import { ModelLogo } from "@/components/catalog/provider-logo";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import {
   InputGroup,
   InputGroupAddon,
@@ -90,7 +92,7 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDate, formatDiscount, formatUsd } from "@/lib/format";
 
-import { LowBalanceThresholdDemo } from "../_components/demos";
+import { LowBalanceThresholdDemo, OneTimeCodeDemo } from "../_components/demos";
 import { Group, Section } from "../_components/section";
 import { LOCALE } from "../_data";
 
@@ -239,6 +241,38 @@ function Forms() {
           </FieldDescription>
         </Field>
       </FieldGroup>
+    </Section>
+  );
+}
+
+function OneTimeCodes() {
+  return (
+    <Section
+      title="InputOTP"
+      description="Un código de un solo uso en casillas. Por debajo es un solo campo: se puede pegar, autocompletar desde el correo o el SMS y leer con un lector de pantalla. El guion separa grupos; no se escribe."
+    >
+      <Usage>el código de verificación de la ventana de acceso.</Usage>
+      <div className="flex flex-wrap items-end gap-8">
+        <State label="Se puede escribir y pegar">
+          <OneTimeCodeDemo label="Código de ejemplo" />
+        </State>
+        <State label="Con error">
+          <InputOTP maxLength={6} value="381920" readOnly aria-invalid aria-label="Código de ejemplo con error">
+            <div aria-hidden className="contents">
+              <InputOTPGroup><InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} /></InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup><InputOTPSlot index={3} /><InputOTPSlot index={4} /><InputOTPSlot index={5} /></InputOTPGroup>
+            </div>
+          </InputOTP>
+        </State>
+        <State label="Deshabilitado">
+          <InputOTP maxLength={4} value="12" disabled aria-label="Código de ejemplo deshabilitado">
+            <div aria-hidden className="contents">
+              <InputOTPGroup><InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} /><InputOTPSlot index={3} /></InputOTPGroup>
+            </div>
+          </InputOTP>
+        </State>
+      </div>
     </Section>
   );
 }
@@ -595,6 +629,31 @@ function Disclosures() {
   );
 }
 
+function Accordions() {
+  return (
+    <Section
+      title="Accordion"
+      description="Una lista de preguntas o temas que se abren de a uno. Cada título es una pregunta completa; la respuesta cabe en un párrafo."
+    >
+      <Usage>/faq, y las preguntas de la landing y de /pricing.</Usage>
+      <Accordion className="nr-mk-faq max-w-xl" defaultValue={["prompts"]}>
+        <AccordionItem value="prompts" className="nr-mk-faq-item">
+          <AccordionTrigger className="nr-mk-faq-trigger">¿Guardan mis prompts?</AccordionTrigger>
+          <AccordionContent className="nr-mk-faq-answer">
+            <p>No. Solo guardamos lo necesario para cobrarte: modelo, tokens, costo y hora.</p>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="renew" className="nr-mk-faq-item">
+          <AccordionTrigger className="nr-mk-faq-trigger">¿El plan se renueva solo?</AccordionTrigger>
+          <AccordionContent className="nr-mk-faq-answer">
+            <p>No. Dura 30 días y no hay cobro automático.</p>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Section>
+  );
+}
+
 function Unused() {
   return (
     <Section
@@ -645,11 +704,13 @@ export function Atoms() {
       <Buttons />
       <Badges />
       <Forms />
+      <OneTimeCodes />
       <Selects />
       <Choices />
       <ProgressAndLoading />
       <HelpAndShortcuts />
       <Disclosures />
+      <Accordions />
       <Cards />
       <Menus />
       <Paging />

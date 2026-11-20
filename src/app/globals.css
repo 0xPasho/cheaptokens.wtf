@@ -163,6 +163,9 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  /* Foco de teclado: el contorno de links y botones y el borde del campo enfocado en las páginas del sitio.
+     Pasa 3:1 sobre cada superficie; --ring, el anillo translúcido de los átomos, no llega en claro. Ver docs/13 */
+  --focus-ring: oklch(0.5 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -273,6 +276,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+  --focus-ring: oklch(0.72 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -321,6 +325,11 @@
       animation-delay: 0s !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+    /* Base UI espera a que termine la animación del panel: con transición y animación a la vez no sabe cuál. */
+    [data-slot="accordion-content"],
+    [data-slot="collapsible-content"] {
+      transition: none !important;
     }
   }
 }
@@ -414,9 +423,24 @@ html { scrollbar-gutter: stable; scroll-behavior: smooth; scroll-padding-top: 92
 body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 .nr-site { min-height: 100dvh; }
 .nr-site button { cursor: pointer; }
-.nr-site :is(a, button, input, select, summary):focus-visible { outline: none; }
+/* Foco de teclado: un contorno por fuera de cada link y botón. Los átomos traen su anillo como box-shadow y el
+   estilo plano de estas páginas se lo quita; el contorno no depende de eso. Solo aparece con teclado. */
+.nr-site :is(a, button, summary, [tabindex="0"]):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; box-shadow: none; }
+/* Un link de texto no tiene forma propia: su contorno lleva las esquinas suaves. Con `:where`, cualquier radio del link gana. */
+:where(.nr-site a:focus-visible) { border-radius: 6px; }
+/* Donde el contenedor recorta lo que sobresale, el contorno va por dentro. */
+.nr-site :is([data-slot="tabs-trigger"], [data-slot="tabs-content"]):focus-visible, .nr-site .nr-sidebar :is(a, button):focus-visible { outline-offset: -2px; }
 /* Sin anillos de foco al pulsar controles de formulario: el caret y el estado abierto bastan. */
+.nr-site :is(input, select):focus-visible { outline: none; }
 .nr-site :is(input, select, textarea):focus-visible { border-color: transparent; box-shadow: none; }
+/* El texto seleccionado sigue la paleta neutra del sitio en vez del azul del sistema. */
+.nr-site ::selection { background: color-mix(in oklch, var(--foreground) 22%, transparent); }
+/* «Saltar al contenido» aparece al recibir el foco: es la primera parada del teclado. */
+.nr-site > .nr-srOnly:focus {
+  position: fixed; top: 16px; left: 16px; z-index: 60; width: auto; height: auto; margin: 0; padding: 10px 18px;
+  overflow: visible; clip: auto; border-radius: 999px; background: var(--foreground); color: var(--background);
+  font-size: 14px; font-weight: 500; outline-offset: 3px;
+}
 .nr-plain { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; height: auto; color: inherit; font: inherit; }
 .nr-site .nr-pills { margin-bottom: 22px; }
 .nr-grid .nr-model-card { padding: 8px; }
@@ -461,7 +485,8 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-task, .nr-pills span { line-height: 1.5; }
 .nr-grid.nr-list .nr-model-meta, .nr-grid.nr-list .nr-pills { display: none; }
 .nr-grid.nr-list .nr-model-card-footer { display: none; }
-.nr-model-link:focus-visible { outline: none; }
+.nr-site .nr-model-link:focus-visible, .nr-model-link:focus-visible { outline: none; }
+:is(.nr-model-card, .nr-mk-price-tile):has(.nr-model-link:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .nr-grid .nr-model-id img { width: 18px; height: 18px; object-fit: contain; }
 .nr-detail-tabs[data-slot="tabs-list"] { width: auto; height: 52px; border-radius: 0; background: none; box-shadow: none; }
 .nr-detail-tabs [data-slot="tabs-trigger"] { flex: none; height: 52px; padding: 14px 0; font-size: 14px; font-weight: 450; border-radius: 0; border: 0; border-bottom: 2px solid transparent; color: var(--text-secondary); background: none; box-shadow: none; }

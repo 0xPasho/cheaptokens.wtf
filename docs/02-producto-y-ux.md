@@ -8,10 +8,12 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 
 | Ruta | Acceso | Trabajo que resuelve |
 |---|---|---|
-| `/[lang]` | Pública | Entender qué es y registrarse |
+| `/[lang]` | Pública | Entender qué es, cómo funciona y cuánto cuesta, y llegar a la key o a los modelos ([ADR-0060](./adr/0060-landing-explica-el-producto.md)) |
 | `/[lang]/models` | Pública | Ver modelos, precios y descuentos |
+| `/[lang]/pricing` | Pública | Elegir entre plan y créditos con números: lo que gasta cada modelo y cómo pagar ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
+| `/[lang]/faq` | Pública | Resolver las dudas de producto, cobro, planes, pagos, API y privacidad ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
 | `/[lang]/docs` | Pública | Conectar en 1 minuto |
-| `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Login y registro con Clerk. En desarrollo, sin Clerk, se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
+| `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Entrar o crear cuenta en la misma ventana, con un código por correo ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)). En desarrollo, sin Clerk, se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
 | `/[lang]/dashboard` | Privada | Ver plan, límites y saldo, y empezar |
 | `/[lang]/dashboard/plan` | Privada | Elegir plan, ver límites y decidir qué pasa al llegar al límite |
@@ -24,19 +26,26 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 
 ## Landing (`/[lang]`)
 
-Arriba del pliegue van tres cosas:
+Explica el producto en ocho secciones, de la que más importa a la que menos ([ADR-0060](./adr/0060-landing-explica-el-producto.md)). Los números salen del catálogo en vivo y de los planes; lo que se promete está acotado por [ADR-0062](./adr/0062-lo-que-el-sitio-promete.md).
 
-1. **Una frase:** "One endpoint. Every model. Up to 90% off." / "Un endpoint. Todos los modelos. Hasta 90% menos."
-2. **El snippet** que muestra que solo cambian dos líneas:
-   ```python
-   client = OpenAI(
-       base_url="https://api.cheapllm.wtf/v1",
-       api_key="wtf_...",
-   )
-   ```
-3. **CTA:** "Get your API key" / "Obtén tu API key" → registro.
+1. **Qué es:** "Un endpoint. Todos los modelos. Hasta 90 % menos." (el porcentaje es el mayor descuento del catálogo), una línea de qué es, **Obtén tu API key** y **Ver los N modelos**, y el snippet con las dos líneas que cambian resaltadas.
+2. **Precio a la vista:** seis modelos conocidos con el precio oficial tachado, el precio cheapllm.wtf y el descuento. Dice que el precio publicado es el máximo.
+3. **Cómo funciona:** tu código → `api.cheapllm.wtf` → el modelo, los tres pasos al primer request y tres garantías.
+4. **Vistazo al catálogo:** los grupos de la sidebar de Modelos, por capacidad o por autor, con cuatro tarjetas cada uno y un link a `/models` con el filtro puesto.
+5. **Precios:** Plus, Pro y Max junto a Créditos, con las requests típicas según el modelo que se elija; cómo se reparte un request entre plan y créditos; cómo se paga. Link a `/pricing`.
+6. **Una key para cada uso:** editor o agente (plan y créditos), producción o CI (solo créditos) y un script o alguien más (solo plan), con las herramientas compatibles.
+7. **Preguntas:** siete de `/faq` y un link a todas.
+8. **Cierre:** el último llamado al registro.
 
-Debajo: una vista previa del catálogo (5–6 modelos populares con el precio oficial tachado y el precio cheapllm.wtf) y un link a `/models`.
+La cabecera lleva Modelos, Precios, Cómo funciona (`/[lang]#how-it-works`) y Docs. El footer suma Precios y Preguntas frecuentes.
+
+## Precios (`/[lang]/pricing`)
+
+Planes y créditos con el selector de modelo, el reparto entre plan y créditos, la tabla de lo que gasta cada modelo (la misma cuenta que «Consumo por modelo» del dashboard), los pasos para pagar con USDC y cinco preguntas de cobro ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
+
+## Preguntas frecuentes (`/[lang]/faq`)
+
+27 preguntas en seis temas, con los temas a la izquierda y un llamado al registro al final. El texto está en `faq.items` del diccionario y el orden en `FAQ_TOPICS` (`src/lib/marketing.ts`) ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)).
 
 ## Catálogo (`/[lang]/models`)
 
@@ -59,8 +68,11 @@ Los IDs, tags y la regla del precio se definen en [06 · Catálogo y precios](./
 
 ## Iniciar y cerrar sesión
 
-- **Con Clerk configurado,** `/[lang]/sign-in` y `/[lang]/sign-up` muestran los componentes de Clerk, traducidos al idioma de la ruta. **Sin Clerk y en desarrollo,** un formulario pide un nombre y abre el workspace `dev:<nombre>`. **En preview o producción sin Clerk,** la página avisa que todavía no se puede entrar ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
-- Entrar a `/[lang]/dashboard…` sin sesión lleva a iniciar sesión y, al terminar, de vuelta a la página pedida.
+- **Una sola ventana** ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)): escribes tu correo, te llega un código de seis dígitos y entras. Si el correo no tenía cuenta, se crea al verificar el código. `/[lang]/sign-in` y `/[lang]/sign-up` son la misma ventana: el link «Crear cuenta» solo cambia el título, la descripción y el propio link.
+- La pantalla del código es igual para todos y no dice si el correo ya tenía cuenta. El código se puede pegar, se envía solo al sexto dígito y se puede pedir otro a los 30 segundos.
+- **Con Clerk configurado,** el código lo envía y lo verifica Clerk. **Sin Clerk y en desarrollo,** la misma ventana pide un nombre, acepta cualquier código y abre el workspace `dev:<nombre>`. **En preview o producción sin Clerk,** la página avisa que todavía no se puede entrar ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)).
+- Entrar a `/[lang]/dashboard…` sin sesión lleva a iniciar sesión y, al terminar, de vuelta a la página pedida. Con sesión abierta, la ventana de acceso manda directo a esa página o al dashboard.
+- «Obtén tu API key» abre la ventana en modo crear cuenta y, al terminar, lleva a las API keys.
 - La cabecera muestra **Iniciar sesión** o el menú de cuenta (Dashboard, API keys, Ajustes y Cerrar sesión). Se resuelve en el navegador para que las páginas públicas sigan estáticas.
 - Cerrar sesión lleva a la landing. Las keys siguen funcionando.
 

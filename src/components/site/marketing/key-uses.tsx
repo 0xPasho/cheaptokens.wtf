@@ -1,0 +1,48 @@
+import { formatUsd } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+
+import { MarketingSection } from "./section";
+
+type Source = keyof Dictionary["dashboard"]["sources"];
+
+/** El ajuste de key de cada caso: fuente de cobro (05 · API keys), límite de gasto de ejemplo y modelos. */
+const USES: { source: Source; limitMicroUsd: number | null; model: string | null }[] = [
+  { source: "plan_then_prepaid", limitMicroUsd: null, model: null },
+  { source: "prepaid_only", limitMicroUsd: 50_000_000, model: null },
+  { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek-v4.1-flash" },
+];
+
+/** 06 · Una key para cada uso: las formas de funcionar según cómo cobra cada API key. ADR-0060. */
+export function KeyUses({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const d = dict.home.uses;
+  return (
+    <MarketingSection id="ways" eyebrow={d.eyebrow} title={d.title} description={d.description}>
+      <div className="nr-mk-uses">
+        {d.items.map((item, index) => {
+          const use = USES[index];
+          return (
+            <article key={item.title} className="nr-mk-use">
+              <p className="nr-mk-flow-label">{item.who}</p>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+              <dl className="nr-mk-keybox">
+                <div><dt>{d.source}</dt><dd>{dict.dashboard.sources[use.source]}</dd></div>
+                <div><dt>{d.limit}</dt><dd>{use.limitMicroUsd === null ? d.none : formatUsd(use.limitMicroUsd, locale, "whole")}</dd></div>
+                <div><dt>{d.models}</dt><dd>{use.model ? <code>{use.model}</code> : d.all}</dd></div>
+              </dl>
+            </article>
+          );
+        })}
+      </div>
+      <ul className="nr-mk-tools" aria-label={d.toolsLabel}>
+        <li aria-hidden>{d.toolsLabel}</li>
+        <li>{d.tools.openai}</li>
+        <li>{d.tools.langchain}</li>
+        <li>{d.tools.vercel}</li>
+        <li>{d.tools.editors}</li>
+        <li data-soon>{d.tools.claudeCode}</li>
+      </ul>
+    </MarketingSection>
+  );
+}

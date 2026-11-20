@@ -1,6 +1,6 @@
 # ADR-0050: Login con Clerk cuando está configurado, y un modo de desarrollo solo en local
 
-- **Estado:** Aceptada. Amplía [ADR-0003](./0003-clerk-solo-dashboard.md).
+- **Estado:** Aceptada. Amplía [ADR-0003](./0003-clerk-solo-dashboard.md). [ADR-0063](./0063-una-sola-ventana-de-acceso.md) cambió la pantalla de acceso: una sola ventana con código por correo, también en el modo de desarrollo.
 - **Fecha:** 2026-11-15
 - **Origen:** Usuario
 

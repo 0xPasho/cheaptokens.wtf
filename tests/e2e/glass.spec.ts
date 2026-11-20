@@ -52,6 +52,9 @@ test("catalog filters survive model navigation and browser back", async ({ page 
   await page.locator("article").getByRole("link").click();
   await expect(page).toHaveURL(/q=claude-sonnet-4.6/);
   await page.locator(".nr-breadcrumb").click();
+  // Next conserva oculta la página anterior: sin esperar la URL, lo de abajo pasa sobre el catálogo
+  // que quedó escondido bajo el detalle y la recarga llega antes de que la navegación termine.
+  await expect(page).toHaveURL(/\/en\/models\?q=claude-sonnet-4\.6$/);
   await expect(page.locator("article")).toHaveCount(1);
   await expect(page.getByRole("searchbox")).toHaveValue("claude-sonnet-4.6");
   await page.reload();
