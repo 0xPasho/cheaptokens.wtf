@@ -285,6 +285,7 @@ const model: GatewayModel = {
   id: "acme/model", status: "active", isReasoning: true,
   inputPricePer1M: BigInt(600_000), outputPricePer1M: BigInt(3_000_000),
   officialInputPer1M: BigInt(3_000_000), officialOutputPer1M: BigInt(15_000_000), upstreams: [target],
+  contextLength: 128_000, maxOutputTokens: null,
 };
 const usage: Usage = {
   promptTokens: 2_000, completionTokens: 500, cachedTokens: 1_000, reasoningTokens: 250,

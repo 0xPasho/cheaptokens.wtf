@@ -32,6 +32,8 @@ export async function loadCatalogSnapshot(
     outputPricePer1M: model.outputPriceMicroUsd,
     officialInputPer1M: model.officialInputPriceMicroUsd,
     officialOutputPer1M: model.officialOutputPriceMicroUsd,
+    contextLength: model.contextLength,
+    maxOutputTokens: model.maxOutputTokens,
     upstreams: [],
   }]));
 

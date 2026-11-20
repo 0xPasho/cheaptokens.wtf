@@ -19,6 +19,13 @@ const DEFAULT_MESSAGES: Record<GatewayErrorCode, string> = {
   upstream_timeout: "The model timed out while processing the request.",
 };
 
+/** Queda algo, pero no alcanza para el costo máximo de este request (ADR-0065). */
+export const HOLD_MESSAGES = {
+  usage_limit_reached: "The plan usage left does not cover this request. Lower max_tokens or the prompt size, wait for requests in progress to finish, or retry after the reset.",
+  insufficient_credits: "Your credits do not cover this request. Lower max_tokens or the prompt size, wait for requests in progress to finish, or top up at https://cheapllm.wtf/dashboard/credits",
+  key_limit_exceeded: "The spending limit left on this API key does not cover this request. Lower max_tokens or the prompt size, or wait for requests in progress to finish.",
+} as const satisfies Partial<Record<GatewayErrorCode, string>>;
+
 const PROVIDER_NAMES = [
   "inferhub", "openrouter", "qwencloud", "qwen", "alibaba", "aliyun", "dashscope",
   "anthropic", "openai", "google", "vertex", "bedrock", "azure", "deepseek", "zhipu",
@@ -37,7 +44,7 @@ const PROVIDER_PATTERN = new RegExp(`(?<![a-z])(?:${[
   ...PROVIDER_NAMES.map((name) => nameLetters(name).join(COMMON_WORD_PROVIDER_NAMES.has(name) ? "" : NAME_SEPARATOR)),
   `${nameLetters("together").join("")}${NAME_SEPARATOR}(?:${nameLetters("ai").join("")}|${nameLetters("computer").join("")})`,
 ].join("|")})(?![a-z])`, "u");
-const GATEWAY_MESSAGES = new Set(Object.values(DEFAULT_MESSAGES));
+const GATEWAY_MESSAGES = new Set<string>([...Object.values(DEFAULT_MESSAGES), ...Object.values(HOLD_MESSAGES)]);
 const GENERIC_PARAMETER_MESSAGE = "The model rejected the request parameters.";
 
 function isSafeText(message: string): boolean {

@@ -12,6 +12,7 @@ import { uuidv7 } from "@/lib/db/uuid";
 import { createAccountRotation } from "@/lib/gateway/accounts";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { handleChatCompletion } from "@/lib/gateway/handler";
+import { createHoldBook } from "@/lib/gateway/holds";
 import { createJsonLogger } from "@/lib/gateway/logger";
 import * as sanitizers from "@/lib/gateway/sanitize";
 import { createSseParser } from "@/lib/gateway/sse";
@@ -69,7 +70,7 @@ function directDeps(harness: Harness, overrides: Partial<GatewayDeps> = {}): Gat
     catalog: createCatalogSource(() => loadCatalogSnapshot(harness.db, {
       env: { UPSTREAM_MOCK_BASE_URL: harness.mock.baseUrl }, environment: "development", now: Date.now,
     })),
-    rateLimiter: createMemoryRateLimiter(), accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
+    rateLimiter: createMemoryRateLimiter(), holds: createHoldBook(), accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
     log: createJsonLogger((line) => harness.logs.push(line)), env: { apiHost: null, rateLimitRpm: 60, isProduction: false },
     after: () => {}, ...overrides,
   };

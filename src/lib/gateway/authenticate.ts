@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { hashKey, validateKeyFormat } from "@/lib/api-keys";
-import { admit, planRemaining, prepaidRules } from "@/lib/billing/limits";
+import { admissionBudget, admit, planRemaining, prepaidRules } from "@/lib/billing/limits";
 import { packBalance } from "@/lib/billing/packs";
 import { overflowSettings, planUsage, storedWindow } from "@/lib/billing/state";
 import { apiKeys, subscriptions, usageWindows, workspaces } from "@/lib/db/schema";
@@ -96,15 +96,17 @@ export const checkAccount: CheckAccount = (context, modelId) => {
   return null;
 };
 
-export const admitUsage: AdmitUsage = async (context, modelId, db, now) => {
+export const admitUsage: AdmitUsage = async (context, modelId, db, now, wantedMicroUsd) => {
   const { billingSource: source, plan, overflow } = context;
-  const planCovers = source !== "prepaid_only" && plan !== null && planRemaining(plan, now) > BigInt(0);
-  // El saldo de paquetes es una query más: solo se hace cuando el plan no alcanza y el paquete cuenta.
+  // El plan alcanza si cubre lo máximo que puede costar el request (ADR-0065): entonces sobran las dos queries.
+  const planCovers = source !== "prepaid_only" && plan !== null && planRemaining(plan, now) >= wantedMicroUsd;
   const needsPacks = !planCovers && prepaidRules(source, plan !== null, overflow).packs;
-  return admit({
+  const input = {
     source, plan, overflow, now,
     // Un plan de socio paga su excedente después: se admite con lo que queda del tope (docs/17).
-    balanceMicroUsd: await admissionBalance(db, context, now),
+    balanceMicroUsd: planCovers ? context.balanceMicroUsd : await admissionBalance(db, context),
     packBalanceMicroUsd: needsPacks ? await packBalance(db, context.workspaceId, modelId, now) : BigInt(0),
-  });
+  };
+  const admission = admit(input);
+  return admission.ok ? { ...admission, budgetMicroUsd: admissionBudget(input) } : admission;
 };
