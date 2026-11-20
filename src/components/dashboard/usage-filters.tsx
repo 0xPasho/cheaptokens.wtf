@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -20,16 +20,22 @@ export function UsageFilters({ ranges, keys, models, sources, labels }: {
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
+  // Lo elegido se ve al instante; la URL (y la tabla) llegan cuando responde el servidor.
+  const [query, setQuery] = useOptimistic(params.toString());
+  const current = new URLSearchParams(query);
   const update = (name: string, value: string) => {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(current);
     if (value === "" || value === "all" || (name === "range" && value === "7d")) next.delete(name);
     else next.set(name, value);
     next.delete("page");
-    const query = next.toString();
-    startTransition(() => router.push(`${pathname}${query ? `?${query}` : ""}`, { scroll: false }));
+    const nextQuery = next.toString();
+    startTransition(() => {
+      setQuery(nextQuery);
+      router.push(`${pathname}${nextQuery ? `?${nextQuery}` : ""}`, { scroll: false });
+    });
   };
   const select = (name: string, label: string, options: Option[]) => (
-    <NativeSelect aria-label={label} value={params.get(name) ?? "all"} onChange={(event) => update(name, event.target.value)} className="w-auto">
+    <NativeSelect aria-label={label} value={current.get(name) ?? "all"} onChange={(event) => update(name, event.target.value)} className="w-auto">
       {options.map((option) => <NativeSelectOption key={option.value} value={option.value}>{option.label}</NativeSelectOption>)}
     </NativeSelect>
   );
@@ -37,7 +43,7 @@ export function UsageFilters({ ranges, keys, models, sources, labels }: {
     <div className="flex flex-wrap items-center gap-3" aria-busy={pending}>
       <ToggleGroup
         spacing={1}
-        value={[params.get("range") ?? "7d"]}
+        value={[current.get("range") ?? "7d"]}
         onValueChange={(value) => { if (value[0]) update("range", value[0]); }}
         aria-label={labels.range}
         className="glass-control p-1"

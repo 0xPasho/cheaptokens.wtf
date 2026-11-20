@@ -96,7 +96,7 @@ Hay dos formas de pagar el uso, y un request las usa en este orden ([ADR-0049](.
 ## Orden de cobro y excedente
 
 - **Plan → créditos.** Las keys de solo créditos (`prepaid_only`) se saltan el plan; las de solo plan (`plan_only`) nunca tocan los créditos ([05 · API keys](./05-api-keys.md#fuente-de-cobro-y-modelos)).
-- **El request que cruza el límite termina completo.** Lo que no cabe en el plan va al excedente.
+- **Un request solo empieza si su costo máximo cabe** en el plan más el excedente permitido; si no cabe toda la salida, se acota su `max_tokens` ([ADR-0066](./adr/0066-reserva-por-request.md)). Lo que no cabe en el plan va al excedente.
 - **El excedente se configura por workspace** en Plan y límites:
   - **Modo:** `continue` (seguir con créditos, el default) o `stop` (`429 usage_limit_reached` hasta el reinicio).
   - **Interruptor:** usar créditos.
@@ -173,13 +173,13 @@ WHERE id = $api_key_id;
 COMMIT;
 ```
 
-### El saldo puede quedar levemente negativo
+### Cada request reserva su costo máximo
 
-No hacemos reserva previa: no sabemos cuánto va a costar un request hasta que termina. Con `balance > 0` como única condición, varios requests en paralelo pueden pasar el chequeo a la vez y dejar el saldo por debajo de cero.
+Antes de llamar al upstream, el gateway calcula lo máximo que puede costar el request: el prompt estimado hacia arriba más la salida máxima (`max_tokens`, o 32 768 si no viene). Lo reserva contra lo que queda del plan, el paquete y los créditos, descontadas las reservas de los requests en curso ([ADR-0066](./adr/0066-reserva-por-request.md)).
 
-- **Exposición máxima ≈ requests en vuelo × costo máximo de un request.** El rate limit (60 req/min por workspace, o el del plan) acota cuántos requests hay en vuelo, y con precios de centavos por request la exposición es pequeña. Lo mismo acota lo que absorbemos cuando un request cruza el límite del plan.
-- Con saldo negativo, todo request siguiente recibe `402`. La siguiente recarga cubre primero la deuda.
-- Se descartó la reserva previa (retener `max_tokens × precio` antes del request) para el MVP, por complejidad. Ver [ADR-0008](./adr/0008-creditos-prepagados.md) y [ADR-0049](./adr/0049-suscripcion-con-limites.md).
+- **Si la salida no cabe,** se recorta a lo que alcanza y el upstream recibe ese `max_tokens`. Si ni el prompt con 1 024 tokens de salida cabe, se rechaza con `402`, `429` o `403`, sin llamar al upstream.
+- **La reserva se libera cuando el cobro ya está en la base.** Vive en memoria, por instancia, como el rate limiter.
+- **El saldo solo queda negativo** si el upstream cobra más de lo estimado, por ejemplo un vendedor que reporta más tokens que el `max_tokens` pedido. Con saldo negativo, todo request siguiente recibe `402`, y la siguiente recarga cubre primero la deuda.
 
 ### Requests que fallan
 

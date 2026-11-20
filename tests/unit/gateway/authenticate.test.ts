@@ -186,7 +186,7 @@ describe("authenticate: database lookup", () => {
     const { generated } = await seed({ balanceMicroUsd: BigInt(0) }, { billingSource: "prepaid_only" });
     const result = await authenticate(`Bearer ${generated.key}`, testDb.db, now);
     if (!result.ok) throw new Error("Expected valid credentials");
-    await expect(admitUsage(result.context, "anthropic/claude-opus-5.5", testDb.db, now))
+    await expect(admitUsage(result.context, "anthropic/claude-opus-5.5", testDb.db, now, BigInt(1)))
       .resolves.toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
   });
 

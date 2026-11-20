@@ -3,6 +3,11 @@ import { activeWindow, type PlanUsage, windowFraction, windowUsed } from "@/lib/
 import { formatDuration, formatPercent, formatUsd } from "@/lib/format";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 
+/** Un límite se muestra exacto: sin decimales solo si es un monto entero (5,40 US$, no 5 US$). */
+export function exactKind(micros: bigint): "whole" | "balance" {
+  return micros % BigInt(1_000_000) === BigInt(0) ? "whole" : "balance";
+}
+
 /** La ventana de 5 horas y la semana del plan, con su reinicio y el valor usado. */
 export function PlanMeters({ usage, now, locale, labels, extra }: {
   usage: PlanUsage;
@@ -23,12 +28,13 @@ export function PlanMeters({ usage, now, locale, labels, extra }: {
         const active = activeWindow(window, now);
         const details: React.ReactNode[] = [
           active ? t(labels.resetsIn, { duration: formatDuration(active.resetsAt - now, locale) }) : labels.startsOnNext,
-          t(labels.value, { used: formatUsd(Number(windowUsed(window, now)), locale), limit: formatUsd(Number(limit), locale, "whole") }),
+          t(labels.value, { used: formatUsd(Number(windowUsed(window, now)), locale), limit: formatUsd(Number(limit), locale, exactKind(limit)) }),
         ];
         if (kind === "fiveHour" && extra) details.push(extra);
         return (
           <UsageMeter
             key={kind}
+            locale={locale}
             label={label}
             fraction={fraction}
             status={fraction >= 1 ? labels.reached : t(labels.used, { percent: formatPercent(fraction, locale) })}

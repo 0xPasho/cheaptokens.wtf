@@ -15,12 +15,12 @@ import { Stat } from "@/components/stat";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress, ProgressLabel } from "@/components/ui/progress";
 import { planRemaining } from "@/lib/billing/limits";
 import { PLANS, REFERENCE_MODEL_ID } from "@/lib/billing/plans";
 import { typicalRequestsIn } from "@/lib/billing/typical";
 import { getLiveCatalog } from "@/lib/catalog/live";
-import { getAccount, getPlanUsageByModel, getUsageSummary, hasAnyRequest, listPacks } from "@/lib/dashboard/queries";
+import { getAccount, getPlanUsageByModel, getUsageSummary, hasAnyRequest, listKeys, listPacks } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
 import { formatCount, formatDate, formatPercent, formatTokens, formatUsd, totalKind } from "@/lib/format";
@@ -54,12 +54,13 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const { workspaceId, now } = await requireDashboard(locale, "");
   const db = getDb();
   const since = new Date(now - 7 * DAY_MS);
-  const [account, summary, byModel, packs, started] = await Promise.all([
+  const [account, summary, byModel, packs, started, keys] = await Promise.all([
     getAccount(db, workspaceId, now),
     getUsageSummary(db, workspaceId, { since }),
     getPlanUsageByModel(db, workspaceId, since),
     listPacks(db, workspaceId),
     hasAnyRequest(db, workspaceId),
+    listKeys(db, workspaceId),
   ]);
   const d = dict.dashboard.overview;
   const catalog = await getLiveCatalog();
@@ -67,6 +68,8 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const reference = catalog.find((model) => model.id === REFERENCE_MODEL_ID);
   const activePacks = packs.filter((pack) => pack.expiresAt.getTime() > now && pack.balanceMicroUsd > BigInt(0));
   const planTotal = byModel.reduce((sum, row) => sum + Number(row.plan), 0);
+  // Una key activa: ni revocada ni vencida tras rotarla (el mismo criterio que la página de keys).
+  const hasKey = keys.some((key) => key.revokedAt === null && (key.expiresAt === null || key.expiresAt.getTime() > now));
   const base = `/${locale}/dashboard`;
 
   return (
@@ -88,13 +91,17 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             <ol className="grid gap-3 sm:grid-cols-3">
               {[
                 { done: account.plan !== null || account.balanceMicroUsd > BigInt(0), label: d.step1, href: `${base}/plan` },
-                { done: false, label: d.step2, href: `${base}/keys` },
+                { done: hasKey, label: d.step2, href: `${base}/keys` },
                 { done: false, label: d.step3, href: `/${locale}/docs#quickstart` },
               ].map((step, index) => (
                 <li key={step.label}>
                   <Link href={step.href} className="flex items-center gap-3 rounded-2xl bg-muted/50 p-4 text-sm hover:bg-muted">
-                    {step.done ? <CircleCheckIcon size={22} aria-hidden /> : <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium tabular-nums">{index + 1}</span>}
+                    {/* El check va en la misma caja de 24 px que el número: si no, el paso hecho queda 2 px más bajo. */}
+                    {step.done
+                      ? <span className="flex size-6 shrink-0 items-center justify-center"><CircleCheckIcon size={22} aria-hidden /></span>
+                      : <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium tabular-nums">{index + 1}</span>}
                     {step.label}
+                    {step.done ? <span className="sr-only"> {d.stepDone}</span> : null}
                   </Link>
                 </li>
               ))}
@@ -157,8 +164,9 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
               <CardContent className="flex flex-col gap-5">
                 {activePacks.map((pack) => (
                   <div key={pack.id} className="flex flex-col gap-2">
-                    <Progress value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100}>
-                      <span className="flex items-center gap-2 text-sm font-medium"><ModelLogo modelId={pack.modelId} />{names.get(pack.modelId) ?? pack.modelId}</span>
+                    {/* Con el idioma de la ruta: si no, el porcentaje que lee el lector de pantalla sale distinto en el servidor. */}
+                    <Progress value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100} locale={locale}>
+                      <ProgressLabel className="flex items-center gap-2"><ModelLogo modelId={pack.modelId} />{names.get(pack.modelId) ?? pack.modelId}</ProgressLabel>
                     </Progress>
                     <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground tabular-nums">
                       <span>{t(d.packLeft, { left: formatUsd(Number(pack.balanceMicroUsd), locale), total: formatUsd(Number(pack.grantedMicroUsd), locale) })}</span>
@@ -194,8 +202,8 @@ async function Overview({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           {byModel.length === 0 ? <p className="text-sm text-muted-foreground">{d.byModelEmpty}</p> : byModel.map((row) => {
             const share = planTotal > 0 ? Number(row.plan) / planTotal : 0;
             return (
-              <Progress key={row.modelId} value={share * 100}>
-                <span className="flex min-w-0 items-center gap-2 text-sm font-medium"><ModelLogo modelId={row.modelId} /><span className="truncate">{names.get(row.modelId) ?? row.modelId}</span></span>
+              <Progress key={row.modelId} value={share * 100} locale={locale}>
+                <ProgressLabel className="flex min-w-0 items-center gap-2"><ModelLogo modelId={row.modelId} /><span className="truncate">{names.get(row.modelId) ?? row.modelId}</span></ProgressLabel>
                 <span className="ml-auto text-sm text-muted-foreground tabular-nums">
                   {formatPercent(share, locale)} · {t(d.requestCount, { count: formatCount(row.requests, locale) })}
                 </span>

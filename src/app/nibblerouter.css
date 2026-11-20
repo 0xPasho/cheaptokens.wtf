@@ -15,12 +15,14 @@
   gap: 24px;
   min-height: 72px;
   padding-inline: 20px 24px;
+  /* Una sola altura para todo lo que va en la fila: logo, links, búsqueda, tema, CTA, entrar y cuenta. */
+  --nr-topbar-control: 36px;
   background: var(--navigation-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 .nr-header-leading { display: flex; align-items: center; gap: 34px; min-width: 0; }
-.nr-brand-button { display: inline-flex; align-items: center; border: 0; padding: 4px; background: none; }
+.nr-brand-button { display: inline-flex; align-items: center; height: var(--nr-topbar-control); border: 0; padding: 0 4px; background: none; }
 .nr-brand-button img { width: 27px; height: 27px; }
 /* El «wtf» del logo: Comic Sans, arcoíris pastel en movimiento y letras que se menean — guiño a la web de 2003. */
 .nr-brand-accent {
@@ -58,7 +60,9 @@
 }
 .nr-desktop-nav { display: flex; align-items: center; gap: 26px; }
 .nr-desktop-nav a {
-  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  height: var(--nr-topbar-control);
   color: var(--muted-foreground);
   font-size: 14px;
   font-weight: 500;
@@ -68,7 +72,7 @@
 .nr-desktop-nav a:hover, .nr-desktop-nav a.active { color: var(--foreground); }
 .nr-search-box {
   display: flex; align-items: center; gap: 9px;
-  width: 168px; height: 40px;
+  width: 168px; height: var(--nr-topbar-control);
   padding-inline: 16px;
   background: var(--secondary);
   border-radius: 999px;
@@ -91,14 +95,16 @@
   background: transparent; color: var(--foreground);
 }
 .nr-icon-button:hover { background: var(--secondary); }
+.nr-topbar .nr-mobile-menu { display: none; }
 .nr-pill-button {
-  border: 0; padding: 8px 15px; border-radius: 999px;
+  display: inline-flex; align-items: center; height: var(--nr-topbar-control);
+  border: 0; padding: 0 15px; border-radius: 999px;
   background: var(--secondary); color: var(--foreground);
   font-size: 12.5px; font-weight: 500; white-space: nowrap;
   transition: background 180ms var(--ease);
 }
 .nr-pill-button:hover { background: var(--surface-pressed); }
-.nr-account-link { color: var(--muted-foreground); font-size: 13px; padding: 8px 4px; white-space: nowrap; transition: color 150ms; }
+.nr-account-link { display: inline-flex; align-items: center; height: var(--nr-topbar-control); padding: 0 4px; color: var(--muted-foreground); font-size: 13px; white-space: nowrap; transition: color 150ms; }
 .nr-account-link:hover { color: var(--foreground); }
 
 .nr-main { padding-inline: 20px; }
@@ -138,6 +144,9 @@
   }
   /* Al salir el sidebar del flujo, la columna principal se ancla a la pista 2 a mano. */
   .nr-main .nr-layout > section { grid-column: 2; }
+  /* El sidebar fijo llega al borde inferior: el footer empieza en la columna principal (20 + 240 + 40 px)
+     para no pintarse encima de él al final de la página. Aplica al catálogo y al dashboard. */
+  body:has(.nr-main .nr-catalog > .nr-sidebar) .nr-site-footer { margin-left: 300px; }
 }
 .nr-sidebar::-webkit-scrollbar { width: 0; display: none; }
 .nr-sidebar-group + .nr-sidebar-group { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -198,9 +207,9 @@
 .nr-big-list button[aria-pressed="true"] { color: var(--foreground); font-weight: 600; }
 
 /* ---------- Section head ---------- */
-.nr-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 4px; }
+.nr-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 16px; }
 .nr-section-head p { margin: 0; font-size: 14px; font-weight: 500; }
-.nr-section-head span { margin-left: 5px; color: var(--muted-foreground); font-size: 13px; font-weight: 400; }
+.nr-section-head span { margin-left: 2px; color: var(--muted-foreground); font-size: 13px; font-weight: 400; }
 .nr-view-toggle { display: flex; gap: 4px; }
 .nr-view-button {
   display: grid; place-items: center;
@@ -234,16 +243,20 @@
 .nr-pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 22px; }
 .nr-pills span { padding: 5px 12px; border-radius: 999px; background: var(--surface-pill); font-size: 12px; color: var(--text-pill); font-variant-numeric: tabular-nums; }
 
-/* List view */
-.nr-grid.list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.nr-grid.list .nr-model-card {
+/* List view: la misma tarjeta en dos capas, en una fila: nombre, descripción en una línea, contexto y descuento. */
+.nr-grid.nr-list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.nr-grid.nr-list .nr-model-card-front {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
-  column-gap: 32px; align-items: center;
-  padding: 15px 24px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) auto;
+  align-items: center; column-gap: 24px;
+  padding: 12px 16px;
 }
-.nr-grid.list .nr-model-meta, .nr-grid.list .nr-pills { display: none; }
-.nr-grid.list .nr-desc { grid-area: 1 / 2 / 2 / 3; margin: 0; -webkit-line-clamp: 1; }
+.nr-grid.nr-list .nr-model-id { min-width: 0; }
+.nr-grid.nr-list .nr-model-link { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nr-grid.nr-list .nr-model-card-front .nr-desc { margin: 0; -webkit-line-clamp: 1; }
+.nr-grid.nr-list .nr-model-card-front .nr-pills { flex-wrap: nowrap; justify-content: flex-end; margin: 0; }
+.nr-grid.nr-list .nr-pills span:not(.nr-pill-context, .nr-pill-discount) { display: none; }
+.nr-grid.nr-list .nr-model-card-footer { display: none; }
 
 .nr-more { display: flex; justify-content: center; padding: 30px 0 4px; }
 .nr-more button {
@@ -309,6 +322,9 @@
 @media (max-width: 860px) {
   .nr-topbar { min-height: 64px; padding-inline: 12px; gap: 10px; }
   .nr-desktop-nav, .nr-search-box, .nr-account-link { display: none; }
+  /* El tema pasa al menú móvil: así caben la CTA, la cuenta y el menú a 375 px. */
+  .nr-topbar .nr-theme-button { display: none; }
+  .nr-topbar .nr-mobile-menu { display: inline-flex; }
   .nr-main { padding-inline: 14px; }
   .nr-discovery-panel { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 88px 0 56px; }
   .nr-page-head { padding: 104px 0 26px; }
@@ -316,9 +332,9 @@
   .nr-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .nr-sidebar { position: static; max-height: none; }
   .nr-grid { grid-template-columns: minmax(0, 1fr); }
-  .nr-grid.list .nr-model-card { grid-template-columns: minmax(0, 1fr) auto; }
-  .nr-grid.list .nr-caps { display: none; }
-  .nr-grid.list .nr-model-foot { grid-area: 1 / 2 / 3 / 3; }
+  /* En una columna angosta la fila deja el nombre y el descuento: la descripción y el contexto no caben. */
+  .nr-grid.nr-list .nr-model-card-front { grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; }
+  .nr-grid.nr-list .nr-model-card-front .nr-desc, .nr-grid.nr-list .nr-pill-context { display: none; }
   .nr-model-card { min-height: 0; }
   .nr-board-row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr); }
   .nr-board-row .nr-lat, .nr-board-row .nr-cost { display: none; }
@@ -366,11 +382,11 @@
   overflow: auto;
   background: var(--surface-code);
   color: var(--text-code);
-  font-family: ui-monospace, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  /* JetBrains Mono, la misma que /docs: el sitio la carga para el código (ADR-0036). */
+  font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 450;
+  font-weight: 400;
   line-height: 22px;
-  letter-spacing: -.176px;
   font-variant-ligatures: none;
   white-space: pre;
   tab-size: 2;
@@ -379,7 +395,8 @@
   scrollbar-color: var(--scrollbar) transparent;
 }
 .nr-model-content { min-width: 0; container-type: inline-size; }
-.nr-model-page > .nr-model-sidebar-toggle { display: none; }
+.nr-model-page > .nr-model-sidebar-toggle, .nr-model-catalog > .nr-catalog-filters-toggle { display: none; }
+.nr-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding-inline: 6px; border-radius: 999px; background: var(--foreground); color: var(--text-inverse); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nr-code-box code, .nr-code-box .nr-token { font: inherit; letter-spacing: inherit; }
 .nr-code-box .nr-token:is(.nr-comment, .nr-prolog, .nr-doctype, .nr-cdata) { color: var(--syntax-comment); }
 .nr-code-box .nr-token:is(.nr-keyword, .nr-operator) { color: var(--syntax-keyword); }
@@ -423,7 +440,7 @@
 .nr-schema-column + .nr-schema-column { border-left: 1px solid var(--border); }
 .nr-schema-column h3 { margin: 0 0 16px; font-size: 15px; font-weight: 500; }
 .nr-schema-field { padding: 16px 0; border-top: 1px solid var(--border); }
-.nr-schema-field code { font: 450 14px/1.5 ui-monospace, "SF Mono", Monaco, "Cascadia Code", Consolas, monospace; color: var(--text-code); }
+.nr-schema-field code { font: 450 14px/1.5 var(--font-mono); color: var(--text-code); }
 .nr-schema-field small { display: block; margin-top: 8px; color: var(--text-secondary); font-size: 14px; line-height: 1.5; }
 .nr-schema-field em { color: var(--syntax-property); font-style: normal; }
 .nr-schema-json { height: 360px; }
@@ -471,7 +488,11 @@
   .nr-model-page { padding: 92px 14px 40px; }
   .nr-model-page > .nr-model-sidebar-toggle { display: inline-flex; margin-bottom: 24px; }
   .nr-model-shell .nr-sidebar { display: none; }
-  .nr-model-shell .nr-sidebar[data-open="true"] { display: block; max-height: 320px; overflow-y: auto; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .nr-model-shell .nr-sidebar[data-open="true"] { display: block; max-height: none; overflow: visible; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  /* El catálogo, igual: los filtros completos al abrirlos, sin una caja de 248 px con scroll propio. */
+  .nr-model-catalog > .nr-catalog-filters-toggle { display: inline-flex; justify-self: start; }
+  .nr-model-catalog > .nr-sidebar { display: none; }
+  .nr-model-catalog > .nr-sidebar[data-open="true"] { display: block; max-height: none; overflow: visible; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
 }
 @media (max-width: 950px) {
   .nr-detail-layout { grid-template-columns: minmax(0, 1fr); }
@@ -515,11 +536,11 @@
    Superficies opacas y sin sombras (ADR-0036). Los colores salen de los tokens de globals.css. */
 .nr-desktop-nav a[aria-current="page"] { color: var(--foreground); }
 .nr-mk { padding-bottom: 24px; }
-.nr-mk-section { padding-top: 96px; }
+.nr-mk-section { padding-top: 160px; }
 .nr-mk-section-tight { padding-top: 48px; }
 .nr-mk-head { max-width: 720px; margin-bottom: 32px; }
 .nr-mk-eyebrow { margin: 0 0 14px; color: var(--text-label); font-size: 13px; font-weight: 500; }
-.nr-mk-title { margin: 0; font-size: clamp(32px, 3.6vw, 48px); font-weight: 550; line-height: 1.06; letter-spacing: -0.045em; text-wrap: balance; }
+.nr-mk-title { margin: 0; font-size: clamp(34px, 4.2vw, 60px); font-weight: 600; line-height: 1.02; letter-spacing: -0.05em; text-wrap: balance; }
 .nr-mk-sub { margin: 14px 0 0; color: var(--muted-foreground); font-size: 16px; line-height: 1.6; text-wrap: pretty; }
 .nr-mk-text-link {
   position: relative; display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
@@ -539,27 +560,12 @@
 .nr-mk-button.bg-secondary { background: var(--surface-action); color: var(--foreground); }
 @media (hover: hover) { .nr-mk-button.bg-secondary:hover { background: var(--surface-action-hover); } }
 
-/* 01 · Hero */
-.nr-mk-hero { padding-top: 148px; text-align: center; }
-.nr-mk-chip {
-  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 26px;
-  padding: 5px 14px 5px 6px; border-radius: 999px; background: var(--card);
-  color: var(--text-description); font-size: 13px;
-}
-.nr-mk-chip-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: var(--surface-pill); }
-.nr-mk-chip-mark img { width: 14px; height: 14px; }
-.nr-mk-hero-title { margin: 0; font-size: clamp(46px, 6.4vw, 88px); font-weight: 550; line-height: 1.02; letter-spacing: -0.05em; text-wrap: balance; }
-.nr-mk-hero-title span { display: block; color: var(--muted-foreground); }
-.nr-mk-hero-sub { max-width: 640px; margin: 24px auto 0; color: var(--text-description); font-size: 18px; line-height: 1.6; text-wrap: pretty; }
+/* 01 · Hero: una sola idea por pantalla. El título, el precio en grande del modelo elegido y cómo empezar. */
+.nr-mk-hero { display: flex; flex-direction: column; align-items: center; padding-top: 136px; text-align: center; }
+.nr-mk-hero-title { max-width: 11.5em; margin: 0; font-size: clamp(44px, 6vw, 88px); font-weight: 600; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
+/* Más cerca del texto principal que el gris de descripción: alto contraste, sin verse apagado. */
+.nr-mk-hero-sub { max-width: 52ch; margin: 24px 0 0; color: color-mix(in oklch, var(--foreground) 72%, transparent); font-size: 19px; line-height: 1.55; text-wrap: balance; }
 .nr-mk-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 32px; }
-.nr-mk-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin: 22px 0 0; padding: 0; list-style: none; color: var(--muted-foreground); font-size: 13px; }
-.nr-mk-facts li + li::before { content: "·"; margin-right: 20px; opacity: 0.6; }
-.nr-mk-composer { max-width: 760px; margin: 56px auto 0; overflow: hidden; border-radius: 28px; background: var(--card); text-align: left; }
-.nr-mk-composer [data-slot="tabs"] { gap: 0; }
-.nr-mk-composer .nr-detail-tabs[data-slot="tabs-list"] { align-self: stretch; justify-content: flex-start; gap: 22px; padding-inline: 22px; border-bottom: 1px solid var(--border); }
-.nr-mk-composer .nr-code-block { border-radius: 0; }
-.nr-mk-composer .nr-code-box { height: auto; }
-.nr-mk-composer-foot { display: flex; align-items: center; gap: 10px; margin: 0; padding: 14px 22px; color: var(--text-description); font-size: 13px; }
 .nr-mk-dot { flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--foreground); opacity: 0.55; }
 /* Líneas resaltadas del snippet: neutras, porque success es solo dinero a favor (docs/13). */
 .nr-code-line { display: block; width: max-content; min-width: calc(100% + 76px); margin: 0 -52px 0 -24px; padding: 0 52px 0 24px; }
@@ -741,8 +747,8 @@
   .nr-mk-faq-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 @media (max-width: 860px) {
-  .nr-mk-hero { padding-top: 112px; }
-  .nr-mk-section { padding-top: 72px; }
+  .nr-mk-hero { padding-top: 120px; }
+  .nr-mk-section { padding-top: 104px; }
   .nr-mk-price-grid, .nr-mk-steps, .nr-mk-uses, .nr-mk-combo { grid-template-columns: minmax(0, 1fr); }
   .nr-mk-pay { grid-template-columns: minmax(0, 1fr); }
   .nr-mk-peek-foot { border-radius: 24px; }
@@ -755,10 +761,136 @@
 }
 @media (max-width: 560px) {
   .nr-grid.nr-mk-peek-grid, .nr-mk-plans { grid-template-columns: minmax(0, 1fr); }
-  /* A 320 px «Todos los modelos.» cabe en una línea. */
-  .nr-mk-hero-title { font-size: clamp(32px, 10.6vw, 40px); letter-spacing: -0.04em; }
-  .nr-mk-facts { flex-direction: column; gap: 4px; }
-  .nr-mk-facts li + li::before { content: none; }
+  .nr-mk-hero-title { font-size: clamp(38px, 11vw, 46px); letter-spacing: -0.045em; }
+}
+
+/* ═════════ Landing: hero, tabla de precios, por qué cuesta menos y migrar ═════════
+   Ritmo de 8 px. Tarjetas en dos capas (28/8/20) solo para objetos reales (el código, el diff); las listas y la
+   tabla van con líneas de 1 px. Todo valor de máquina (IDs, URLs, precios) en JetBrains Mono. */
+
+/* Hero */
+/* Ocupa el ancho de la columna: así el selector, si no cabe, se desliza en vez de ensanchar la página. */
+.nr-mk-hero-price { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; margin-top: 56px; }
+.nr-mk-hero-figures { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 28px; margin: 0; font-variant-numeric: tabular-nums; }
+.nr-mk-hero-official { color: var(--muted-foreground); font-size: clamp(28px, 3.4vw, 48px); font-weight: 450; letter-spacing: -0.03em; text-decoration-thickness: 3px; }
+.nr-mk-hero-ours { color: var(--foreground); font-size: clamp(64px, 9.5vw, 136px); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; }
+.nr-mk-hero-caption { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin: 20px 0 0; color: var(--muted-foreground); font-size: 15px; }
+/* Lo que el usuario ahorra es dinero a su favor: el único color del hero (docs/13 › Color). */
+.nr-mk-hero-savings { color: var(--success); font-weight: 550; font-variant-numeric: tabular-nums; }
+.nr-mk-model-picker[data-slot="toggle-group"] {
+  display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 100%; margin-top: 28px;
+  padding: 4px; border-radius: 999px; background: var(--card);
+}
+.nr-mk-model-picker [data-slot="toggle-group-item"] {
+  flex: none; height: 36px; gap: 8px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent;
+  box-shadow: none; color: var(--text-description); font-size: 13.5px; font-weight: 450;
+}
+.nr-mk-model-picker [data-slot="toggle-group-item"] img { width: 16px; height: 16px; object-fit: contain; }
+.nr-mk-model-picker [data-slot="toggle-group-item"][aria-pressed="true"] { background: var(--foreground); color: var(--text-inverse); }
+.nr-mk-model-picker [data-slot="toggle-group-item"][aria-pressed="true"] img.nr-brand-monochrome { filter: invert(1); }
+.dark .nr-mk-model-picker [data-slot="toggle-group-item"][aria-pressed="true"] img.nr-brand-monochrome { filter: none; }
+@media (hover: hover) { .nr-mk-model-picker [data-slot="toggle-group-item"]:not([aria-pressed="true"]):hover { color: var(--foreground); } }
+.nr-mk-hero .nr-mk-ctas { justify-content: center; margin-top: 44px; }
+.nr-mk-base-url {
+  display: inline-flex; align-items: center; gap: 10px; max-width: 100%; height: 40px; margin-top: 16px;
+  padding: 0 4px 0 16px; border-radius: 999px; background: var(--surface-action); font-size: 13px;
+}
+.nr-mk-base-url > span { flex: none; color: var(--muted-foreground); }
+.nr-mk-base-url code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--foreground); font: 13px var(--font-mono); }
+.nr-mk-base-url [data-slot="button"] { flex: none; width: 32px; height: 32px; border-radius: 999px; }
+
+/* Tabla de precios */
+.nr-mk-prices[data-slot="tabs"] { gap: 0; }
+.nr-mk-price-tabs[data-slot="tabs-list"] {
+  display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; width: auto; height: auto;
+  margin-bottom: 8px; padding: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.nr-mk-price-tabs [data-slot="tabs-trigger"] {
+  flex: none; height: 36px; gap: 8px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--card);
+  box-shadow: none; color: var(--text-description); font-size: 13.5px; font-weight: 450;
+}
+.nr-mk-price-tabs [data-slot="tabs-trigger"]::after { display: none; }
+.nr-mk-price-tabs [data-slot="tabs-trigger"][data-active] { background: var(--foreground); color: var(--text-inverse); }
+@media (hover: hover) { .nr-mk-price-tabs [data-slot="tabs-trigger"]:not([data-active]):hover { background: var(--surface-hover); color: var(--foreground); } }
+.nr-mk-price-tabs [data-slot="tabs-trigger"] .nr-mk-chip-count { opacity: 0.7; }
+.nr-mk-price-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.nr-mk-price-table :is(th, td) { padding: 14px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.nr-mk-price-table :is(th, td):first-child { padding-left: 0; }
+.nr-mk-price-table :is(th, td):last-child { padding-right: 0; }
+.nr-mk-price-table thead th { padding-top: 16px; padding-bottom: 10px; color: var(--text-label); font-size: 12px; font-weight: 500; text-align: left; }
+.nr-mk-price-table tbody th { font-weight: 400; text-align: left; }
+.nr-mk-price-table .nr-mk-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nr-mk-price-table td.nr-mk-num { font: 13px var(--font-mono); }
+.nr-mk-table-model { display: inline-flex; align-items: center; gap: 12px; color: var(--foreground); }
+.nr-mk-table-model img { flex: none; width: 20px; height: 20px; object-fit: contain; }
+.nr-mk-table-model > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nr-mk-table-model b { font-size: 14.5px; font-weight: 500; letter-spacing: -0.01em; }
+.nr-mk-table-model code { color: var(--muted-foreground); font: 12px var(--font-mono); }
+@media (hover: hover) { .nr-mk-table-model:hover b { text-decoration: underline; text-underline-offset: 3px; } }
+.nr-mk-price-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 16px; color: var(--muted-foreground); font-size: 13px; }
+.nr-mk-price-foot p { margin: 0; }
+.nr-mk-price-foot .nr-mk-text-link { margin-top: 0; }
+
+/* Histograma de descuentos: barras neutras y la mediana en el color del texto. */
+/* Una fila: la mediana en grande a la izquierda (5 de 12) y las barras a la derecha (7 de 12). */
+.nr-mk-histogram {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: end; gap: 48px;
+  margin: 56px 0 0; padding-top: 32px; border-top: 1px solid var(--border);
+}
+.nr-mk-histogram figcaption { display: grid; gap: 6px; color: var(--muted-foreground); font-size: 13.5px; line-height: 1.5; }
+.nr-mk-histogram-median { color: var(--foreground); font: 550 clamp(40px, 4vw, 56px)/1 var(--font-sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.nr-mk-histogram-median + span { color: var(--foreground); font-size: 15px; font-weight: 500; }
+.nr-mk-histogram-chart { position: relative; display: grid; gap: 8px; }
+.nr-mk-histogram-bars { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; align-items: end; gap: 3px; height: 72px; }
+.nr-mk-histogram-bars span { border-radius: 3px 3px 0 0; background: color-mix(in oklch, var(--foreground) 24%, transparent); }
+.nr-mk-histogram-bars span[data-empty] { height: 2px; }
+/* La mediana: una línea en su posición exacta sobre las barras, no una barra de otro color. */
+.nr-mk-histogram-marker { position: absolute; top: -6px; bottom: 22px; width: 0; border-left: 1px dashed var(--foreground); }
+.nr-mk-histogram-axis { position: relative; height: 14px; color: var(--muted-foreground); font: 12px/14px var(--font-mono); }
+.nr-mk-histogram-axis span { position: absolute; top: 0; white-space: nowrap; }
+.nr-mk-histogram-axis span:first-child { left: 0; }
+.nr-mk-histogram-axis span:last-child { right: 0; }
+.nr-mk-histogram-axis span[data-median] { color: var(--foreground); transform: translateX(-50%); }
+
+/* Por qué cuesta menos: título a la izquierda (5 de 12), lista de definiciones con líneas a la derecha (7 de 12). */
+.nr-mk-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; gap: 48px; }
+.nr-mk-split .nr-mk-head { margin-bottom: 0; }
+.nr-mk-facts-list { margin: 0; border-top: 1px solid var(--border); }
+.nr-mk-facts-list > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--border); }
+.nr-mk-facts-list dt { font-size: 15px; font-weight: 550; letter-spacing: -0.01em; }
+.nr-mk-facts-list dd { margin: 0; color: var(--text-description); font-size: 14.5px; line-height: 1.6; text-wrap: pretty; }
+
+/* Migrar: el diff en dos capas y, al lado, los pasos y con qué funciona. Tonos neutros: el verde es solo dinero. */
+.nr-mk-switch-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; gap: 32px; }
+.nr-mk-diff { min-width: 0; margin: 0; padding: 8px; border-radius: 28px; background: var(--card); }
+.nr-mk-diff figcaption { padding: 8px 12px 12px; color: var(--text-label); font-size: 12px; font-weight: 500; }
+.nr-mk-diff pre { margin: 0; padding: 16px 0; overflow-x: auto; border-radius: 20px; background: var(--surface-code); color: var(--text-code); font: 14px/24px var(--font-mono); }
+.nr-mk-diff-line { display: block; padding-right: 20px; white-space: pre; }
+.nr-mk-diff-sign { display: inline-block; width: 40px; padding-left: 16px; color: var(--muted-foreground); user-select: none; }
+.nr-mk-diff-line[data-kind="removed"] { background: color-mix(in oklch, var(--foreground) 4%, transparent); color: var(--muted-foreground); }
+.nr-mk-diff-line[data-kind="added"] { background: color-mix(in oklch, var(--foreground) 9%, transparent); color: var(--foreground); box-shadow: inset 3px 0 0 var(--foreground); }
+.nr-mk-switch-side { display: grid; gap: 12px; padding-top: 4px; }
+.nr-mk-switch-side .nr-mk-eyebrow { margin: 0; }
+.nr-mk-inline-steps { margin: 0 0 20px; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.nr-mk-inline-steps li { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+.nr-mk-inline-steps li > span { display: inline-grid; flex: none; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: var(--surface-action); color: var(--muted-foreground); font: 500 12px var(--font-mono); }
+.nr-mk-tool-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.nr-mk-tool-list li { padding: 6px 12px; border-radius: 999px; background: var(--surface-action); color: var(--text-description); font-size: 13px; }
+.nr-mk-tool-list li[data-soon] { background: transparent; box-shadow: inset 0 0 0 1px var(--border); color: var(--muted-foreground); }
+
+@media (max-width: 1080px) {
+  .nr-mk-split, .nr-mk-switch-grid, .nr-mk-histogram { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+}
+/* En una columna la tabla pasa a filas de dos líneas: nombre y descuento arriba, los dos precios debajo. */
+@media (max-width: 760px) {
+  .nr-mk-price-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nr-mk-price-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .nr-mk-price-table tbody :is(th, td) { padding: 0; border: 0; }
+  .nr-mk-price-table .nr-mk-col-context { display: none; }
+  .nr-mk-price-table .nr-mk-col-discount { grid-column: 2; grid-row: 1; align-self: center; }
+  .nr-mk-price-table td[data-label] { display: flex; grid-column: 1 / -1; justify-content: space-between; gap: 12px; }
+  .nr-mk-price-table td[data-label]::before { content: attr(data-label); color: var(--muted-foreground); font: 12.5px var(--font-sans); }
+  .nr-mk-facts-list > div { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 }
 
 /* ═════════ Ventana única de acceso: /sign-in y /sign-up (ADR-0063) ═════════
@@ -827,4 +959,48 @@
 }
 @media (max-width: 860px) {
   .nr-auth-page { padding-top: 104px; padding-bottom: 64px; }
+}
+
+/* ═════════ Páginas de estado: 404 y error ═════════
+   La columna de la ventana de acceso (.nr-auth) con los botones de la landing debajo del texto. */
+.nr-status-page { gap: 28px; }
+.nr-status-page .nr-mk-eyebrow { margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+.nr-status-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+/* Dentro del dashboard la columna ya tiene su margen: el bloque empieza donde empiezan los títulos de sus páginas. */
+.nr-status-inline { padding-block: 8px 48px; }
+
+/* ═════════ Dashboard en pantallas angostas ═════════
+   La barra lateral pasa a una fila de pestañas que se desliza: todas las secciones a un toque, sin una caja con
+   scroll vertical que corte «Ajustes». Los títulos de grupo se ocultan, pero siguen nombrando sus navs. */
+@media (max-width: 860px) {
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar {
+    display: flex; align-items: center; gap: 2px;
+    max-height: none; margin-inline: -14px; padding: 0 14px 4px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar .nr-sidebar-group { display: contents; }
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar .nr-sidebar-group h2 { display: none; }
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar .nr-big-list { display: flex; flex-direction: row; width: auto; gap: 2px; }
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar .nr-big-list :is(a, button) { width: auto; white-space: nowrap; padding-inline: 10px 14px; }
+  /* Entre «Cuenta» y «Ayuda», un separador corto en lugar del borde horizontal de escritorio. */
+  .nr-catalog:not(.nr-model-catalog) > .nr-sidebar .nr-sidebar-group + .nr-sidebar-group .nr-big-list {
+    margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--border);
+  }
+}
+
+/* Landing en un solo eje: después del hero centrado, los encabezados de sección también van al centro. Las
+   secciones en dos columnas a propósito (por qué cuesta menos, preguntas) conservan su encabezado a la izquierda. */
+.nr-mk > .nr-mk-section:not(.nr-mk-split, .nr-mk-faq-layout) > .nr-mk-head { margin-inline: auto; text-align: center; }
+.nr-mk > .nr-mk-section:not(.nr-mk-split, .nr-mk-faq-layout) > .nr-mk-head .nr-mk-sub { margin-inline: auto; }
+.nr-mk-price-tabs[data-slot="tabs-list"] { justify-content: center; }
+/* En angosto los cuatro modelos no caben en una píldora: una fila que se desliza, con el último desvanecido,
+   en vez de partirse en tres líneas dentro de un óvalo. */
+@media (max-width: 560px) {
+  .nr-mk-model-picker[data-slot="toggle-group"] {
+    flex-wrap: nowrap; justify-content: flex-start; width: 100%; overflow-x: auto; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
 }

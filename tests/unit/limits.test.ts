@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  addToWindow, admit, type OverflowSettings, overflowMonthKey, type PlanUsage, planRemaining, planResumesAt, prepaidRules, splitCharge,
+  addToWindow, admissionBudget, admit, budgetShortfall, type OverflowSettings, overflowMonthKey, type PlanUsage, planRemaining, planResumesAt, prepaidRules, splitCharge,
   windowFraction,
 } from "@/lib/billing/limits";
 import { FIVE_HOUR_MS, packGrant, PACK_OFFERS, PLANS, WEEK_MS } from "@/lib/billing/plans";
@@ -87,6 +87,37 @@ describe("admission", () => {
   it("without a plan behaves like before: positive balance passes", () => {
     expect(admit({ ...base, plan: null, balanceMicroUsd: big(1) })).toEqual({ ok: true, usesPlan: false });
     expect(admit({ ...base, plan: null, balanceMicroUsd: big(0) })).toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
+  });
+});
+
+describe("admission budget", () => {
+  const base = { source: "plan_then_prepaid" as const, overflow, balanceMicroUsd: big(0), packBalanceMicroUsd: big(0), now };
+
+  it("adds the plan left, the pack and the credits the key may use", () => {
+    expect(admissionBudget({ ...base, plan: pro(5_000_000), packBalanceMicroUsd: big(100), balanceMicroUsd: big(1_000) }))
+      .toBe(big(460_000 + 100 + 1_000));
+    expect(admissionBudget({ ...base, plan: null, packBalanceMicroUsd: big(100), balanceMicroUsd: big(1_000) })).toBe(big(1_100));
+  });
+
+  it("caps overflow credits with what is left of the monthly cap, and never counts a negative balance", () => {
+    expect(admissionBudget({ ...base, plan: pro(5_460_000), balanceMicroUsd: big(9_000_000), overflow: { ...overflow, spentThisMonthMicroUsd: big(4_999_000) } }))
+      .toBe(big(1_000));
+    expect(admissionBudget({ ...base, plan: pro(5_000_000), balanceMicroUsd: big(-500) })).toBe(big(460_000));
+    expect(admissionBudget({ ...base, plan: pro(5_460_000), balanceMicroUsd: big(1_000), overflow: { ...overflow, mode: "stop" } })).toBe(big(0));
+  });
+
+  it("plan-only keys count only the plan; prepaid-only keys never count it", () => {
+    expect(admissionBudget({ ...base, source: "plan_only", plan: pro(5_000_000), balanceMicroUsd: big(1_000), packBalanceMicroUsd: big(100) }))
+      .toBe(big(460_000));
+    expect(admissionBudget({ ...base, source: "prepaid_only", plan: pro(0), balanceMicroUsd: big(1_000) })).toBe(big(1_000));
+  });
+
+  it("reports a shortfall with the same code as an exhausted budget, retrying at the first window reset", () => {
+    expect(budgetShortfall("plan_then_prepaid", pro(5_000_000), now)).toEqual({ ok: false, code: "usage_limit_reached", retryAt: now + FIVE_HOUR_MS / 2 });
+    expect(budgetShortfall("plan_only", pro(5_460_000, 23_400_000), now)).toEqual({ ok: false, code: "usage_limit_reached", retryAt: now + WEEK_MS / 2 });
+    expect(budgetShortfall("plan_then_prepaid", { plan: PLANS.pro, fiveHour: null, week: null }, now)).toEqual({ ok: false, code: "usage_limit_reached", retryAt: null });
+    expect(budgetShortfall("prepaid_only", pro(0), now)).toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
+    expect(budgetShortfall("plan_then_prepaid", null, now)).toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
   });
 });
 

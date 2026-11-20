@@ -4,17 +4,19 @@ import { describe, expect, it } from "vitest";
 import { validateChatRequest } from "@/lib/gateway/validate";
 
 const valid = { model: "author/model", messages: [{ role: "user", content: "Hola" }] };
+/** Sin `max_tokens`, `max_completion_tokens` ni `n`. */
+const unsized = { maxOutputTokens: null, choices: 1 };
 
 describe("validateChatRequest", () => {
   it("defaults streaming flags and keeps the original body", () => {
     const result = validateChatRequest(valid);
-    expect(result).toEqual({ ok: true, body: valid, model: valid.model, stream: false, includeUsage: false });
+    expect(result).toEqual({ ok: true, body: valid, model: valid.model, stream: false, includeUsage: false, ...unsized });
     if (result.ok) expect(result.body).toBe(valid);
   });
 
   it.each([true, false])("respects include_usage=%s", (includeUsage) => {
     const body = { ...valid, stream: true, stream_options: { include_usage: includeUsage, extra: "preserved" } };
-    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage });
+    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage, ...unsized });
   });
 
   it.each([
@@ -22,12 +24,12 @@ describe("validateChatRequest", () => {
     { stream: false, stream_options: null },
   ])("treats nullable streaming fields as absent: %j", (fields) => {
     const body = { ...valid, ...fields };
-    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: false, includeUsage: false });
+    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: false, includeUsage: false, ...unsized });
   });
 
   it("accepts null stream_options while streaming", () => {
     const body = { ...valid, stream: true, stream_options: null };
-    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage: false });
+    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: body.model, stream: true, includeUsage: false, ...unsized });
   });
 
   it("accepts include_usage with null stream", () => {
@@ -60,7 +62,9 @@ describe("validateChatRequest", () => {
       model: " author/model ",
       messages: [{ role: "custom-role", content: [{ type: "image_url", image_url: { url: "data:image/png;base64,..." } }], future: 3 }, { role: "" }],
       temperature: "model decides",
-      max_tokens: -1,
+      max_tokens: 900,
+      max_completion_tokens: 700,
+      n: 2,
       tools: [{ type: "function", function: { name: "weather" } }],
       tool_choice: "auto",
       response_format: { type: "json_object" },
@@ -69,7 +73,21 @@ describe("validateChatRequest", () => {
       stream: false,
       stream_options: { include_usage: true },
     };
-    expect(validateChatRequest(body)).toEqual({ ok: true, body, model: " author/model ", stream: false, includeUsage: true });
+    expect(validateChatRequest(body)).toEqual({
+      ok: true, body, model: " author/model ", stream: false, includeUsage: true, maxOutputTokens: 700, choices: 2,
+    });
+  });
+
+  it.each(["max_tokens", "max_completion_tokens", "n"])("rejects %s that is not a positive integer", (field) => {
+    for (const value of [0, -1, 1.5, "100", true, {}, [], Number.MAX_SAFE_INTEGER + 1]) {
+      expect(validateChatRequest({ ...valid, [field]: value }))
+        .toEqual({ ok: false, message: `The '${field}' field must be a positive integer.` });
+    }
+  });
+
+  it("treats null output limits and choices as absent", () => {
+    expect(validateChatRequest({ ...valid, max_tokens: null, max_completion_tokens: null, n: null }))
+      .toMatchObject({ ok: true, ...unsized });
   });
 
   it("accepts stream_options without include_usage", () => {

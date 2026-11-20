@@ -10,6 +10,7 @@ import TimerIcon from "kubai-icons-react/icons/timer";
 import WalletIcon from "kubai-icons-react/icons/wallet";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useId, useRef } from "react";
 
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -27,11 +28,24 @@ const ITEMS = [
 export function DashboardNav({ locale, labels }: { locale: Locale; labels: Dictionary["dashboard"]["nav"] }) {
   const pathname = usePathname();
   const base = `/${locale}/dashboard`;
+  // Cada landmark con su nombre: la sidebar es «Dashboard»; sus dos navs, «Cuenta» y «Ayuda» (sus títulos).
+  const id = useId();
+  // En móvil la barra es una fila que se desliza: la sección actual se centra para que siempre se vea.
+  // Solo mueve la fila (scrollLeft), nunca la página.
+  const asideRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const row = asideRef.current;
+    const current = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!row || !current || row.scrollWidth <= row.clientWidth) return;
+    const rowBox = row.getBoundingClientRect();
+    const itemBox = current.getBoundingClientRect();
+    row.scrollLeft += itemBox.left - rowBox.left - (rowBox.width - itemBox.width) / 2;
+  }, [pathname]);
   return (
-    <aside className="nr-sidebar" aria-label={labels.label}>
+    <aside ref={asideRef} className="nr-sidebar" aria-label={labels.label}>
       <div className="nr-sidebar-group">
-        <h2>{labels.account}</h2>
-        <nav className="nr-big-list" aria-label={labels.label}>
+        <h2 id={`${id}-account`}>{labels.account}</h2>
+        <nav className="nr-big-list" aria-labelledby={`${id}-account`}>
           {ITEMS.map(({ path, key, Icon }) => {
             const href = `${base}${path}`;
             const current = path === "" ? pathname === base : pathname.startsWith(href);
@@ -45,8 +59,8 @@ export function DashboardNav({ locale, labels }: { locale: Locale; labels: Dicti
         </nav>
       </div>
       <div className="nr-sidebar-group">
-        <h2>{labels.help}</h2>
-        <nav className="nr-big-list" aria-label={labels.help}>
+        <h2 id={`${id}-help`}>{labels.help}</h2>
+        <nav className="nr-big-list" aria-labelledby={`${id}-help`}>
           <Link href={`/${locale}/models`}>
             <GridIcon size={24} trigger="parent" aria-hidden />
             <span className="nr-sidebar-label">{labels.models}</span>

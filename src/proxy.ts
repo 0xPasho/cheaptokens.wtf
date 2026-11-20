@@ -80,5 +80,7 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   // Fuera: la API (/v1), los route handlers (/api), la puerta de socios (/partner/, docs/17), los archivos internos de Next y los estáticos.
-  matcher: ["/((?!v1|api|partner/|_next|.*\\..*).*)"],
+  // Los estáticos se reconocen por su extensión, no por tener un punto: los IDs de modelo llevan puntos
+  // (`/models/anthropic/claude-opus-5.5`) y sin idioma tienen que redirigir, no dar 404.
+  matcher: ["/((?!v1|api|partner/|_next|.*\\.(?:svg|png|jpe?g|gif|webp|avif|ico|txt|xml|json|webmanifest|woff2?|ttf|css|js|map|md)$).*)"],
 };

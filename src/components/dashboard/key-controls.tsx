@@ -2,7 +2,7 @@
 
 import PlusIcon from "kubai-icons-react/icons/circle-plus";
 import RotateIcon from "kubai-icons-react/icons/rotate-cw";
-import { useActionState, useState, useTransition } from "react";
+import { startTransition, useActionState, useRef, useState, useTransition } from "react";
 
 import {
   type ActionError, createKeyAction, type KeyResult, revokeKeyAction, rotateKeyAction,
@@ -24,13 +24,16 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Spinner } from "@/components/ui/spinner";
+import { t } from "@/lib/i18n/dictionaries";
+import { cn } from "@/lib/utils";
 
 type Source = "plan_then_prepaid" | "plan_only" | "prepaid_only";
 
 export interface KeyLabels {
   create: string; createTitle: string; createDescription: string; name: string; namePlaceholder: string; limit: string; limitHint: string;
   source: string; models: string; allModels: string; pickModels: string; pickModelsHint: string; createdTitle: string; createdDescription: string;
-  rotatedTitle: string; rotatedDescription: string; done: string; keyLabel: string; cancel: string;
+  rotatedTitle: string; rotatedDescription: string; done: string; keyLabel: string; cancel: string; close: string;
   rotate: string; rotateTitle: string; rotateBody: string; rotateConfirm: string; revoke: string; revokeTitle: string; revokeBody: string; revokeConfirm: string;
   sources: Record<Source, string>; sourceDescriptions: Record<Source, string>; copy: string; copied: string;
 }
@@ -67,7 +70,7 @@ export function CreateKeyDialog({ labels, models, errors, snippet, disabled }: {
         <PlusIcon data-icon="inline-start" aria-hidden />
         {labels.create}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl" closeLabel={labels.close}>
         <CreateKeyForm key={formKey} labels={labels} models={models} errors={errors} snippet={snippet} />
       </DialogContent>
     </Dialog>
@@ -75,7 +78,14 @@ export function CreateKeyDialog({ labels, models, errors, snippet, disabled }: {
 }
 
 function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels; models: { id: string; name: string }[]; errors: Record<ActionError, string>; snippet: SnippetProps }) {
-  const [state, action, pending] = useActionState<KeyResult, FormData>(createKeyAction, null);
+  const [state, action, pending] = useActionState<KeyResult, FormData>(async (previous, form) => {
+    try {
+      return await createKeyAction(previous, form);
+    } catch {
+      // Sesión vencida o el servidor falló: se ve el error genérico en vez de la pantalla de error.
+      return { ok: false, error: "error" };
+    }
+  }, null);
   const [scope, setScope] = useState<"all" | "pick">("all");
   if (state?.ok) {
     return (
@@ -91,7 +101,15 @@ function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels;
   }
   const error = state && !state.ok ? state.error : null;
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form
+      // Sin `action` en el form: React lo vacía al terminar y un error de validación borraría lo escrito.
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        startTransition(() => action(form));
+      }}
+      className="flex flex-col gap-4"
+    >
       <DialogHeader>
         <DialogTitle>{labels.createTitle}</DialogTitle>
         <DialogDescription>{labels.createDescription}</DialogDescription>
@@ -152,60 +170,115 @@ function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels;
   );
 }
 
-/** Rotar (key nueva, la anterior 24 h más) y revocar, ambos con confirmación. */
-export function KeyActions({ keyId, name, canRotate, labels, errors, snippet }: {
+type Confirm = "rotate" | "revoke";
+
+/**
+ * Rotar (key nueva, la anterior 24 h más) y revocar, ambos con confirmación. Sigue montado cuando la key
+ * ya está revocada: así el diálogo termina de cerrarse y devuelve el foco aunque la fila pierda sus botones.
+ */
+export function KeyActions({ keyId, name, revoked, canRotate, focusId, labels, errors, snippet }: {
   keyId: string;
   name: string;
+  revoked: boolean;
   canRotate: boolean;
+  /** El nombre de la key en su fila: recibe el foco cuando desaparecen los botones. */
+  focusId: string;
   labels: KeyLabels;
   errors: Record<ActionError, string>;
   snippet: SnippetProps;
 }) {
-  const [rotated, setRotated] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [error, setError] = useState<ActionError | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [rotated, setRotated] = useState<string | null>(null);
+  const [revealOpen, setRevealOpen] = useState(false);
+  const [pending, startAction] = useTransition();
+  const revokeRef = useRef<HTMLButtonElement>(null);
+  /** A dónde va el foco al cerrar la confirmación: su botón, ninguno (se abre la key rotada) o el nombre de la fila. */
+  const focusAfter = useRef<"trigger" | "none" | "row">("trigger");
+  const finalFocus = () => {
+    if (focusAfter.current === "none") return false;
+    if (focusAfter.current === "row") return document.getElementById(focusId) ?? true;
+    return true;
+  };
+  const openChange = (kind: Confirm) => (next: boolean) => {
+    // Mientras corre la acción no se cierra: su resultado (o su error) se muestra aquí.
+    if (pending) return;
+    focusAfter.current = "trigger";
+    setError(null);
+    setConfirm(next ? kind : null);
+  };
+  const run = (kind: Confirm) => startAction(async () => {
+    setError(null);
+    let failure: ActionError | null = null;
+    let key: string | null = null;
+    try {
+      if (kind === "rotate") {
+        const result = await rotateKeyAction(keyId);
+        if (result?.ok) key = result.key;
+        else failure = result?.error ?? "error";
+      } else {
+        const result = await revokeKeyAction(keyId);
+        if (!result.ok) failure = result.error;
+      }
+    } catch {
+      // Sesión vencida o un fallo del servidor: el error se ve en el diálogo, que sigue abierto.
+      failure = "error";
+    }
+    startAction(() => {
+      if (failure) {
+        setError(failure);
+        return;
+      }
+      focusAfter.current = key ? "none" : "row";
+      setConfirm(null);
+      if (key) {
+        setRotated(key);
+        setRevealOpen(true);
+      }
+    });
+  });
+  const confirmProps = { cancel: labels.cancel, pending, error: error ? errors[error] : null, finalFocus };
+
   return (
     <div className="flex items-center justify-end gap-1">
-      {error ? <span role="alert" className="mr-2 text-xs text-destructive">{errors[error]}</span> : null}
-      {canRotate ? (
-        <AlertDialog>
+      <AlertDialog open={confirm === "rotate"} onOpenChange={openChange("rotate")}>
+        {canRotate && !revoked ? (
           <AlertDialogTrigger render={<Button variant="ghost" size="sm" />}>
             <RotateIcon data-icon="inline-start" aria-hidden />
             {labels.rotate}
           </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{labels.rotateTitle.replace("{name}", name)}</AlertDialogTitle>
-              <AlertDialogDescription>{labels.rotateBody}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{labels.cancel}</AlertDialogCancel>
-              <AlertDialogAction disabled={pending} onClick={() => startTransition(async () => {
-                const result = await rotateKeyAction(keyId);
-                if (result?.ok) setRotated(result.key);
-                else setError(result?.error ?? "error");
-              })}>{labels.rotateConfirm}</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      ) : null}
-      <AlertDialog>
-        <AlertDialogTrigger render={<Button variant="ghost" size="sm" className="text-destructive" />}>{labels.revoke}</AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{labels.revokeTitle.replace("{name}", name)}</AlertDialogTitle>
-            <AlertDialogDescription>{labels.revokeBody}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{labels.cancel}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" disabled={pending} onClick={() => startTransition(async () => { await revokeKeyAction(keyId); })}>
-              {labels.revokeConfirm}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        ) : null}
+        <ConfirmContent
+          {...confirmProps}
+          title={t(labels.rotateTitle, { name })}
+          body={labels.rotateBody}
+          confirm={labels.rotateConfirm}
+          onConfirm={() => run("rotate")}
+        />
       </AlertDialog>
-      <Dialog open={rotated !== null} onOpenChange={(open) => { if (!open) setRotated(null); }}>
-        <DialogContent className="sm:max-w-xl">
+      <AlertDialog open={confirm === "revoke"} onOpenChange={openChange("revoke")}>
+        {revoked ? null : (
+          <AlertDialogTrigger ref={revokeRef} render={<Button variant="ghost" size="sm" className="text-destructive" />}>
+            {labels.revoke}
+          </AlertDialogTrigger>
+        )}
+        <ConfirmContent
+          {...confirmProps}
+          destructive
+          title={t(labels.revokeTitle, { name })}
+          body={labels.revokeBody}
+          confirm={labels.revokeConfirm}
+          onConfirm={() => run("revoke")}
+        />
+      </AlertDialog>
+      <Dialog
+        open={revealOpen}
+        onOpenChange={setRevealOpen}
+        // La key se borra de la memoria cuando el diálogo terminó de cerrarse, no antes: si no, salta su alto.
+        onOpenChangeComplete={(open) => { if (!open) setRotated(null); }}
+      >
+        {/* La key anterior sigue viva 24 horas: su botón de revocar sigue en la fila. */}
+        <DialogContent className="sm:max-w-xl" closeLabel={labels.close} finalFocus={revokeRef}>
           <DialogHeader>
             <DialogTitle>{labels.rotatedTitle}</DialogTitle>
             <DialogDescription>{labels.rotatedDescription}</DialogDescription>
@@ -215,5 +288,42 @@ export function KeyActions({ keyId, name, canRotate, labels, errors, snippet }: 
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ConfirmContent({ title, body, confirm, cancel, destructive, pending, error, onConfirm, finalFocus }: {
+  title: string;
+  body: string;
+  confirm: string;
+  cancel: string;
+  destructive?: boolean;
+  pending: boolean;
+  error: string | null;
+  onConfirm: () => void;
+  finalFocus: () => HTMLElement | boolean;
+}) {
+  return (
+    <AlertDialogContent finalFocus={finalFocus}>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{title}</AlertDialogTitle>
+        <AlertDialogDescription>{body}</AlertDialogDescription>
+      </AlertDialogHeader>
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      <AlertDialogFooter>
+        <AlertDialogCancel disabled={pending}>{cancel}</AlertDialogCancel>
+        {/* El texto queda (transparente) bajo el spinner: el botón no cambia de ancho y conserva su nombre. */}
+        <AlertDialogAction
+          variant={destructive ? "destructive" : "default"}
+          disabled={pending}
+          focusableWhenDisabled
+          aria-busy={pending || undefined}
+          onClick={onConfirm}
+          className="relative"
+        >
+          <span className={cn(pending && "opacity-0")}>{confirm}</span>
+          {pending ? <Spinner aria-hidden className="absolute inset-0 m-auto" /> : null}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
   );
 }

@@ -43,7 +43,7 @@ export default async function PricingPage() {
         <div className="nr-mk-strip-foot">
           <p>{d.usage.footnote}</p>
           <Link className="nr-mk-text-link" href={`/${locale}/models`}>
-            <ArrowLabel>{t(dict.home.peek.viewAll, { count: formatCount(models.length, locale) })}</ArrowLabel>
+            <ArrowLabel>{t(dict.home.prices.viewAll, { count: formatCount(models.length, locale) })}</ArrowLabel>
           </Link>
         </div>
       </MarketingSection>

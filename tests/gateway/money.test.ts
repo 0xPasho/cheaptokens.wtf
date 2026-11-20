@@ -1,12 +1,16 @@
 // @vitest-environment node
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { UPSTREAMS } from "../fixtures/catalog-upstreams";
 
 import { grantCredits } from "@/lib/billing/ledger";
+import { HOUR_MS, PLANS } from "@/lib/billing/plans";
 import { reconcile } from "@/lib/billing/reconcile";
-import { apiKeys, creditTransactions, requests, upstreams, workspaces } from "@/lib/db/schema";
+import { apiKeys, requests, subscriptions, upstreams, usageWindows, workspaces } from "@/lib/db/schema";
+import { loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
+import { HOLD_MESSAGES } from "@/lib/gateway/errors";
+import { DEFAULT_MAX_OUTPUT_TOKENS, estimatePromptTokens, MIN_OUTPUT_TOKENS, sizeHold } from "@/lib/gateway/request-cost";
 import { createSseParser } from "@/lib/gateway/sse";
 import type { GatewayErrorCode } from "@/lib/gateway/types";
 
@@ -45,6 +49,24 @@ async function account(harness: Harness) {
   const [workspace] = await harness.db.select().from(workspaces).where(eq(workspaces.id, harness.workspaceId));
   const [key] = await harness.db.select().from(apiKeys).where(eq(apiKeys.id, harness.apiKeyId));
   return { balance: workspace.balanceMicroUsd, spent: key.spentMicroUsd };
+}
+
+const DAY_MS = 24 * HOUR_MS;
+
+/** Lo que el gateway reserva para `body` sin límite de presupuesto, con el mismo catálogo que el harness. */
+async function holdFor(harness: Harness, body: Record<string, unknown>): Promise<bigint> {
+  const snapshot = await loadCatalogSnapshot(harness.db, {
+    env: { UPSTREAM_MOCK_BASE_URL: harness.mock.baseUrl }, environment: "development", now: Date.now,
+  });
+  const gatewayModel = snapshot.getModel(String(body.model));
+  if (!gatewayModel) throw new Error(`Unknown model ${String(body.model)}`);
+  const size = sizeHold(gatewayModel, {
+    promptTokens: estimatePromptTokens(JSON.stringify(body), body, gatewayModel.contextLength),
+    requestedOutputTokens: typeof body.max_tokens === "number" ? body.max_tokens : null,
+    choices: 1,
+  }, null);
+  if (!size.ok) throw new Error("An unlimited budget always fits");
+  return size.amountMicroUsd;
 }
 
 async function expectReconciled(harness: Harness) {
@@ -150,44 +172,115 @@ describe("gateway money under load", () => {
     await expectReconciled(harness);
   });
 
-  it("allows a small concurrent overdraft, rejects later requests with 402 and resumes after a credit grant", async () => {
-    const harness = await start({ balanceUsd: "0.0001" });
-    expect(await account(harness)).toEqual({ balance: BigInt(100), spent: BigInt(0) });
-    await Promise.all(Array.from({ length: 12 }, async () => {
-      const response = await post(harness, {
-        ...basicBody, stream: true, x_mock: { chunks: 8, latencyMs: 100, chunkDelayMs: 30 },
-      });
-      expect(response.status).toBe(200);
-      expect(await response.text()).toContain("data: [DONE]");
-    }));
+  it("holds each request's worst case so concurrent requests never overdraw, and frees it after the charge", async () => {
+    const harness = await start({ balanceUsd: "0" });
+    const body = { ...basicBody, stream: true, max_tokens: MIN_OUTPUT_TOKENS, x_mock: { chunks: 8, latencyMs: 1500, chunkDelayMs: 30 } };
+    const hold = await holdFor(harness, body);
+    // Alcanza para tres reservas y media: el cuarto request ya no cabe aunque quede saldo.
+    await grantCredits(harness.db, { workspaceId: harness.workspaceId, amountMicroUsd: hold * BigInt(7) / BigInt(2), note: "Three holds and a half" });
+    const responses = await Promise.all(Array.from({ length: 12 }, () => post(harness, body)));
+    const accepted = responses.filter((response) => response.status === 200);
+    expect(accepted).toHaveLength(3);
+    for (const response of responses.filter((candidate) => candidate.status !== 200)) {
+      expect(response.status).toBe(402);
+      expect(await response.json()).toMatchObject({ error: { code: "insufficient_credits", message: HOLD_MESSAGES.insufficient_credits } });
+    }
+    for (const response of accepted) expect(await response.text()).toContain("data: [DONE]");
     await harness.flushAfter();
-    const overdrawn = { balance: BigInt(-56), spent: BigInt(156) };
-    expect(await account(harness)).toEqual(overdrawn);
-    expect(await harness.db.select().from(requests)).toHaveLength(12);
+
+    expect((await account(harness)).balance).toBeGreaterThanOrEqual(BigInt(0));
+    expect(harness.mock.requests).toHaveLength(3);
+    expect(await harness.db.select().from(requests)).toHaveLength(3);
+    expect(harness.holds.held(harness.workspaceId, harness.apiKeyId, harness.holds.mark())).toEqual({ workspace: BigInt(0), key: BigInt(0) });
     await expectReconciled(harness);
 
-    for (const stream of [false, true, false]) {
-      await failure(await post(harness, { ...basicBody, stream }), 402, "insufficient_credits");
+    // Cobrados los tres, lo que no gastaron de su reserva vuelve a estar disponible.
+    const next = await post(harness, { ...body, x_mock: { chunks: 2 } });
+    expect(next.status).toBe(200);
+    await next.text();
+    await harness.flushAfter();
+    expect(await harness.db.select().from(requests)).toHaveLength(4);
+    await expectReconciled(harness);
+  });
+
+  it("never lets concurrent requests cross the plan limit of a plan-only key into absorbed usage", async () => {
+    const harness = await start({ balanceUsd: "0" });
+    const now = Date.now();
+    const body = { ...basicBody, stream: true, max_tokens: MIN_OUTPUT_TOKENS, x_mock: { chunks: 8, latencyMs: 1500, chunkDelayMs: 30 } };
+    const hold = await holdFor(harness, body);
+    await harness.db.update(apiKeys).set({ billingSource: "plan_only" }).where(eq(apiKeys.id, harness.apiKeyId));
+    await harness.db.insert(subscriptions).values({
+      workspaceId: harness.workspaceId, planId: "plus", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - DAY_MS), currentPeriodEnd: new Date(now + DAY_MS),
+    });
+    // A la ventana de 5 horas le quedan tres reservas y media.
+    await harness.db.insert(usageWindows).values({
+      workspaceId: harness.workspaceId, kind: "five_hour", startedAt: new Date(now - HOUR_MS), resetsAt: new Date(now + HOUR_MS),
+      usedMicroUsd: PLANS.plus.fiveHourLimitMicroUsd - hold * BigInt(7) / BigInt(2),
+    });
+
+    const responses = await Promise.all(Array.from({ length: 12 }, () => post(harness, body)));
+    expect(responses.filter((response) => response.status === 200)).toHaveLength(3);
+    for (const response of responses) {
+      if (response.status === 200) {
+        expect(await response.text()).toContain("data: [DONE]");
+        continue;
+      }
+      expect(response.status).toBe(429);
+      expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(3_000);
+      expect(await response.json()).toMatchObject({ error: { code: "usage_limit_reached", message: HOLD_MESSAGES.usage_limit_reached } });
     }
     await harness.flushAfter();
-    expect(await account(harness)).toEqual(overdrawn);
-    expect(harness.mock.requests).toHaveLength(12);
-    expect(await harness.db.select().from(requests)).toHaveLength(12);
 
-    await grantCredits(harness.db, {
-      workspaceId: harness.workspaceId, amountMicroUsd: BigInt(100), note: "Cover overdraft and restore access",
-    });
-    expect(await account(harness)).toEqual({ balance: BigInt(44), spent: BigInt(156) });
-    const response = await post(harness);
+    const rows = await harness.db.select().from(requests);
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.absorbedMicroUsd).toBe(BigInt(0));
+      expect(row.planMicroUsd).toBe(row.costMicroUsd);
+    }
+    const [window] = await harness.db.select().from(usageWindows)
+      .where(and(eq(usageWindows.workspaceId, harness.workspaceId), eq(usageWindows.kind, "five_hour")));
+    expect(window.usedMicroUsd).toBeLessThanOrEqual(PLANS.plus.fiveHourLimitMicroUsd);
+  });
+
+  it("rejects a prompt that alone does not fit the balance without calling the upstream", async () => {
+    const harness = await start({ balanceUsd: "0.001" });
+    const before = await account(harness);
+    const response = await post(harness, { ...basicBody, messages: [{ role: "user", content: "x".repeat(3_000_000) }] });
+    await failure(response, 402, "insufficient_credits");
+    await harness.flushAfter();
+    expect(await account(harness)).toEqual(before);
+    expect(harness.mock.requests).toHaveLength(0);
+    expect(await harness.db.select().from(requests)).toHaveLength(0);
+  });
+
+  it("sends the reserved output cap upstream and leaves a max_tokens that fits untouched", async () => {
+    const harness = await start({ balanceUsd: "0" });
+    const fits = { ...basicBody, max_tokens: 4_096 };
+    await grantCredits(harness.db, { workspaceId: harness.workspaceId, amountMicroUsd: await holdFor(harness, fits), note: "One hold" });
+
+    for (const body of [fits, basicBody, { ...basicBody, max_completion_tokens: 64_000 }]) {
+      const response = await post(harness, body);
+      expect(response.status).toBe(200);
+      await response.text();
+      await harness.flushAfter();
+    }
+    const sent = harness.mock.requests.map((request) => request.body as Record<string, unknown>);
+    // Lo que pidió el cliente y cabe pasa tal cual.
+    expect(sent[0].max_tokens).toBe(4_096);
+    // Sin salida fijada, el upstream recibe la que alcanza, nunca la por defecto completa.
+    expect(sent[1].max_tokens).toBeGreaterThanOrEqual(MIN_OUTPUT_TOKENS);
+    expect(sent[1].max_tokens).toBeLessThanOrEqual(4_096);
+    // Con más de la que cabe, se recorta en el mismo campo que mandó el cliente.
+    expect(sent[2].max_completion_tokens).toBeLessThanOrEqual(4_096);
+    expect(sent[2]).not.toHaveProperty("max_tokens");
+    await expectReconciled(harness);
+
+    const rich = await start();
+    const response = await post(rich);
     expect(response.status).toBe(200);
     await response.text();
-    await harness.flushAfter();
-    expect(await account(harness)).toEqual({ balance: BigInt(31), spent: BigInt(169) });
-    expect(await harness.db.select().from(requests)).toHaveLength(13);
-    const credits = await harness.db.select().from(creditTransactions);
-    expect(credits).toHaveLength(2);
-    expect(credits.reduce((sum, credit) => sum + credit.amountMicroUsd, BigInt(0))).toBe(BigInt(200));
-    await expectReconciled(harness);
+    expect((rich.mock.requests[0].body as Record<string, unknown>).max_tokens).toBe(DEFAULT_MAX_OUTPUT_TOKENS);
   });
 
   it("rejects the very next request after revocation without charging it", async () => {
@@ -207,21 +300,33 @@ describe("gateway money under load", () => {
     await expectReconciled(harness);
   });
 
-  it("returns 403 as soon as actual charges reach the key spending limit", async () => {
+  it("returns 403 when the spending limit left on the key does not cover the next request", async () => {
     const harness = await start();
-    await harness.db.update(apiKeys).set({ spendLimitMicroUsd: BigInt(20) }).where(eq(apiKeys.id, harness.apiKeyId));
-    for (const spent of [BigInt(13), BigInt(26)]) {
-      const response = await post(harness);
-      expect(response.status).toBe(200);
-      await response.text();
-      await harness.flushAfter();
-      expect((await account(harness)).spent).toBe(spent);
-    }
+    const body = { ...basicBody, max_tokens: MIN_OUTPUT_TOKENS };
+    const hold = await holdFor(harness, body);
+    await harness.db.update(apiKeys).set({ spendLimitMicroUsd: hold + BigInt(5) }).where(eq(apiKeys.id, harness.apiKeyId));
+    const first = await post(harness, body);
+    expect(first.status).toBe(200);
+    await first.text();
+    await harness.flushAfter();
     const before = await account(harness);
-    expect(before.balance).toBeGreaterThan(BigInt(0));
-    await failure(await post(harness), 403, "key_limit_exceeded");
+    expect(before.spent).toBeGreaterThan(BigInt(5));
+
+    const response = await post(harness, body);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ error: { code: "key_limit_exceeded", message: HOLD_MESSAGES.key_limit_exceeded } });
     await harness.flushAfter();
     expect(await account(harness)).toEqual(before);
+    expect(harness.mock.requests).toHaveLength(1);
+
+    // Una salida que sí cabe en lo que queda pasa; con el límite alcanzado, ya nada.
+    const small = await post(harness, { ...body, max_tokens: 16 });
+    expect(small.status).toBe(200);
+    await small.text();
+    await harness.flushAfter();
+    await harness.db.update(apiKeys).set({ spendLimitMicroUsd: (await account(harness)).spent }).where(eq(apiKeys.id, harness.apiKeyId));
+    await failure(await post(harness, { ...body, max_tokens: 1 }), 403, "key_limit_exceeded");
+    await harness.flushAfter();
     expect(harness.mock.requests).toHaveLength(2);
     expect(await harness.db.select().from(requests)).toHaveLength(2);
     await expectReconciled(harness);

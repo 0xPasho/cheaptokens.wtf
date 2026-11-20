@@ -27,6 +27,7 @@ function options(stream = false, overrides: Partial<CallUpstreamOptions> = {}): 
       id: "public/model", status: "active", isReasoning: false, upstreams: [],
       inputPricePer1M: BigInt(20_000), outputPricePer1M: BigInt(40_000),
       officialInputPer1M: BigInt(100_000), officialOutputPer1M: BigInt(200_000),
+      contextLength: 128_000, maxOutputTokens: null,
     },
     body: { model: "public/model", messages: [{ role: "user", content: "private prompt" }], stream },
     stream, fetch, now: Date.now, log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },

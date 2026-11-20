@@ -15,6 +15,7 @@ function options(scenarios: string[], stream = false, apiKeys: readonly string[]
     id: "public/model", status: "active", isReasoning: false,
     inputPricePer1M: BigInt(20_000), outputPricePer1M: BigInt(40_000),
     officialInputPer1M: BigInt(100_000), officialOutputPer1M: BigInt(200_000),
+    contextLength: 128_000, maxOutputTokens: null,
     upstreams: scenarios.map((scenario, index) => ({
       upstreamId: `upstream-${index}`, baseUrl: mock.baseUrl, apiKeys,
       upstreamModel: `mock/${scenario}`, priority: index,

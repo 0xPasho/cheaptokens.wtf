@@ -9,7 +9,7 @@ import { BitcoinPendingNotice } from "@/components/dashboard/bitcoin-pending-not
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { PaymentsNotice } from "@/components/dashboard/payments-notice";
 import { OverflowForm } from "@/components/dashboard/plan-controls";
-import { PlanMeters } from "@/components/dashboard/plan-meters";
+import { exactKind, PlanMeters } from "@/components/dashboard/plan-meters";
 import { PurchaseButton, PurchaseProvider } from "@/components/dashboard/purchase-dialog";
 import { PageHeader, SectionHeader } from "@/components/page-header";
 import { Price, PriceComparison } from "@/components/price";
@@ -71,6 +71,9 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const money = (micros: bigint, kind: "balance" | "whole" = "balance") => formatUsd(Number(micros), locale, kind);
   const periodEnd = subscription ? formatDate(subscription.periodEnd, locale) : "";
   const priceLabels = { official: dict.catalog.official, discounted: dict.catalog.discounted };
+  // El tope va en un campo: con la coma del idioma (12,5) y sin separador de miles, que el servidor no lee.
+  const capInput = new Intl.NumberFormat(locale, { useGrouping: false, maximumFractionDigits: 2 })
+    .format(Number(account.overflow.capMicroUsd) / 1_000_000);
 
   return (
     <PurchaseProvider
@@ -131,10 +134,10 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   initial={{
                     mode: account.overflow.mode,
                     credits: account.overflow.credits,
-                    cap: String(Number(account.overflow.capMicroUsd) / 1_000_000),
+                    cap: capInput,
                   }}
                   labels={{
-                    continue: d.overflowContinue, continueHint: d.overflowContinueHint, stop: d.overflowStop, stopHint: d.overflowStopHint,
+                    title: d.overflowTitle, continue: d.overflowContinue, continueHint: d.overflowContinueHint, stop: d.overflowStop, stopHint: d.overflowStopHint,
                     credits: d.useCredits, creditsHint: d.useCreditsHint,
                     cap: d.cap, save: d.save, saved: d.saved,
                     capUsed: t(d.capUsed, { used: money(account.overflow.spentThisMonthMicroUsd), cap: money(account.overflow.capMicroUsd) }),
@@ -177,8 +180,8 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                     </p>
                     <dl className="flex flex-col text-sm">
                       {[
-                        [d.everyFiveHours, money(plan.fiveHourLimitMicroUsd)],
-                        [d.everyWeek, money(plan.weekLimitMicroUsd, "whole")],
+                        [d.everyFiveHours, money(plan.fiveHourLimitMicroUsd, exactKind(plan.fiveHourLimitMicroUsd))],
+                        [d.everyWeek, money(plan.weekLimitMicroUsd, exactKind(plan.weekLimitMicroUsd))],
                         ...samples.map((model) => [
                           t(d.perWindow, { model: model.name }),
                           t(d.approxRequests, { count: formatCount(typicalRequestsIn(plan.fiveHourLimitMicroUsd, model), locale) }),
@@ -187,7 +190,7 @@ async function Plan({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                       ].map(([term, value]) => (
                         <div key={term} className="flex justify-between gap-3 border-t py-2.5 first:border-t-0">
                           <dt className="text-muted-foreground">{term}</dt>
-                          <dd className="text-right font-medium tabular-nums">{value}</dd>
+                          <dd className="text-right font-medium whitespace-nowrap tabular-nums">{value}</dd>
                         </div>
                       ))}
                     </dl>

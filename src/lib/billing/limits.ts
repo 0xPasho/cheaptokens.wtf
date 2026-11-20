@@ -87,9 +87,9 @@ export function overflowCapLeft(overflow: OverflowSettings): bigint {
 
 export type AdmissionError = "usage_limit_reached" | "no_active_plan" | "insufficient_credits";
 
-export type Admission =
-  | { ok: true; usesPlan: boolean }
-  | { ok: false; code: AdmissionError; retryAt: number | null };
+export type AdmissionFailure = { ok: false; code: AdmissionError; retryAt: number | null };
+
+export type Admission = { ok: true; usesPlan: boolean } | AdmissionFailure;
 
 export interface AdmissionInput {
   source: BillingSource;
@@ -120,6 +120,34 @@ export function admit(input: AdmissionInput): Admission {
   return { ok: false, code: "insufficient_credits", retryAt: null };
 }
 
+/**
+ * Lo máximo que se le puede cobrar a un request sin absorber nada ni dejar el saldo negativo (ADR-0066): lo que
+ * queda del plan, más el paquete y los créditos que la key puede usar. En el excedente, los créditos se acotan
+ * también con lo que queda del tope del mes.
+ */
+export function admissionBudget(input: AdmissionInput): bigint {
+  const { source, plan, overflow, now } = input;
+  let budget = source !== "prepaid_only" && plan ? planRemaining(plan, now) : ZERO;
+  const rules = prepaidRules(source, plan !== null, overflow);
+  if (rules.packs && input.packBalanceMicroUsd > ZERO) budget += input.packBalanceMicroUsd;
+  if (rules.credits && input.balanceMicroUsd > ZERO) {
+    const cap = rules.overflow ? overflowCapLeft(overflow) : input.balanceMicroUsd;
+    budget += input.balanceMicroUsd < cap ? input.balanceMicroUsd : cap;
+  }
+  return budget;
+}
+
+/**
+ * El request no cabe en lo que queda, aunque quede algo (ADR-0066). Mismo código que si no quedara nada. Con plan,
+ * vuelve a caber cuando se reinicia la primera ventana activa.
+ */
+export function budgetShortfall(source: BillingSource, plan: PlanUsage | null, now: number): AdmissionFailure & { code: "usage_limit_reached" | "insufficient_credits" } {
+  if (!plan || source === "prepaid_only") return { ok: false, code: "insufficient_credits", retryAt: null };
+  const resets = [activeWindow(plan.fiveHour, now), activeWindow(plan.week, now)]
+    .filter((window): window is StoredWindow => window !== null).map((window) => window.resetsAt);
+  return { ok: false, code: "usage_limit_reached", retryAt: planResumesAt(plan, now) ?? (resets.length > 0 ? Math.min(...resets) : null) };
+}
+
 export interface ChargeSplit {
   plan: bigint;
   pack: bigint;
@@ -138,9 +166,9 @@ export interface SplitInput {
 }
 
 /**
- * Después del request: reparte el costo plan → paquete → créditos. El request que cruza el límite
- * no se corta. Como antes de ADR-0049, se admite con saldo positivo y se cobra al terminar, así que el
- * saldo puede quedar negativo por un request. En el excedente lo que acota es el tope mensual, no el saldo.
+ * Después del request: reparte el costo plan → paquete → créditos. El request no se corta: desde ADR-0066 se
+ * admite solo si su costo máximo cabe en `admissionBudget` (descontadas las reservas en curso), así que lo que
+ * queda para `absorbed` o para un saldo negativo es lo que el upstream cobre por encima de esa estimación.
  */
 export function splitCharge(input: SplitInput): ChargeSplit {
   const split: ChargeSplit = { plan: ZERO, pack: ZERO, credits: ZERO, absorbed: ZERO };

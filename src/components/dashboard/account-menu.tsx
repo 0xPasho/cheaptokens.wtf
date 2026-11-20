@@ -25,7 +25,7 @@ export function AccountMenu({ locale, mode, identity, labels }: {
   const base = `/${locale}/dashboard`;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="nr-icon-button" />}>
         {/* El nombre va como texto sr-only: las iniciales visibles no son el nombre (WCAG 2.5.3, docs/13). */}
         <Avatar size="sm" aria-hidden>
           <AvatarFallback>{initials}</AvatarFallback>

@@ -63,15 +63,19 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
     modelId: one("model"),
     source: SOURCES.find((value) => value === one("source")) ?? null,
   };
-  const page = Math.max(0, Number.parseInt(one("page") ?? "1", 10) - 1 || 0);
-  const [summary, { rows, total }] = await Promise.all([
+  const requested = Math.max(0, Number.parseInt(one("page") ?? "1", 10) - 1 || 0);
+  const [summary, first] = await Promise.all([
     getUsageSummary(db, workspaceId, filters),
-    listRequests(db, workspaceId, filters, page, PAGE_SIZE),
+    listRequests(db, workspaceId, filters, requested, PAGE_SIZE),
   ]);
+  const { total } = first;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // Una página que ya no existe (link viejo, menos requests con otro filtro) muestra la última.
+  const page = Math.min(requested, pages - 1);
+  const { rows } = page === requested ? first : await listRequests(db, workspaceId, filters, page, PAGE_SIZE);
   const d = dict.dashboard.usage;
   const catalog = await getLiveCatalog();
   const names = new Map(catalog.map((model) => [model.id, model.name]));
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageHref = (target: number) => {
     const next = new URLSearchParams(Object.entries(params).flatMap(([key, value]) => (typeof value === "string" ? [[key, value]] : [])));
     next.set("page", String(target + 1));
@@ -172,7 +176,7 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
       {total > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
           <span className="tabular-nums">{t(d.showing, { from: formatCount(page * PAGE_SIZE + 1, locale), to: formatCount(Math.min(total, (page + 1) * PAGE_SIZE), locale), total: formatCount(total, locale) })}</span>
-          <Pagination className="mx-0 w-auto">
+          <Pagination className="mx-0 w-auto" aria-label={d.pagination}>
             <PaginationContent>
               {page > 0 ? <PaginationItem><PaginationPrevious href={pageHref(page - 1)} text={d.previous} /></PaginationItem> : null}
               <PaginationItem><span className="px-2 tabular-nums">{t(d.page, { page: formatCount(page + 1, locale), pages: formatCount(pages, locale) })}</span></PaginationItem>

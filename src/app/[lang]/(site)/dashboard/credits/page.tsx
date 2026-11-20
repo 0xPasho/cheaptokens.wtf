@@ -92,6 +92,7 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
               initial={deposit ? depositView(crypto, chains, deposit) : emptyDepositView(account.balanceMicroUsd.toString())}
               locale={locale}
               labels={dict.dashboard.deposit}
+              errorLabel={dict.dashboard.error}
               bitcoin={bitcoin ? {
                 label: dict.dashboard.bitcoin.tab,
                 active: bitcoin.order?.intent === "topup" && bitcoin.order.outcome === null,
@@ -147,7 +148,11 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <TableRow key={pack.id}>
                     <TableCell><span className="flex items-center gap-2 font-medium"><ModelLogo modelId={pack.modelId} />{names.get(pack.modelId) ?? pack.modelId}</span></TableCell>
                     <TableCell className="min-w-48">
-                      <Progress value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100}>
+                      <Progress
+                        value={(Number(pack.balanceMicroUsd) / Number(pack.grantedMicroUsd)) * 100}
+                        aria-label={t(d.packLeftLabel, { model: names.get(pack.modelId) ?? pack.modelId })}
+                        locale={locale}
+                      >
                         <span className="text-sm tabular-nums">{money(pack.balanceMicroUsd)}</span>
                         <span className="ml-auto text-sm text-muted-foreground tabular-nums">{money(pack.grantedMicroUsd)}</span>
                       </Progress>

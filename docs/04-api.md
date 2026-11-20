@@ -74,6 +74,7 @@ for await (const chunk of stream) {
 
 - **`model`** (obligatorio): un ID de cheapllm.wtf.
 - **Todo lo demás** (`messages`, `temperature`, `max_tokens`, `tools`, `tool_choice`, `response_format`, contenido con imágenes, etc.) **se reenvía tal cual al upstream.** Si un modelo no soporta un parámetro, el error del upstream vuelve como `400`.
+- **`max_tokens`, `max_completion_tokens` y `n`:** enteros positivos o `null`; si no, `400`. Sin límite de salida, el upstream recibe `max_tokens: 32768`. Si el saldo o el plan no alcanzan para la salida pedida, se recorta a lo que alcanza (`finish_reason: "length"`) ([ADR-0066](./adr/0066-reserva-por-request.md)).
 - **`stream`** y **`stream_options.include_usage`**: se respetan. Internamente siempre pedimos `usage` al upstream, pero solo se lo reenviamos al cliente si lo pidió.
 
 ### Response

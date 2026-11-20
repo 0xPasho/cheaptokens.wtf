@@ -11,6 +11,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Price, PriceComparison } from "@/components/price";
 import { Button } from "@/components/ui/button";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
+import { TYPICAL_REQUEST } from "@/lib/billing/plans";
 import { requestCost, similarModels } from "@/lib/catalog/queries";
 import type { CatalogModel } from "@/lib/catalog/types";
 import { formatCount, formatDate, formatDiscount, formatTokens } from "@/lib/format";
@@ -24,8 +25,10 @@ export function ModelDetail({ model, models, locale, dict }: { model: CatalogMod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const filters = useCatalogFilters();
   const back = `/${locale}/models${filters.search}`;
-  const officialCost = requestCost(model.officialInput, model.officialOutput, 2000, 500);
-  const discountedCost = requestCost(model.discountedInput, model.discountedOutput, 2000, 500);
+  // La misma request típica que los planes y /pricing (20 mil de entrada, 2 mil de salida).
+  const { promptTokens, completionTokens } = TYPICAL_REQUEST;
+  const officialCost = requestCost(model.officialInput, model.officialOutput, promptTokens, completionTokens);
+  const discountedCost = requestCost(model.discountedInput, model.discountedOutput, promptTokens, completionTokens);
   const similar = similarModels(model, models);
   return <div className="nr-model-page">
     <Button variant="secondary" className="nr-model-sidebar-toggle nr-detail-button" aria-expanded={sidebarOpen} aria-controls={sidebarId} onClick={() => setSidebarOpen(!sidebarOpen)}>{dict.detail.modelFilters}</Button>
@@ -72,7 +75,7 @@ export function ModelDetail({ model, models, locale, dict }: { model: CatalogMod
             </ModelDetailPanel>
             <ModelDetailPanel aria-label={dict.detail.costTitle}>
               <div className="nr-panel-heading"><h2>{dict.detail.costTitle}</h2></div>
-              <div className="nr-cost"><p>{t(dict.detail.costBody, { input: formatCount(2000, locale), output: formatCount(500, locale) })}</p>
+              <div className="nr-cost"><p>{t(dict.detail.costBody, { input: formatCount(promptTokens, locale), output: formatCount(completionTokens, locale) })}</p>
                 <dl><div><dt>{dict.detail.discountedCost}</dt><dd><Price micros={discountedCost} kind="cost" locale={locale} /></dd></div>
                   <div><dt>{dict.detail.officialCost}</dt><dd><Price micros={officialCost} kind="cost" locale={locale} /></dd></div>
                   <div><dt>{dict.detail.savings}</dt><dd className="text-success"><Price micros={officialCost - discountedCost} kind="cost" locale={locale} /></dd></div>

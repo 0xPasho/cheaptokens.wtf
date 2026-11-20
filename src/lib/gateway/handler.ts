@@ -3,10 +3,12 @@ import type { RequestRecord, RequestStatus } from "@/lib/billing/types";
 import { countRun, deskaRun } from "@/lib/partner/runs";
 
 import { planUsageHeaders } from "@/lib/billing/headers";
+import { budgetShortfall } from "@/lib/billing/limits";
 
 import { admitUsage, authenticate, checkAccount } from "./authenticate";
-import { errorResponse, streamErrorChunk } from "./errors";
+import { errorResponse, HOLD_MESSAGES, streamErrorChunk } from "./errors";
 import { computeRequestCosts, createUsageAccumulator, estimateTokens } from "./metering";
+import { estimatePromptTokens, type RequestShape, sizeHold, withOutputLimit } from "./request-cost";
 import { buildUsageChunk, sanitizeChunk, sanitizeCompletion } from "./sanitize";
 import { callUpstream } from "./select-upstream";
 import { encodeSseData, SSE_DONE, SSE_KEEP_ALIVE } from "./sse";
@@ -99,19 +101,30 @@ async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId
   });
 }
 
+/** La reserva del request (ADR-0066): se libera después de su cobro, o al fallar antes de agendarlo. */
+interface HoldState {
+  release: () => void;
+  /** True cuando ya hay una tarea en `after()` que cobra y después libera. */
+  scheduled: boolean;
+}
+
 export async function handleChatCompletion(request: Request, deps: GatewayDeps): Promise<Response> {
   const id = deps.newId();
   const requestId = `req_${id.replaceAll("-", "")}`;
+  const hold: HoldState = { release: () => {}, scheduled: false };
   try {
-    return await processChatCompletion(request, deps, id, requestId);
+    return await processChatCompletion(request, deps, id, requestId, hold);
   } catch {
+    if (!hold.scheduled) hold.release();
     // Las excepciones internas tampoco deben exponer contenido ni perder el ID público.
     deps.log.error("gateway_failed", { requestId });
     return errorResponse("upstream_error", { requestId });
   }
 }
 
-async function processChatCompletion(request: Request, deps: GatewayDeps, id: string, requestId: string): Promise<Response> {
+async function processChatCompletion(
+  request: Request, deps: GatewayDeps, id: string, requestId: string, hold: HoldState,
+): Promise<Response> {
   const startedAt = deps.now();
   const reject = (code: GatewayErrorCode, message?: string) => errorResponse(code, { requestId, message });
 
@@ -127,6 +140,8 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   }
   if (rawBody === null) return reject("request_too_large");
 
+  // Antes de leer saldos: lo que otros requests liberen después todavía no está en lo que leamos (ADR-0066).
+  const holdMark = deps.holds.mark();
   const auth = await authenticate(request.headers.get("authorization"), deps.db, deps.now());
   if (!auth.ok) return reject(auth.code);
   const { context } = auth;
@@ -147,14 +162,46 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   if (model.status === "retired") return reject("model_retired");
   const accountError = checkAccount(context, model.id);
   if (accountError) return reject(accountError);
+  const shape: RequestShape = {
+    promptTokens: estimatePromptTokens(rawBody, validated.body, model.contextLength),
+    requestedOutputTokens: validated.maxOutputTokens,
+    choices: validated.choices,
+  };
+  const wanted = sizeHold(model, shape, null);
   const admissionNow = deps.now();
-  const admission = await admitUsage(context, model.id, deps.db, admissionNow);
+  const admission = await admitUsage(context, model.id, deps.db, admissionNow, wanted.ok ? wanted.amountMicroUsd : BigInt(0));
+  const retryAfter = (retryAt: number | null) => retryAt === null ? undefined : (retryAt - admissionNow) / 1000;
   if (!admission.ok) {
-    return errorResponse(admission.code, {
-      requestId,
-      retryAfterSeconds: admission.retryAt === null ? undefined : (admission.retryAt - admissionNow) / 1000,
+    return errorResponse(admission.code, { requestId, retryAfterSeconds: retryAfter(admission.retryAt) });
+  }
+  // Solo se admite lo que cabe en lo que queda, descontado lo que reservan los requests en curso (ADR-0066).
+  // Desde aquí hasta `hold()` no hay await: dos requests no pueden reservar el mismo saldo.
+  const held = deps.holds.held(context.workspaceId, context.apiKeyId, holdMark);
+  const workspaceBudget = admission.budgetMicroUsd - held.workspace;
+  const keyBudget = context.spendLimitMicroUsd === null ? null : context.spendLimitMicroUsd - context.spentMicroUsd - held.key;
+  const keyBinds = keyBudget !== null && keyBudget < workspaceBudget;
+  const size = sizeHold(model, shape, keyBinds ? keyBudget : workspaceBudget);
+  if (!size.ok) {
+    if (keyBinds) return reject("key_limit_exceeded", HOLD_MESSAGES.key_limit_exceeded);
+    const shortfall = budgetShortfall(context.billingSource, context.plan, admissionNow);
+    return errorResponse(shortfall.code, {
+      requestId, message: HOLD_MESSAGES[shortfall.code], retryAfterSeconds: retryAfter(shortfall.retryAt),
     });
   }
+  hold.release = deps.holds.hold(context.workspaceId, context.apiKeyId, size.amountMicroUsd);
+  // Cobra y después libera: la reserva sigue contando hasta que el cobro está en la base.
+  const afterThenRelease = (task: () => Promise<void>) => {
+    hold.scheduled = true;
+    deps.after(async () => {
+      try {
+        await task();
+      } finally {
+        hold.release();
+      }
+    });
+  };
+  // Sin salida fijada, o con más de la que cabe, el upstream recibe el máximo que se reservó.
+  const upstreamBody = size.limitsOutput ? withOutputLimit(validated.body, size.maxOutputTokens) : validated.body;
   // Lo que queda del plan antes de este request (ADR-0049). Sin plan, sin headers.
   const usageHeaders = context.billingSource === "prepaid_only" ? {} : planUsageHeaders(context.plan, admissionNow);
 
@@ -166,7 +213,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
   let result: UpstreamResult;
   try {
     result = await callUpstream({
-      model, body: validated.body, stream: validated.stream, now: deps.now, log: deps.log, signal: abort.signal,
+      model, body: upstreamBody, stream: validated.stream, now: deps.now, log: deps.log, signal: abort.signal,
       fetch: deps.fetch, accounts: deps.accounts,
       // Si `maxDuration` aborta, `callUpstream` lanza: esto conserva el intento para el registro.
       onAttempt: (target) => {
@@ -199,7 +246,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
       costMicroUsd: BigInt(0), upstreamCostMicroUsd: BigInt(0), officialCostMicroUsd: BigInt(0),
       ttfbMs: null, latencyMs: deps.now() - startedAt,
     };
-    deps.after(() => recordRequest(deps, record, requestId));
+    afterThenRelease(() => recordRequest(deps, record, requestId));
     return reject(code, result.clientMessage ?? undefined);
   }
 
@@ -246,7 +293,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
       clearTimeout(timer);
       finishedAt = deps.now();
     }
-    deps.after(makeChargeTask(status, usage(), status === "success" ? null : "upstream_error", response.status));
+    afterThenRelease(makeChargeTask(status, usage(), status === "success" ? null : "upstream_error", response.status));
     return response;
   }
 
@@ -298,7 +345,7 @@ async function processChatCompletion(request: Request, deps: GatewayDeps, id: st
       if (!cancelled) controller.close();
     }
   })();
-  deps.after(async () => {
+  afterThenRelease(async () => {
     try {
       await pumping;
     } finally {

@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
-import ExternalLinkIcon from "kubai-icons-react/icons/external-link";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { HighlightedCode } from "@/components/code-block";
 import { ModelDetailPanel } from "@/components/catalog/model-detail-panel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getKeyHref } from "@/lib/auth/redirect";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -15,6 +15,8 @@ import { buildQuickstartSnippets } from "@/lib/snippets";
 export function ModelQuickstart({ model, locale, dict }: { model: string; locale: Locale; dict: Dictionary }) {
   const [system, setSystem] = useState(true);
   const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
   const snippets = buildQuickstartSnippets({ baseUrl: API_BASE_URL, apiKey: "wtf_...", model });
   if (system) {
     snippets.javascript = snippets.javascript.replace('messages: [{ role: "user", content: "Hello!" }]', 'messages: [\n    { role: "system", content: "You are a helpful assistant." },\n    { role: "user", content: "Hello!" },\n  ]');
@@ -34,14 +36,20 @@ export function ModelQuickstart({ model, locale, dict }: { model: string; locale
       <div className="nr-code-column">
         <Tabs defaultValue="javascript">
           <TabsList className="nr-detail-tabs" aria-label={dict.detail.codeLanguage}>
-            <TabsTrigger value="javascript">TypeScript</TabsTrigger><TabsTrigger value="python">Python</TabsTrigger><TabsTrigger value="curl">cURL</TabsTrigger>
+            <TabsTrigger value="javascript">JavaScript</TabsTrigger><TabsTrigger value="python">Python</TabsTrigger><TabsTrigger value="curl">cURL</TabsTrigger>
           </TabsList>
           {(["javascript", "python", "curl"] as const).map((language) => <TabsContent key={language} value={language}>
             <pre className="nr-code-box" tabIndex={0}><HighlightedCode code={snippets[language]} /></pre>
             <div className="nr-code-actions">
-              <Link href={`/${locale}/docs#quickstart`} className={buttonVariants({ className: "nr-detail-button nr-primary" })}>{dict.nav.getKey} <ExternalLinkIcon size={14} aria-hidden /></Link>
+              {/* Lleva a crear cuenta y, después, a las keys (como la CTA de la cabecera). */}
+              <Link href={getKeyHref(locale)} className={buttonVariants({ className: "nr-detail-button primary" })}>{dict.nav.getKey}</Link>
               <Button variant="secondary" className="nr-detail-button" onClick={async () => {
-                try { await navigator.clipboard.writeText(snippets[language]); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+                try {
+                  await navigator.clipboard.writeText(snippets[language]);
+                  setCopied(true);
+                  clearTimeout(copiedTimer.current);
+                  copiedTimer.current = setTimeout(() => setCopied(false), 1800);
+                }
                 catch { setCopied(false); }
               }}>{copied ? dict.copy.copied : dict.detail.copyCode}</Button>
             </div>

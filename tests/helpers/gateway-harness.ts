@@ -14,6 +14,7 @@ import { readServerEnv, type EnvSource } from "@/lib/env";
 import { createAccountRotation } from "@/lib/gateway/accounts";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { handleChatCompletion } from "@/lib/gateway/handler";
+import { createHoldBook } from "@/lib/gateway/holds";
 import { createJsonLogger } from "@/lib/gateway/logger";
 import type { GatewayDeps } from "@/lib/gateway/types";
 import { createMemoryRateLimiter } from "@/lib/rate-limit/memory";
@@ -111,8 +112,9 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
     const balance = usdToMicroUsdExact(String(options.balanceUsd ?? 5));
     if (balance !== BigInt(0)) await grantCredits(db, { workspaceId: workspace.id, amountMicroUsd: balance, note: "Gateway harness" });
     const key = await createApiKey(db, { workspaceId: workspace.id, name: "Gateway harness", spendLimitMicroUsd: null });
+    const holds = createHoldBook();
     const deps: GatewayDeps = {
-      db, catalog, rateLimiter: createMemoryRateLimiter(), accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
+      db, catalog, rateLimiter: createMemoryRateLimiter(), holds, accounts: createAccountRotation(), fetch, now: Date.now, newId: uuidv7,
       log: createJsonLogger((line) => logs.push(line)), env: readServerEnv(env),
       after(task) { tasks.push(Promise.resolve().then(task)); },
     };
@@ -131,7 +133,7 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
     let closing: Promise<void> | undefined;
     return {
       baseUrl: `http://127.0.0.1:${address.port}/v1`, apiKey: key.key,
-      workspaceId: workspace.id, apiKeyId: key.id, db, mock, logs, flushAfter,
+      workspaceId: workspace.id, apiKeyId: key.id, db, mock, logs, flushAfter, holds,
       close(): Promise<void> {
         closing ??= (async () => {
           await new Promise<void>((resolve, reject) => {

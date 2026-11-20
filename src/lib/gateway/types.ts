@@ -9,7 +9,7 @@
  * - El dinero va en bigint, en µUSD (ADR-0007). Los floats solo aparecen al leer `usage.cost`.
  * - Nada del upstream llega al cliente: ni headers, ni IDs, ni campos fuera de la whitelist (docs/07 › Ocultar el upstream).
  */
-import type { Admission, BillingSource, OverflowSettings, PlanUsage } from "@/lib/billing/limits";
+import type { Admission, AdmissionFailure, BillingSource, OverflowSettings, PlanUsage } from "@/lib/billing/limits";
 import type { ModelStatus } from "@/lib/catalog/types";
 import type { Db } from "@/lib/db/types";
 import type { RateLimiter } from "@/lib/rate-limit/types";
@@ -80,6 +80,10 @@ export interface GatewayModel {
   /** Precio oficial, µUSD por 1M. Para `official_cost_micro_usd`. */
   officialInputPer1M: MicroUsd;
   officialOutputPer1M: MicroUsd;
+  /** Tokens de contexto: acota el prompt y la salida que se reservan (ADR-0066). */
+  contextLength: number;
+  /** Salida máxima del modelo si se conoce (`models.max_output_tokens`). Null: la por defecto del gateway. */
+  maxOutputTokens: number | null;
   /** Ya filtrados (`enabled` y sin `ops_disabled_at`) y ordenados por `priority`. */
   upstreams: readonly UpstreamTarget[];
 }
@@ -248,8 +252,26 @@ export type CheckAccount = (
   modelId: string,
 ) => Extract<GatewayErrorCode, "key_limit_exceeded" | "account_suspended" | "model_not_allowed_for_key"> | null;
 
-/** Plan, paquetes y créditos (ADR-0049). Lee el saldo de paquetes solo si el plan no alcanza. */
-export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number) => Promise<Admission>;
+/** Una admisión con lo máximo que se le puede cobrar al request sin absorber nada ni dejar saldo negativo. */
+export type BudgetedAdmission = (Extract<Admission, { ok: true }> & { budgetMicroUsd: MicroUsd }) | AdmissionFailure;
+
+/**
+ * Plan, paquetes y créditos (ADR-0049, ADR-0066). `wantedMicroUsd` es lo máximo que puede costar el request:
+ * si el plan lo cubre, no se consultan paquetes ni el excedente de socio.
+ */
+export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number, wantedMicroUsd: MicroUsd) => Promise<BudgetedAdmission>;
+
+// ─── Reservas (ADR-0066) ──────────────────────────────────────────────────────
+
+/** Lo reservado por los requests en curso. En memoria y por instancia, como el rate limiter. */
+export interface HoldBook {
+  /** Se toma antes de leer saldos de la base. */
+  mark(): number;
+  /** Lo reservado ahora por el workspace y por la key, más lo liberado después de `since`: la base leída antes aún no lo refleja. */
+  held(workspaceId: string, apiKeyId: string, since: number): { workspace: MicroUsd; key: MicroUsd };
+  /** Reserva `amount` para el workspace y la key. Devuelve la función que la libera; llamarla otra vez no hace nada. */
+  hold(workspaceId: string, apiKeyId: string, amount: MicroUsd): () => void;
+}
 
 // ─── Logger ───────────────────────────────────────────────────────────────────
 
@@ -269,6 +291,8 @@ export interface Logger {
 export interface GatewayDeps {
   db: Db;
   rateLimiter: RateLimiter;
+  /** Una por instancia: las reservas de todos los requests en curso (ADR-0066). */
+  holds: HoldBook;
   catalog: CatalogSource;
   /** Una por instancia, igual que el rate limiter: la rotación y las pausas se comparten entre requests. */
   accounts: UpstreamAccounts;
