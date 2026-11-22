@@ -1,16 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import LanguagesIcon from "kubai-icons-react/icons/languages";
+import { usePathname, useRouter } from "next/navigation";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
-import { LOCALE_COOKIE, LOCALES, type Locale, switchLocalePath } from "@/lib/i18n/config";
-import { cn } from "@/lib/utils";
+import { hasLocale, LOCALE_COOKIE, LOCALES, type Locale, switchLocalePath } from "@/lib/i18n/config";
 
 /**
  * Cambia el prefijo de idioma de la ruta actual y guarda la elección (docs/10-i18n.md). Conserva la query:
  * los filtros del catálogo y el `redirect_url` de la ventana de acceso siguen en el otro idioma.
+ * Los buscadores encuentran la otra versión por los `alternates` del layout, no por este control.
  */
 export function LanguageSwitcher({
   locale,
@@ -22,29 +22,32 @@ export function LanguageSwitcher({
   names: Record<Locale, string>;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   // La query del catálogo cambia con `replaceState`: este hook la sigue; en el servidor es vacía.
   const { search } = useCatalogFilters();
+  const items = LOCALES.map((value) => ({ value, label: names[value] }));
 
   return (
-    <nav aria-label={label} className="flex items-center gap-1">
-      {LOCALES.map((option) => (
-        <Link
-          key={option}
-          href={`${switchLocalePath(pathname, option)}${search}`}
-          hrefLang={option}
-          lang={option}
-          aria-current={option === locale ? "true" : undefined}
-          onClick={() => {
-            document.cookie = `${LOCALE_COOKIE}=${option}; path=/; max-age=31536000; SameSite=Lax`;
-          }}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "text-muted-foreground aria-[current=true]:text-foreground",
-          )}
-        >
-          {names[option]}
-        </Link>
-      ))}
-    </nav>
+    <Select
+      items={items}
+      value={locale}
+      onValueChange={(value) => {
+        if (!value || !hasLocale(value) || value === locale) return;
+        document.cookie = `${LOCALE_COOKIE}=${value}; path=/; max-age=31536000; SameSite=Lax`;
+        router.push(`${switchLocalePath(pathname, value)}${search}`);
+      }}
+    >
+      <SelectTrigger size="sm" aria-label={label} className="nr-footer-select">
+        <LanguagesIcon aria-hidden />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="end" alignItemWithTrigger={false} side="top">
+        {items.map((item) => (
+          <SelectItem key={item.value} value={item.value} lang={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

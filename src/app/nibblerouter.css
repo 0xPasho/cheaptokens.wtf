@@ -24,6 +24,7 @@
 .nr-header-leading { display: flex; align-items: center; gap: 34px; min-width: 0; }
 .nr-brand-button { display: inline-flex; align-items: center; height: var(--nr-topbar-control); border: 0; padding: 0 4px; background: none; }
 .nr-brand-button img { width: 27px; height: 27px; }
+.nr-wordmark { display: inline-flex; align-items: baseline; white-space: nowrap; }
 /* El «wtf» del logo: Comic Sans, arcoíris pastel en movimiento y letras que se menean — guiño a la web de 2003. */
 .nr-brand-accent {
   display: inline-flex;
@@ -323,7 +324,6 @@
   .nr-topbar { min-height: 64px; padding-inline: 12px; gap: 10px; }
   .nr-desktop-nav, .nr-search-box, .nr-account-link { display: none; }
   /* El tema pasa al menú móvil: así caben la CTA, la cuenta y el menú a 375 px. */
-  .nr-topbar .nr-theme-button { display: none; }
   .nr-topbar .nr-mobile-menu { display: inline-flex; }
   .nr-main { padding-inline: 14px; }
   .nr-discovery-panel { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 88px 0 56px; }
@@ -561,7 +561,32 @@
 @media (hover: hover) { .nr-mk-button.bg-secondary:hover { background: var(--surface-action-hover); } }
 
 /* 01 · Hero: una sola idea por pantalla. El título, el precio en grande del modelo elegido y cómo empezar. */
-.nr-mk-hero { display: flex; flex-direction: column; align-items: center; padding-top: 136px; text-align: center; }
+.nr-mk-hero { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; padding-top: 136px; text-align: center; }
+/* Órbita de logos: decoración detrás del contenido. Tiles opacos con borde de 1 px, sin sombra (ADR-0036).
+   Cada uno entra escalonado (--orbit-delay), flota (--orbit-duration) y sigue al cursor según --orbit-depth. */
+.nr-mk-orbit { --orbit-x: 0; --orbit-y: 0; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.nr-mk-orbit-slot {
+  position: absolute;
+  translate: calc(var(--orbit-x) * var(--orbit-depth) * 28px) calc(var(--orbit-y) * var(--orbit-depth) * 20px);
+  transition: translate 900ms var(--ease);
+}
+.nr-mk-orbit-tile {
+  display: grid; place-items: center; border: 1px solid var(--border); border-radius: 28%; background: var(--card);
+  rotate: var(--orbit-rotate); pointer-events: auto;
+  animation:
+    nr-orbit-enter 900ms var(--ease) var(--orbit-delay) backwards,
+    nr-orbit-float var(--orbit-duration) ease-in-out var(--orbit-phase) infinite;
+  transition: scale 220ms var(--ease), background-color 180ms var(--ease);
+}
+.nr-mk-orbit-tile img { width: 46%; height: 46%; object-fit: contain; }
+@media (hover: hover) { .nr-mk-orbit-tile:hover { scale: 1.06; background: var(--surface-hover); } }
+@keyframes nr-orbit-enter { from { opacity: 0; scale: 0.6; filter: blur(8px); } }
+@keyframes nr-orbit-float {
+  0%, 100% { translate: 0 0; rotate: var(--orbit-rotate); }
+  50% { translate: 0 -10px; rotate: calc(var(--orbit-rotate) + 3deg); }
+}
+/* Por debajo de 1200 px el título ocupa el margen: los logos ya no tienen dónde estar. */
+@media (max-width: 1199px) { .nr-mk-orbit { display: none; } }
 .nr-mk-hero-title { max-width: 11.5em; margin: 0; font-size: clamp(44px, 6vw, 88px); font-weight: 600; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
 /* Más cerca del texto principal que el gris de descripción: alto contraste, sin verse apagado. */
 .nr-mk-hero-sub { max-width: 52ch; margin: 24px 0 0; color: color-mix(in oklch, var(--foreground) 72%, transparent); font-size: 19px; line-height: 1.55; text-wrap: balance; }
@@ -882,7 +907,7 @@
   .nr-mk-split, .nr-mk-switch-grid, .nr-mk-histogram { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
 /* En una columna la tabla pasa a filas de dos líneas: nombre y descuento arriba, los dos precios debajo. */
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .nr-mk-price-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .nr-mk-price-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
   .nr-mk-price-table tbody :is(th, td) { padding: 0; border: 0; }
@@ -1003,4 +1028,63 @@
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
     mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
   }
+}
+
+/* ---------- Pie de página ----------
+   Mismo borde que la cabecera (20 px). Arriba, logo y frase a la izquierda y dos columnas de enlaces;
+   abajo, separado por una línea, el © y las preferencias (idioma y tema) como selects compactos. */
+.nr-site-footer { margin: 72px 20px 0; padding: 40px 8px 28px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 14px; }
+.nr-footer-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; }
+.nr-footer-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 34ch; }
+.nr-footer-wordmark { color: var(--foreground); font-size: 22px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.2; border-radius: 8px; }
+.nr-footer-brand p { margin: 0; line-height: 1.5; text-wrap: pretty; }
+.nr-footer-columns { display: flex; gap: clamp(48px, 8vw, 120px); }
+.nr-footer-columns h2 { margin: 0 0 14px; color: var(--foreground); font-size: 14px; font-weight: 550; }
+.nr-footer-columns ul { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.nr-footer-columns a { color: var(--muted-foreground); transition: color 150ms var(--ease); }
+.nr-footer-columns a:hover { color: var(--foreground); }
+.nr-footer-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; }
+.nr-footer-bar p { margin: 0; }
+.nr-footer-prefs { display: flex; flex-wrap: wrap; gap: 8px; }
+.nr-footer-select[data-slot="select-trigger"] { box-shadow: none; color: var(--muted-foreground); }
+.nr-footer-select[data-slot="select-trigger"]:hover { color: var(--foreground); }
+@media (max-width: 860px) {
+  .nr-site-footer { margin: 56px 16px 0; padding-inline: 4px; }
+  .nr-footer-main { grid-template-columns: 1fr; gap: 36px; }
+  .nr-footer-bar { flex-direction: column-reverse; align-items: flex-start; }
+}
+
+/* Bandas de la landing: una sección sí y otra no lleva un fondo apenas distinto, de borde a borde de la ventana,
+   para que las secciones se lean como bloques y no como una sola página plana. El fondo sale del border-image
+   (no de una sombra: ADR-0036) y no ensancha la página. Sobre la banda, las tarjetas usan --surface-band-card. */
+.nr-mk-band {
+  --card: var(--surface-band-card);
+  margin-top: 120px;
+  padding-block: 112px;
+  border-image: conic-gradient(var(--surface-band) 0 0) fill 0 / / 0 100vmax;
+}
+.nr-mk-band + .nr-mk-section { padding-top: 120px; }
+.nr-mk-band + .nr-mk-final { margin-top: 120px; }
+
+/* Jerarquía: el título enorme queda para el hero, «¿Cómo puede costar tan poco?» y el cierre. El resto, un paso menos. */
+.nr-mk-home > .nr-mk-section:not(.nr-mk-split) .nr-mk-title { font-size: clamp(30px, 3.4vw, 48px); letter-spacing: -0.045em; }
+
+/* Iconos de la landing: los mismos Kubai Ink de la barra lateral, sin cuadro detrás (el icono ya trae su cuerpo). */
+.nr-mk-icon { display: inline-grid; flex: none; place-items: center; }
+.nr-mk-icon svg { width: 28px; height: 28px; }
+.nr-mk-facts-list dt { display: flex; align-items: center; gap: 12px; }
+.nr-mk-facts-list > div { align-items: center; }
+.nr-mk-use-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nr-mk-combo-step .nr-mk-icon { align-self: flex-start; margin-bottom: 6px; }
+.nr-mk-inline-steps li > .nr-mk-icon { width: auto; height: auto; border-radius: 0; background: none; }
+.nr-mk-inline-steps li > .nr-mk-icon svg { width: 26px; height: 26px; }
+
+/* Logos de marca dentro de chips: 14 px, a la izquierda del nombre. */
+.nr-mk-tool-list li, .nr-mk-pay-nets li { display: inline-flex; align-items: center; gap: 7px; }
+.nr-mk-tool-list img, .nr-mk-pay-nets img { flex: none; width: 14px; height: 14px; object-fit: contain; }
+
+@media (max-width: 860px) {
+  .nr-mk-band { margin-top: 80px; padding-block: 72px; }
+  .nr-mk-band + .nr-mk-section { padding-top: 80px; }
+  .nr-mk-band + .nr-mk-final { margin-top: 80px; }
 }

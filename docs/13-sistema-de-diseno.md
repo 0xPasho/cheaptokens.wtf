@@ -46,6 +46,8 @@ Contenido y controles son opacos y planos. No hay halos, degradados de botones, 
 
 Las utilidades `glass-*` se mantienen únicamente como aliases para compatibilidad con los átomos instalados; ahora producen el material plano. Los menús y diálogos tienen superficies opacas. Se conserva el soporte de movimiento reducido y el contraste de los controles.
 
+**Bandas de la landing.** Para que las secciones se lean como bloques, una sí y otra no (por qué cuesta menos, precios, preguntas) lleva `.nr-mk-band`: un fondo `--surface-band` de borde a borde de la ventana, hecho con `border-image` y no con sombra. Dentro de la banda, las tarjetas usan `--surface-band-card` (blanco en claro, la tarjeta de siempre en oscuro). El título enorme queda para el hero, «¿Cómo puede costar tan poco?» y el cierre; el resto de las secciones de la landing va un paso más chico.
+
 **Foco de teclado.** En las páginas del sitio, cada link y cada botón enfocado con el teclado lleva un contorno de 2 px por fuera, con el token `--focus-ring`, que pasa 3:1 sobre cada superficie en los dos temas. El anillo translúcido de los átomos (`--ring`) no sirve aquí: el estilo plano le quita el `box-shadow` y en claro no llega a 3:1. Una tarjeta cuyo link la cubre entera lleva el contorno en la tarjeta. «Saltar al contenido» aparece al recibir el foco. Los campos de texto no llevan contorno al pulsarlos, salvo los de la ventana de acceso. Ver [ADR-0064](./adr/0064-foco-de-teclado-visible.md).
 
 ## Datos, texto y funciones
@@ -58,7 +60,7 @@ Los filtros por capacidad se combinan con Y. Autor, búsqueda, orden y vista viv
 
 ## Iconos
 
-Los iconos funcionales usan `kubai-icons-react`, con el acabado Ink mediante el token `--icon-body` en ambos temas y los tamaños de cada control. Se conservan el sombreado original, los detalles blancos, las etiquetas accesibles y los iconos decorativos ocultos. Los logos de marca y proveedores no se sustituyen. Ver [ADR-0037](./adr/0037-iconos-kubai.md) y [ADR-0039](./adr/0039-iconos-kubai-ink.md). La muestra está en `/design-system`.
+Los iconos funcionales usan `kubai-icons-react`, con el acabado Ink mediante el token `--icon-body` en ambos temas y los tamaños de cada control. Se conservan el sombreado original, los detalles blancos, las etiquetas accesibles y los iconos decorativos ocultos. Los logos de marca y proveedores no se sustituyen. En la landing, los motivos, los pasos y los usos de key llevan su icono Ink a 26–28 px sin cuadro detrás; los chips de «Funciona con» y de pago llevan el logo de la marca (OpenAI, LangChain, Vercel, USDC, Bitcoin), decorativo porque el nombre va escrito al lado. Ver [ADR-0037](./adr/0037-iconos-kubai.md) y [ADR-0039](./adr/0039-iconos-kubai-ink.md). La muestra está en `/design-system`.
 
 ## Componentes
 

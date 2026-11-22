@@ -67,7 +67,8 @@ test.describe("idioma", () => {
 
   test("el selector de idioma cambia solo el prefijo y lo recuerda", async ({ page }) => {
     await open(page, "/es/models/openai/gpt-5");
-    await page.getByRole("navigation", { name: "Idioma" }).getByRole("link", { name: "English" }).click();
+    await page.getByRole("contentinfo").getByRole("combobox", { name: "Idioma" }).click();
+    await page.getByRole("option", { name: "English" }).click();
     await expect(page).toHaveURL(/\/en\/models\/openai\/gpt-5$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     // La cookie gana sobre Accept-Language (es-MX en la config).

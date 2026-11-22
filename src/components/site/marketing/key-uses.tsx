@@ -1,3 +1,7 @@
+import MonitorIcon from "kubai-icons-react/icons/monitor";
+import ScrollIcon from "kubai-icons-react/icons/scroll";
+import ServerIcon from "kubai-icons-react/icons/server";
+
 import { formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -7,10 +11,10 @@ import { MarketingSection } from "./section";
 type Source = keyof Dictionary["dashboard"]["sources"];
 
 /** El ajuste de key de cada caso: fuente de cobro (05 · API keys), límite de gasto de ejemplo y modelos. */
-const USES: { source: Source; limitMicroUsd: number | null; model: string | null }[] = [
-  { source: "plan_then_prepaid", limitMicroUsd: null, model: null },
-  { source: "prepaid_only", limitMicroUsd: 50_000_000, model: null },
-  { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek/deepseek-v4.1-flash" },
+const USES: { source: Source; limitMicroUsd: number | null; model: string | null; Icon: typeof MonitorIcon }[] = [
+  { source: "plan_then_prepaid", limitMicroUsd: null, model: null, Icon: MonitorIcon },
+  { source: "prepaid_only", limitMicroUsd: 50_000_000, model: null, Icon: ServerIcon },
+  { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek/deepseek-v4.1-flash", Icon: ScrollIcon },
 ];
 
 /** 06 · Una key para cada uso: las formas de funcionar según cómo cobra cada API key. ADR-0060. */
@@ -23,7 +27,10 @@ export function KeyUses({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           const use = USES[index];
           return (
             <article key={item.title} className="nr-mk-use">
-              <p className="nr-mk-flow-label">{item.who}</p>
+              <div className="nr-mk-use-top">
+                <p className="nr-mk-flow-label">{item.who}</p>
+                <span className="nr-mk-icon" aria-hidden><use.Icon /></span>
+              </div>
               <h3>{item.title}</h3>
               <p>{item.body}</p>
               <dl className="nr-mk-keybox">

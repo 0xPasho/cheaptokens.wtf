@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 
 import { KonamiRetro } from "@/components/konami-retro";
+import { Analytics } from "@/components/site/analytics";
 import { AuthProvider } from "@/components/site/auth-provider";
 import { ThemeSync } from "@/components/theme-sync";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -54,6 +55,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         <AuthProvider locale={lang}>
           <TooltipProvider>{children}</TooltipProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

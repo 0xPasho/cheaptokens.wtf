@@ -10,6 +10,7 @@ import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { HERO_MODELS, pickModels } from "@/lib/marketing";
 import { API_BASE_URL } from "@/lib/site";
 
+import { HeroOrbit } from "./hero-orbit";
 import { type HeroModel, HeroPrice } from "./hero-price";
 import { ArrowLabel } from "./section";
 
@@ -30,6 +31,7 @@ export function HomeHero({ models, locale, dict }: { models: CatalogModel[]; loc
   }));
   return (
     <section className="nr-mk-hero" aria-labelledby="hero-title">
+      <HeroOrbit />
       <h1 id="hero-title" className="nr-mk-hero-title">{d.title}</h1>
       <p className="nr-mk-hero-sub">
         {t(d.subtitle, { models: formatCount(models.length, locale), authors: formatCount(authors, locale) })}

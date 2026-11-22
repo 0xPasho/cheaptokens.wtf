@@ -25,13 +25,14 @@ export default async function HomePage() {
   const models = await getLiveCatalog();
   const pricing = dict.pricing;
   return (
-    <Container className="nr-mk">
+    <Container className="nr-mk nr-mk-home">
       <HomeHero models={models} locale={locale} dict={dict} />
       <PriceTable models={models} locale={locale} dict={dict} />
       <WhyCheaper dict={dict} />
       <SwitchDiff dict={dict} />
       <MarketingSection
         id="pricing"
+        className="nr-mk-band"
         eyebrow={pricing.eyebrow}
         title={pricing.title}
         description={pricing.description}
@@ -44,7 +45,7 @@ export default async function HomePage() {
       <KeyUses locale={locale} dict={dict} />
       <MarketingSection
         id="faq"
-        className="nr-mk-faq-layout"
+        className="nr-mk-faq-layout nr-mk-band"
         eyebrow={dict.home.faq.eyebrow}
         title={dict.home.faq.title}
         description={dict.home.faq.description}

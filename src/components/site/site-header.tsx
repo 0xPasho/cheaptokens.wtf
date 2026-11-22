@@ -9,15 +9,16 @@ import WorkflowIcon from "kubai-icons-react/icons/workflow";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { ThemeMenuOptions, ThemeToggle } from "@/components/theme-toggle";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
 import { getKeyHref } from "@/lib/auth/redirect";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+
+import { BrandWordmark } from "./brand-wordmark";
 
 const noSubscription = () => () => {};
 /** En Mac el atajo se escribe con ⌘. En el servidor no se sabe: se pinta Ctrl y el cliente lo corrige. */
@@ -53,12 +54,7 @@ export function SiteHeader({ locale, dict, account, menuAccount }: {
     <header className="nr-topbar">
       <div className="nr-header-leading">
         <Link href={`/${locale}`} className="nr-brand-button" aria-label={dict.nav.home}>
-          {dict.meta.brandBase}
-          <span className="nr-brand-accent">
-            {Array.from(dict.meta.brandTld).map((letter, index) => (
-              <span key={`${index}-${letter}`}>{letter}</span>
-            ))}
-          </span>
+          <BrandWordmark base={dict.meta.brandBase} tld={dict.meta.brandTld} />
         </Link>
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
           <Link href={`/${locale}/models`} className={isModels ? "nr-active" : undefined} aria-current={isModels ? "page" : undefined}>{dict.nav.models}</Link>
@@ -75,7 +71,6 @@ export function SiteHeader({ locale, dict, account, menuAccount }: {
         <kbd>{apple ? "⌘K" : "Ctrl K"}</kbd>
       </form>
       <div className="nr-header-actions">
-        <ThemeToggle labels={dict.theme} className="nr-icon-button nr-theme-button" />
         <Link href={getKeyHref(locale)} className={buttonVariants({ variant: "secondary", className: "nr-pill-button" })}>{dict.nav.getKey}</Link>
         {account}
         <MobileMenu locale={locale} dict={dict} account={menuAccount} />
@@ -86,7 +81,7 @@ export function SiteHeader({ locale, dict, account, menuAccount }: {
 
 /**
  * Menú de la cabecera en pantallas angostas (≤ 860 px), donde no caben la navegación, la búsqueda ni «Entrar».
- * El tema también vive aquí: su botón propio se oculta para dejar sitio a la cuenta.
+ * El idioma y el tema están en el pie de página.
  */
 function MobileMenu({ locale, dict, account }: { locale: Locale; dict: Dictionary; account: React.ReactNode }) {
   return (
@@ -104,11 +99,6 @@ function MobileMenu({ locale, dict, account }: { locale: Locale; dict: Dictionar
           <DropdownMenuItem render={<Link href={`/${locale}/faq`} />}><CircleHelpIcon aria-hidden />{dict.nav.faq}</DropdownMenuItem>
         </DropdownMenuGroup>
         {account}
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{dict.theme.trigger}</DropdownMenuLabel>
-          <ThemeMenuOptions labels={dict.theme} />
-        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

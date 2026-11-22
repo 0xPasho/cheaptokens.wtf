@@ -1,3 +1,7 @@
+/* eslint-disable @next/next/no-img-element -- Small local SVG brand marks. */
+import LayersIcon from "kubai-icons-react/icons/layers";
+import ShieldIcon from "kubai-icons-react/icons/shield";
+import TimerIcon from "kubai-icons-react/icons/timer";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -8,6 +12,9 @@ import { BITCOIN_QUOTE_MINUTES, DEFAULT_OVERFLOW_CAP_MICRO_USD } from "@/lib/mar
 
 /** Cuánto llena cada medidor del dibujo: plan a medias, plan lleno y el excedente en su tope. */
 const METERS = [72, 100, 28];
+
+/** Un icono por paso, en lugar del número: primero el plan, en el límite eliges, y el tope que pones tú. */
+const STEP_ICONS = [LayersIcon, TimerIcon, ShieldIcon];
 
 /** Cómo se reparte un request entre el plan y los créditos (08 · Créditos y pagos › Orden de cobro). */
 export function BillingFlow({ locale, dict, withHead = true }: {
@@ -27,14 +34,17 @@ export function BillingFlow({ locale, dict, withHead = true }: {
         </div>
       ) : null}
       <ol className="nr-mk-combo">
-        {d.steps.map((step, index) => (
+        {d.steps.map((step, index) => {
+          const Icon = STEP_ICONS[index];
+          return (
           <li key={step.title} className="nr-mk-combo-step">
-            <span className="nr-mk-step-number" aria-hidden>{formatCount(index + 1, locale).padStart(2, "0")}</span>
+            {Icon ? <span className="nr-mk-icon" aria-hidden><Icon /></span> : <span className="nr-mk-step-number" aria-hidden>{formatCount(index + 1, locale).padStart(2, "0")}</span>}
             <StepHeading>{step.title}</StepHeading>
             <p>{t(step.body, { cap: formatUsd(DEFAULT_OVERFLOW_CAP_MICRO_USD, locale, "whole") })}</p>
             <div className="nr-mk-meter" aria-hidden><i style={{ width: `${METERS[index]}%` }} data-muted={index === 2 || undefined} /></div>
           </li>
-        ))}
+          );
+        })}
       </ol>
     </div>
   );
@@ -48,7 +58,11 @@ export function PayNote({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const d = dict.pricing.pay;
   return (
     <div className="nr-mk-pay">
-      <ul className="nr-mk-pay-nets"><li>USDC · Solana</li><li>USDC · Base</li><li>Bitcoin</li></ul>
+      <ul className="nr-mk-pay-nets">
+        <li><img src="/brand/logos/usdc-color.svg" alt="" width={14} height={14} />USDC · Solana</li>
+        <li><img src="/brand/logos/usdc-color.svg" alt="" width={14} height={14} />USDC · Base</li>
+        <li><img src="/brand/logos/bitcoin-color.svg" alt="" width={14} height={14} />Bitcoin</li>
+      </ul>
       <p><b>{d.title}</b> {t(d.body, { minutes: formatCount(BITCOIN_QUOTE_MINUTES, locale) })}</p>
       <Link href={`/${locale}/dashboard/credits`} className={buttonVariants({ variant: "secondary", className: "nr-mk-button" })}>{d.cta}</Link>
     </div>

@@ -41,7 +41,7 @@ function ClerkAccount({ locale, labels, variant }: { locale: Locale; labels: Lab
   if (!isSignedIn) return <SignInLink locale={locale} label={labels.signIn} variant={variant} />;
   if (variant === "menu") return null;
   const identity = user.primaryEmailAddress?.emailAddress ?? user.fullName ?? user.id;
-  return <AccountMenu locale={locale} mode="clerk" identity={identity} labels={labels} />;
+  return <AccountMenu locale={locale} mode="clerk" identity={identity} seed={user.id} labels={labels} />;
 }
 
 const noSubscription = () => () => {};
@@ -56,5 +56,5 @@ function DevAccount({ locale, labels, variant }: { locale: Locale; labels: Label
   const identity = useSyncExternalStore(noSubscription, readDevIdentity, () => null);
   if (!identity) return <SignInLink locale={locale} label={labels.signIn} variant={variant} />;
   if (variant === "menu") return null;
-  return <AccountMenu locale={locale} mode="dev" identity={identity} labels={labels} />;
+  return <AccountMenu locale={locale} mode="dev" identity={identity} seed={`dev:${identity}`} labels={labels} />;
 }

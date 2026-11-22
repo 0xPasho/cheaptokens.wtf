@@ -6,6 +6,13 @@ import SunIcon from "kubai-icons-react/icons/sun";
 
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
@@ -76,5 +83,47 @@ export function ThemeToggle({
         <ThemeMenuOptions labels={labels} />
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * El tema como select, para el pie de página. El ícono del botón sigue a la clase `.dark` (igual que
+ * `ThemeToggle`), así que se ve bien antes de hidratar aunque el valor guardado llegue después.
+ */
+export function ThemeSelect({
+  labels,
+  className,
+}: {
+  labels?: Partial<ThemeToggleLabels>;
+  className?: string;
+}) {
+  const { theme, setTheme } = useTheme();
+  const text = { ...DEFAULT_LABELS, ...labels };
+  const items = (Object.keys(ICONS) as Theme[]).map((value) => ({ value, label: text[value] }));
+  return (
+    <Select
+      items={items}
+      value={theme}
+      onValueChange={(value) => {
+        if (value && isTheme(value)) setTheme(value);
+      }}
+    >
+      <SelectTrigger size="sm" aria-label={text.trigger} className={className}>
+        <SunIcon aria-hidden className="dark:hidden" />
+        <MoonIcon aria-hidden className="hidden dark:block" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="end" alignItemWithTrigger={false} side="top">
+        {items.map((item) => {
+          const Icon = ICONS[item.value];
+          return (
+            <SelectItem key={item.value} value={item.value}>
+              <Icon aria-hidden />
+              {item.label}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }

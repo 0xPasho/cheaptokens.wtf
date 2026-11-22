@@ -5,7 +5,7 @@ import KeyRoundIcon from "kubai-icons-react/icons/key-round";
 import SettingsIcon from "kubai-icons-react/icons/settings";
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AccountAvatar } from "@/components/account-avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -15,21 +15,20 @@ import type { Locale } from "@/lib/i18n/config";
 import { SignOut } from "./sign-out";
 
 /** Menú de cuenta de la cabecera: el patrón de /design-system › Dropdown menu. */
-export function AccountMenu({ locale, mode, identity, labels }: {
+export function AccountMenu({ locale, mode, identity, seed, labels }: {
   locale: Locale;
   mode: "clerk" | "dev";
   identity: string;
+  /** Semilla del avatar por defecto: el id de Clerk (o el de la sesión de desarrollo). */
+  seed: string;
   labels: { account: string; dashboard: string; keys: string; settings: string; signOut: string };
 }) {
-  const initials = identity.replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase() || "?";
   const base = `/${locale}/dashboard`;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="nr-icon-button" />}>
-        {/* El nombre va como texto sr-only: las iniciales visibles no son el nombre (WCAG 2.5.3, docs/13). */}
-        <Avatar size="sm" aria-hidden>
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+        {/* El avatar es decorativo: el nombre va como texto sr-only. */}
+        <AccountAvatar seed={seed} size="sm" />
         <span className="sr-only">{labels.account}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-52" align="end">

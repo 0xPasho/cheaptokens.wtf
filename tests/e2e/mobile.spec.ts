@@ -63,6 +63,7 @@ for (const path of ["/es", "/en/models", "/es/models/google/gemini-4-argon", "/e
     expect(overflow).toBeLessThanOrEqual(0);
     const header = (await page.locator("header").first().boundingBox())!;
     expect(header.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    await expect(page.getByRole("navigation", { name: /Main|Principal/ }).getByRole("link").first()).toBeVisible();
+    // En un teléfono la navegación vive en el menú de la cabecera.
+    await expect(page.locator("header").getByRole("button", { name: /^(Menu|Menú)$/ })).toBeVisible();
   });
 }

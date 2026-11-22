@@ -1,3 +1,8 @@
+/* eslint-disable @next/next/no-img-element -- Small local SVG brand marks. */
+import CodeIcon from "kubai-icons-react/icons/code";
+import KeyRoundIcon from "kubai-icons-react/icons/key-round";
+import WalletIcon from "kubai-icons-react/icons/wallet";
+
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { API_BASE_URL } from "@/lib/site";
 
@@ -18,6 +23,14 @@ const DIFF: DiffLine[] = [
 ];
 
 const SIGN = { same: " ", removed: "-", added: "+" } as const;
+
+/** Los tres pasos, en orden: saldo, key y las dos líneas. La lista sigue siendo `ol`: el orden no depende del icono. */
+const STEP_ICONS = [WalletIcon, KeyRoundIcon, CodeIcon];
+
+/** Logo de marca en un chip: decorativo, el nombre ya va escrito al lado. */
+function ToolLogo({ file }: { file: string }) {
+  return <img className="nr-brand-monochrome" src={`/brand/logos/${file}.svg`} alt="" width={14} height={14} />;
+}
 
 /**
  * 04 · Cambiarse, en vez del diagrama de flechas: el diff exacto, los tres pasos en una línea y con qué funciona.
@@ -40,18 +53,21 @@ export function SwitchDiff({ dict }: { dict: Dictionary }) {
         <div className="nr-mk-switch-side">
           <h3 className="nr-mk-eyebrow">{d.stepsLabel}</h3>
           <ol className="nr-mk-inline-steps">
-            {d.steps.map((step, index) => (
-              <li key={step}>
-                <span aria-hidden>{index + 1}</span>
-                {step}
-              </li>
-            ))}
+            {d.steps.map((step, index) => {
+              const Icon = STEP_ICONS[index];
+              return (
+                <li key={step}>
+                  {Icon ? <span className="nr-mk-icon" aria-hidden><Icon /></span> : <span aria-hidden>{index + 1}</span>}
+                  {step}
+                </li>
+              );
+            })}
           </ol>
           <h3 className="nr-mk-eyebrow">{d.toolsLabel}</h3>
           <ul className="nr-mk-tool-list">
-            <li>{tools.openai}</li>
-            <li>{tools.langchain}</li>
-            <li>{tools.vercel}</li>
+            <li><ToolLogo file="openai" />{tools.openai}</li>
+            <li><ToolLogo file="langchain" />{tools.langchain}</li>
+            <li><ToolLogo file="vercel" />{tools.vercel}</li>
             <li>{tools.editors}</li>
             <li data-soon>{tools.claudeCode}</li>
           </ul>

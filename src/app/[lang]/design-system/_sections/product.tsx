@@ -19,6 +19,7 @@ import { Price, PriceComparison } from "@/components/price";
 import { QuickstartSnippet } from "@/components/quickstart-snippet";
 import { Stat } from "@/components/stat";
 import { UsageMeter } from "@/components/usage-meter";
+import { AccountAvatar } from "@/components/account-avatar";
 import { AccountMenu } from "@/components/dashboard/account-menu";
 import { BitcoinQuote, BitcoinStatusLine } from "@/components/dashboard/bitcoin-panel";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
@@ -575,7 +576,7 @@ function DashboardChromePattern() {
   return (
     <Section
       title="Navegación del dashboard"
-      description="DashboardNav reusa la sidebar del catálogo. AccountMenu es el menú de cuenta de la cabecera, con cerrar sesión."
+      description="DashboardNav reusa la sidebar del catálogo. AccountMenu es el menú de cuenta de la cabecera, con cerrar sesión. AccountAvatar es la imagen por defecto de cada cuenta: un degradado que sale de su id (el mismo algoritmo que Deska)."
     >
       <div className="flex flex-wrap items-start gap-10">
         <div className="w-60"><DashboardNav locale={LOCALE} labels={dict.dashboard.nav} /></div>
@@ -583,8 +584,12 @@ function DashboardChromePattern() {
           locale={LOCALE}
           mode="dev"
           identity="ana@ejemplo.com"
+          seed="dev:ana@ejemplo.com"
           labels={{ account: dict.auth.account, dashboard: dict.dashboard.nav.overview, keys: dict.dashboard.nav.keys, settings: dict.dashboard.nav.settings, signOut: dict.auth.signOut }}
         />
+        <div className="flex items-center gap-3">
+          {["user_2abcDEF", "user_ana", "user_luis", "user_mar"].map((seed) => <AccountAvatar key={seed} seed={seed} size="xl" />)}
+        </div>
       </div>
     </Section>
   );

@@ -62,6 +62,9 @@
 
 :root {
   color-scheme: light;
+  /* Bandas de la landing: una sección sí y otra no, de borde a borde. Sobre la banda las tarjetas pasan a blanco. */
+  --surface-band: oklch(0.968 0 0);
+  --surface-band-card: oklch(1 0 0);
   --surface-model-front: #ffffff;
   --surface-model-pill: #ededed;
   --icon-body: #2e3036;
@@ -185,6 +188,8 @@
 
 .dark {
   color-scheme: dark;
+  --surface-band: oklch(0.15 0 0);
+  --surface-band-card: oklch(0.205 0 0);
   --surface-model-front: #242424;
   --surface-model-pill: #303030;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
@@ -500,10 +505,6 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-pill-button[data-slot="button"], .nr-pill-button.group\/button { height: var(--nr-topbar-control, 36px); box-shadow: none; line-height: 1.5; }
 .nr-topbar .nr-icon-button[data-slot="button"] { width: var(--nr-topbar-control); height: var(--nr-topbar-control); background: none; border-radius: 9px; box-shadow: none; }
 .nr-topbar .nr-icon-button:hover { background: var(--secondary); }
-.nr-site-footer { margin: 0 20px; padding: 48px 0 32px; color: var(--muted-foreground); font-size: 12.5px; }
-.nr-footer-row { display: flex; justify-content: space-between; gap: 24px; }
-.nr-site-footer nav { display: flex; gap: 16px; }
-.nr-site-footer p { margin-top: 12px; }
 .nr-docs { padding-top: 112px; }
 .nr-docs [data-slot="card"], [data-slot="card"] { border-radius: 28px; }
 .nr-docs h1 { font-size: clamp(36px, 3.4vw, 52px); font-weight: 550; letter-spacing: -.045em; }
@@ -517,14 +518,9 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-cost dt { color: var(--text-description-strong); }
 .nr-cost dd { text-align: right; font-variant-numeric: tabular-nums; }
 .nr-documentation-link { text-decoration: underline; text-underline-offset: 3px; }
-.nr-mobile-nav { display: none; }
-@media (max-width: 1080px) { .nr-site-footer { margin-inline: 20px; } }
 @media (max-width: 860px) {
- .nr-site-footer { margin-inline: 16px; }
- .nr-footer-row { flex-direction: column; }
  .nr-catalog { padding-top: 92px; }
  .nr-catalog > .nr-sidebar { max-height: 248px; overflow: auto; }
- .nr-mobile-nav { display: flex; gap: 16px; }
  .nr-section-controls { gap: 8px; }
  .nr-docs { padding-top: 92px; }
 }
@@ -557,12 +553,9 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
   .nr-detail-overview > .nr-layered-panel-front { padding: 20px; }
 }
 .nr-detail-panel .nr-api-switch span { padding: 9px 15px; font-size: 13px; color: var(--foreground); }
-.nr-site-footer { padding-top: 0; }
 .nr-site .nr-detail-footer { padding-top: 28px; }
 @media (max-width: 600px) { .nr-related-model { flex-wrap: wrap; } .nr-related-model code { max-width: 100%; } }
 .nr-search-box kbd { opacity: 1; }
-.nr-site-footer .nr-mobile-nav { display: none; }
-@media (max-width: 860px) { .nr-site-footer .nr-mobile-nav { display: flex; margin-bottom: 20px; } }
 
 .nr-resource-links :is(a, button) { display: inline-flex; align-items: center; gap: 6px; }
 
