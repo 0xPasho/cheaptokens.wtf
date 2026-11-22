@@ -57,6 +57,41 @@ Objetivo: un desconocido se registra, elige un plan o recarga, crea una key y ha
 - [ ] Cron diario de reconciliación de saldos.
 - [ ] Al menos 2 upstreams de producción que pasen la [lista de requisitos](./07-upstreams.md#requisitos-para-aceptar-un-upstream). Durante las pruebas: InferHub + simulado.
 
+**Revisión del PR #1 · antes de desplegar**
+
+El [PR #1](https://github.com/0xPasho/cheaptokens.wtf/pull/1) trajo las reservas por request ([ADR-0066](./adr/0066-reserva-por-request.md)), el pulido de UI y la landing nueva. Entró sin revisión; esto es lo que la revisión posterior dejó pendiente.
+
+- [x] Probar en vivo contra InferHub tres casos: `max_tokens` mayor que la salida máxima del modelo, prompt + `max_tokens` mayor que el contexto, y un modelo de razonamiento con `max_tokens`. Hecho el 2026-11-21 con `cb/kimi-k2.5`, `cx/gpt-6-luna` y `oai/gpt-5.4-mini`: InferHub respondió `200` en los tres.
+- [x] Acotar el `max_tokens` que el gateway manda cuando el cliente no lo fija (32 768). No hizo falta: InferHub acepta un `max_tokens` mayor que la salida máxima y que el contexto libre. Hay que repetir la prueba con cada upstream nuevo; `GET /v1/models` de InferHub ya trae `max_output_tokens` por modelo, por si un vendedor lo rechaza.
+- [x] Descontar las reservas en curso antes de decidir que el plan alcanza. Con requests en paralelo, un asiento de socio o un workspace con paquetes salía recortado o con `429` sin que se consultara el tope ni el paquete (`admitUsage` en `src/lib/gateway/authenticate.ts`).
+- [x] Liberar la reserva aunque `after()` falle (`afterThenRelease` en `src/lib/gateway/handler.ts`).
+- [x] «Cómo funciona», en la cabecera y en el menú móvil, apuntaba a `#how-it-works`, que ya no existe. Ahora lleva a `#why` (`src/components/site/site-header.tsx`).
+- [ ] Desplegar `main` en producción ([18 · Deploy](./18-deploy.md)).
+
+**Revisión del PR #1 · cobro**
+
+Lo que cambie una decisión de ADR-0066 va con un ADR nuevo que la reemplace.
+
+- [ ] Avisar con un header de respuesta cuando la salida se recortó por saldo o por plan. Hoy el cliente solo ve `finish_reason: "length"`.
+- [ ] Estimar el prompt por tipo de carácter. A 3 bytes por token no es una cota para dígitos, símbolos ni texto no ASCII.
+- [ ] `Retry-After` de un `429` por reserva: el reinicio de la ventana que limita, y corto o ausente cuando solo falta que se liberen reservas (`budgetShortfall` en `src/lib/billing/limits.ts`).
+- [ ] Contar los requests recortados o rechazados solo por reservas en curso. Con ese dato se decide si hace falta una cola o una tolerancia; mientras tanto la reserva se queda estricta.
+- [ ] Asiento de socio con saldo positivo: admitirlo con lo que queda del tope (`admissionBalance` en `src/lib/partner/postpaid.ts`). Solo pasa con un abono manual.
+
+**Revisión del PR #1 · web**
+
+- [ ] Actualizar `tests/e2e/pages.spec.ts` a la landing nueva: todavía busca `#models`, «Calcula las requests con» y el costo del request de ejemplo anterior. Después, regenerar las capturas con `pnpm test:e2e:update` y revisarlas.
+- [ ] ADR que reemplace la lista de secciones de [ADR-0060](./adr/0060-landing-explica-el-producto.md) por la landing nueva, y actualizar [02 · Producto y UX](./02-producto-y-ux.md).
+- [ ] La tabla de precios de la landing abre en el primer grupo que tenga modelos, no siempre en «popular» (`src/components/site/marketing/price-table.tsx`).
+- [ ] El tope de excedente del formulario del plan se formatea con `@/lib/format` (`src/app/[lang]/(site)/dashboard/plan/page.tsx`).
+- [ ] Uso: acotar `?page=` antes de la primera consulta (`src/app/[lang]/(site)/dashboard/usage/page.tsx`).
+- [ ] Selector de idioma: cambiar también el idioma dentro de `redirect_url` y leer la query vigente (`src/components/site/language-switcher.tsx`).
+
+**Revisión del PR #1 · proceso**
+
+- [ ] CI en cada PR: lint, typecheck, pruebas unitarias, pruebas del gateway y build. Las capturas visuales siguen en local, porque solo existen para macOS y Windows.
+- [ ] Proteger `main`: PR con una aprobación y CI en verde, y el dueño como revisor obligatorio de gateway, cobro y ADRs (`CODEOWNERS`).
+
 ### Criterios de lanzamiento
 
 - [ ] El SDK oficial de OpenAI (Python y JS) funciona cambiando solo `base_url` y `api_key`, con y sin streaming, incluyendo tools. JS verificado ([15 · Plan › Terminado](./15-plan-gateway.md#6-terminado)); falta probar Python.

@@ -63,7 +63,7 @@ export function SiteHeader({ locale, dict, account, menuAccount }: {
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
           <Link href={`/${locale}/models`} className={isModels ? "nr-active" : undefined} aria-current={isModels ? "page" : undefined}>{dict.nav.models}</Link>
           <Link href={`/${locale}/pricing`} className={isPricing ? "nr-active" : undefined} aria-current={isPricing ? "page" : undefined}>{dict.nav.pricing}</Link>
-          <Link href={`/${locale}#how-it-works`} className="nr-nav-anchor">{dict.nav.howItWorks}</Link>
+          <Link href={`/${locale}#why`} className="nr-nav-anchor">{dict.nav.howItWorks}</Link>
           <Link href={`/${locale}/docs`} className={isDocs ? "nr-active" : undefined} aria-current={isDocs ? "page" : undefined}>{dict.nav.docs}</Link>
         </nav>
       </div>
@@ -99,7 +99,7 @@ function MobileMenu({ locale, dict, account }: { locale: Locale; dict: Dictionar
           {/* Con ícono, como el menú de cuenta y el tema: todas las etiquetas empiezan en la misma columna. */}
           <DropdownMenuItem render={<Link href={`/${locale}/models`} />}><GridIcon aria-hidden />{dict.nav.models}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/pricing`} />}><TagIcon aria-hidden />{dict.nav.pricing}</DropdownMenuItem>
-          <DropdownMenuItem render={<Link href={`/${locale}#how-it-works`} />}><WorkflowIcon aria-hidden />{dict.nav.howItWorks}</DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={`/${locale}#why`} />}><WorkflowIcon aria-hidden />{dict.nav.howItWorks}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/docs`} />}><BookOpenIcon aria-hidden />{dict.nav.docs}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/faq`} />}><CircleHelpIcon aria-hidden />{dict.nav.faq}</DropdownMenuItem>
         </DropdownMenuGroup>
