@@ -54,3 +54,4 @@ next-env.d.ts
 # builds del servidor (deploy/build.sh)
 /.next-build/
 /.next-prev/
+/.next-check/
