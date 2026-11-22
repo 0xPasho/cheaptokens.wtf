@@ -509,6 +509,31 @@ body { margin: 0; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: ant
 .nr-docs [data-slot="card"], [data-slot="card"] { border-radius: 28px; }
 .nr-docs h1 { font-size: clamp(36px, 3.4vw, 52px); font-weight: 550; letter-spacing: -.045em; }
 .nr-docs :is(pre, code) { font-family: var(--font-mono); }
+/* /docs (ADR-0068): índice fijo a la izquierda y una columna de lectura. */
+.nr-docs-layout { display: grid; grid-template-columns: 200px minmax(0, 760px); justify-content: center; align-items: start; gap: 64px; }
+.nr-docs-nav { position: sticky; top: 112px; display: grid; gap: 20px; max-height: calc(100dvh - 136px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.nr-docs-nav p { margin: 0 0 6px; color: var(--text-label); font-size: 12px; }
+.nr-docs-nav ul { display: grid; gap: 2px; }
+.nr-docs-nav a { display: block; padding: 3px 0; color: var(--text-description); font-size: 14.5px; transition: color 150ms; }
+@media (hover: hover) { .nr-docs-nav a:hover { color: var(--foreground); } }
+/* Los bloques de código miden lo que su contenido: el alto fijo de 320 px es de la ficha del modelo. */
+.nr-docs .nr-code-box { height: auto; max-height: 30rem; }
+.nr-docs-glance { display: grid; padding: 4px 20px; border-radius: 20px; background: var(--card); }
+.nr-docs-glance > div { display: grid; grid-template-columns: 136px minmax(0, 1fr); align-items: center; gap: 16px; min-height: 48px; padding: 6px 0; }
+.nr-docs-glance > div + div { border-top: 1px solid var(--border); }
+.nr-docs-glance dt { color: var(--text-label); font-size: 14px; }
+.nr-docs-glance dd { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 14px; }
+.nr-docs-glance dd > code { font-size: 13.5px; overflow-wrap: anywhere; }
+.nr-docs-steps { display: grid; gap: 16px; counter-reset: docs-step; }
+.nr-docs-steps > li { position: relative; padding-left: 40px; counter-increment: docs-step; }
+.nr-docs-steps > li::before { content: counter(docs-step); position: absolute; top: 0; left: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+@media (max-width: 1023px) {
+  .nr-docs-layout { grid-template-columns: minmax(0, 760px); }
+  .nr-docs-nav { display: none; }
+}
+@media (max-width: 600px) {
+  .nr-docs-glance > div { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 0; }
+}
 .nr-code-block { position: relative; border-radius: 28px; overflow: hidden; background: var(--surface-code); }
 .nr-code-block pre { margin: 0; padding: 24px 52px 24px 24px; overflow: auto; font-size: 14px; line-height: 22px; }
 .nr-code-block > button { position: absolute; top: 16px; right: 16px; }

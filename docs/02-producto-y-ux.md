@@ -12,7 +12,7 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 | `/[lang]/models` | Pública | Ver modelos, precios y descuentos |
 | `/[lang]/pricing` | Pública | Elegir entre plan y créditos con números: lo que gasta cada modelo y cómo pagar ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
 | `/[lang]/faq` | Pública | Resolver las dudas de producto, cobro, planes, pagos, API y privacidad ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
-| `/[lang]/docs` | Pública | Conectar en 1 minuto |
+| `/[lang]/docs` | Pública | Conectar en 1 minuto y resolver dudas de la API ([ADR-0068](./adr/0068-docs-un-solo-endpoint.md)) |
 | `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Entrar o crear cuenta en la misma ventana, con un código por correo ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)). En desarrollo, sin Clerk, se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
 | `/[lang]/dashboard` | Privada | Ver plan, límites y saldo, y empezar |
@@ -131,7 +131,7 @@ Una sidebar con la composición del catálogo ([ADR-0038](./adr/0038-sidebar-izq
 
 ## Docs (`/[lang]/docs`)
 
-Una sola página, en este orden: base URL, autenticación, ejemplo en curl, Python y JS/TS, streaming, cómo elegir modelo (link a `/models`), tabla de errores y herramientas compatibles. El contenido sale de [04 · API](./04-api.md).
+Una sola página alrededor de una idea: un endpoint, con el formato de OpenAI ([ADR-0068](./adr/0068-docs-un-solo-endpoint.md)). Arriba, un recuadro con la base URL, el endpoint, la autenticación y `GET /v1/models`. Después, con un índice lateral, tres bloques: **Empezar** (cuenta, saldo o plan y key; el primer request y el aviso de `max_tokens`), **Usar** (modelos, qué funciona, streaming, cuánto pagas, API keys y rate limit) y **Referencia** (problemas comunes, errores con qué hacer y formato del stream). El contenido sale de [04 · API](./04-api.md), [05 · API keys](./05-api-keys.md) y [08 · Créditos y pagos](./08-creditos-y-pagos.md), y las cifras, del código.
 
 ## Estados vacíos y errores
 

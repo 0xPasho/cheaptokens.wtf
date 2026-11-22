@@ -276,7 +276,9 @@ test.describe("docs", () => {
   test("la tabla de errores tiene los 15 códigos y las cifras salen con el formato del idioma", async ({ page }) => {
     await open(page, "/es/docs");
     const errors = page.getByRole("region", { name: "Códigos de error" });
-    await expect(errors.locator("tbody tr")).toHaveCount(15);
+    // ADR-0068: agrupados en cinco, cada grupo con su fila de título (sin celdas `td`).
+    await expect(errors.locator("tbody tr:has(td)")).toHaveCount(15);
+    await expect(errors.locator("tbody th[scope=colgroup]")).toHaveCount(5);
     await expect(errors.locator("tbody tr").filter({ hasText: "rate_limit_exceeded" })).toContainText("429");
     // ADR-0049: el límite del plan también responde 429, con su propio código.
     await expect(errors.locator("tbody tr").filter({ hasText: "usage_limit_reached" })).toContainText("429");
@@ -285,13 +287,31 @@ test.describe("docs", () => {
     await expect(page.getByText(/al menos 0,00001\s?US\$/)).toBeVisible();
   });
 
-  test("el ejemplo de streaming pide el uso y muestra el keep-alive y el error a mitad del stream", async ({ page }) => {
+  test("el ejemplo de streaming pide el uso, y la referencia muestra el keep-alive y el error a mitad del stream", async ({ page }) => {
     await open(page, "/en/docs");
     const streaming = page.locator("#streaming");
     await expect(streaming.getByRole("tabpanel")).toContainText('stream_options={"include_usage": True}');
-    await expect(streaming).toContainText(": keep-alive");
-    await expect(streaming).toContainText('"finish_reason":"error"');
-    await expect(streaming).toContainText("data: [DONE]");
+    await expect(streaming.getByRole("link", { name: "Stream format" })).toHaveAttribute("href", "#stream-format");
+    const format = page.locator("#stream-format");
+    await expect(format).toContainText(": keep-alive");
+    await expect(format).toContainText('"finish_reason":"error"');
+    await expect(format).toContainText("data: [DONE]");
+  });
+
+  test("el índice lleva a cada sección y las cifras salen del código", async ({ page }) => {
+    await open(page, "/en/docs");
+    const index = page.getByRole("navigation", { name: "On this page" });
+    const links = index.getByRole("link");
+    await expect(links).toHaveCount(11);
+    for (const href of await links.evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href")))) {
+      await expect(page.locator(`section${href}`)).toHaveCount(1);
+    }
+    // ADR-0049: el rate limit de cada plan, de src/lib/billing/plans.ts.
+    const rateLimit = page.getByRole("region", { name: "Rate limit by plan" });
+    await expect(rateLimit.locator("tbody tr").filter({ hasText: "Max" })).toContainText("300");
+    // ADR-0066: la salida por defecto y el mínimo que se reserva, de src/lib/gateway/request-cost.ts.
+    await expect(page.locator("#quickstart")).toContainText("32,768");
+    await expect(page.locator("#billing")).toContainText("1,024");
   });
 
   test.describe("en un teléfono", () => {

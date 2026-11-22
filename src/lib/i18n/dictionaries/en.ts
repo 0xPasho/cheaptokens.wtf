@@ -493,13 +493,39 @@ export const en = {
   docs: {
     title: "Docs",
     description:
-      "The API speaks OpenAI Chat Completions. Change the base URL and the key, and keep the rest of your code.",
+      "One endpoint, in OpenAI's format. Change the base URL and the key, and your code, SDK or tool stays the same.",
     metaDescription:
-      "Connect to cheapllm.wtf in a minute: base URL, authentication, streaming, models, billing, errors and rate limits.",
-    auth: {
-      title: "Base URL and authentication",
-      baseUrl: "Every request goes to this base URL:",
-      header: "Send your API key as a bearer token in the `Authorization` header:",
+      "Connect to cheapllm.wtf in a minute: one OpenAI-compatible endpoint. Setup, first request, what works, what you pay, API keys, errors and rate limits.",
+    navLabel: "On this page",
+    groups: { start: "Get started", use: "Use", reference: "Reference" },
+    glance: {
+      baseUrl: "Base URL",
+      endpoint: "Endpoint",
+      auth: "Authentication",
+      format: "Format",
+      formatValue: "Same as OpenAI Chat Completions",
+      models: "Models",
+      modelsValue: "`GET /v1/models`, public, no key needed",
+    },
+    setup: {
+      title: "Before your first request",
+      steps: {
+        account: {
+          title: "Create your account",
+          body: "You sign in with a code we send to your email.",
+          link: "Create account",
+        },
+        fund: {
+          title: "Add balance or buy a plan",
+          body: "You pay with USDC or Bitcoin. There are no trial credits: without balance or a plan, requests answer `402`.",
+          link: "Compare plans and credits",
+        },
+        key: {
+          title: "Create an API key",
+          body: "In Dashboard › API keys. It's shown only once: keep it in an environment variable on your server.",
+          link: "Create a key",
+        },
+      },
       serverTitle: "Call it from your server",
       serverBody:
         "The API doesn't accept calls from the browser: there's no CORS. A key in your frontend is a leaked key.",
@@ -507,48 +533,155 @@ export const en = {
     quickstart: {
       title: "Your first request",
       body: "The Python and JavaScript examples use the official OpenAI SDK, and the JavaScript one works in TypeScript too. Only the base URL and the key change.",
-    },
-    streaming: {
-      title: "Streaming",
-      body: "Pass `stream: true` and the response arrives as Server-Sent Events, just like with OpenAI. To get token usage in the last chunk, set `stream_options.include_usage` to `true`.",
-      wireTitle: "What you get",
-      wireBody:
-        "Each event is a `data:` line with a `chat.completion.chunk`. With `include_usage`, the last one has empty `choices` and the `usage`. The stream ends with `data: [DONE]`.",
-      keepAlive:
-        "During long pauses, for example while a model reasons, you'll get `: keep-alive` comment lines. The SSE standard says to ignore them, and the SDKs already do.",
-      errorTitle: "Errors mid-stream",
-      errorBody:
-        "If the model fails after the stream has started, the HTTP status is already `200`. The error arrives as one last chunk, with an `error` object and `finish_reason: \"error\"`, followed by `[DONE]`. The OpenAI SDKs raise it as an `APIError`.",
-      reasoningTitle: "Reasoning",
-      reasoningBody:
-        "Reasoning models send their reasoning in `reasoning_content`: in `delta` when streaming, in `message` when not. The OpenAI SDKs don't type it, but they don't drop it either: read it as an extra field.",
+      maxTokensTitle: "Set `max_tokens`",
+      maxTokensBody:
+        "Without it, we ask for the model's maximum output, or {tokens} tokens if the provider doesn't report one. If your balance or plan can't cover that much, the output is cut to what fits and arrives with `finish_reason: \"length\"`.",
     },
     models: {
       title: "Choosing a model",
       body: "Each model has an ID in the form `author/model`, like `{model}`. That's what goes in `model`.",
       list: "The catalog shows every model with its price and discount. From code, call `GET /v1/models`: it's public and doesn't need a key.",
+      tags: "A model's tags say what it can do: `tools` for tool calling, `vision` for images and `reasoning` for models that reason.",
       browse: "Browse models",
     },
+    features: {
+      title: "What works",
+      body: "Everything in the request reaches the model as is. Whether a feature works depends on the model, and its tags in the catalog tell you.",
+      tableLabel: "Supported features",
+      feature: "Feature",
+      how: "How",
+      rows: {
+        streaming: { name: "Streaming", how: "`stream: true`, as with OpenAI. See Streaming below." },
+        tools: { name: "Tool calling", how: "`tools` and `tool_choice`, with models tagged `tools`." },
+        structured: { name: "Structured output", how: "`response_format`, when the model supports it." },
+        vision: { name: "Images", how: "Image parts in `messages`, with models tagged `vision`." },
+        reasoning: {
+          name: "Reasoning",
+          how: "Arrives in `reasoning_content`: in `message`, or in `delta` when streaming. The OpenAI SDKs don't type it but keep it: read it as an extra field.",
+        },
+        params: {
+          name: "Other parameters",
+          how: "`temperature`, `top_p`, `seed` and the rest pass through. If the model rejects one, you get a `400`.",
+        },
+      },
+      notYetTitle: "Not available yet",
+      notYet:
+        "`/v1/messages` (Anthropic's format), the Responses API, `/v1/completions`, embeddings, image generation, audio and batch.",
+      toolsTitle: "Compatible tools",
+      toolsBody: "Anything that lets you change the OpenAI base URL should work.",
+      toolsTableLabel: "Compatible tools",
+      tool: "Tool",
+      status: "Status",
+      toolRows: {
+        openaiSdk: { name: "OpenAI SDK (Python, JS/TS)", status: "Works. It's the reference client." },
+        langchain: { name: "LangChain (`ChatOpenAI` with `base_url`)", status: "Works." },
+        vercelAiSdk: { name: "Vercel AI SDK (OpenAI-compatible provider)", status: "Works." },
+        editors: {
+          name: "Editors and agents that accept an OpenAI base URL",
+          status: "Should work. We haven't tested them one by one yet.",
+        },
+        claudeCode: { name: "Claude Code", status: "Not yet: it needs `/v1/messages`, which comes later." },
+      },
+    },
+    streaming: {
+      title: "Streaming",
+      body: "Pass `stream: true` and the response arrives as Server-Sent Events, just like with OpenAI. To get token usage in the last chunk, set `stream_options.include_usage` to `true`.",
+      formatLink: "The exact events, keep-alives and errors mid-stream are in {link}.",
+    },
     billing: {
-      title: "How billing works",
-      body: "You pay per token from your prepaid credits, at each model's cheapllm.wtf price.",
+      title: "What you pay",
+      body: "Each request is paid from your plan or your balance, depending on the key. Plans and their limits are on {pricing}.",
+      pricingLink: "Pricing",
+      cap: "The price per 1M tokens in the catalog is the maximum: if the cost goes down, you pay less.",
       tokens:
-        "We count the tokens the model reports in `usage`: `prompt_tokens` at the input price and `completion_tokens` at the output price. Prices are per 1M tokens.",
-      reasoning: "Reasoning tokens are output tokens: they're included in `completion_tokens`.",
-      minimum: "Every request that gets a response costs at least {amount}.",
+        "We count the tokens the model reports in `usage`: `prompt_tokens` as input and `completion_tokens` as output. Reasoning tokens are output.",
+      cached: "Cached input never costs more than regular input.",
+      minimum: "A request that gets a response costs at least {amount}.",
+      reserve:
+        "Before calling the model, we hold the most the request can cost: the prompt plus `max_tokens`. If that doesn't fit, the output is cut to what fits. If not even {tokens} output tokens fit, the request is rejected and you pay nothing.",
       cancel:
         "If you cancel a stream, you pay for everything the model generated until it finished, not only what reached you. To cap it, set `max_tokens`.",
-      cached: "Cached input is billed as regular input, for now.",
+      failed: "Requests that fail aren't charged. The details are in Errors.",
+      headersTitle: "What's left of your plan",
+      headersBody:
+        "When the key pays from a plan, every response carries these headers. They show what was left before that request.",
+      headersTableLabel: "Plan headers",
+      header: "Header",
+      value: "Value",
+      headers: {
+        windowRemaining: "Share left of the 5-hour window, from 0 to 1 (`0.66`)",
+        weekRemaining: "The same, for the week",
+        windowReset: "When the 5-hour window resets, in ISO 8601",
+        weekReset: "When the week resets, in ISO 8601",
+      },
+    },
+    keys: {
+      title: "API keys",
+      body: "You set these up when you create a key in the dashboard.",
+      sourceTitle: "Where it pays from",
+      sourceTableLabel: "Billing sources",
+      option: "Option",
+      what: "What it does",
+      defaultSource: "default",
+      limit: "Spending limit: when the key reaches it, it answers `403 key_limit_exceeded`.",
+      models: "Allowed models: any other model answers `403 model_not_allowed_for_key`.",
+      fixed: "The billing source can't be changed later. To change it, create another key.",
+      rotate:
+        "Rotating creates a new key with the same settings. The old one keeps working for 24 hours, so you can swap it without downtime.",
+      revoke: "Revoking takes effect on the next request.",
+    },
+    rateLimit: {
+      title: "Rate limit",
+      body: "Requests per minute for each workspace, across all its keys:",
+      tableLabel: "Rate limit by plan",
+      plan: "Plan",
+      rpm: "Requests per minute",
+      noPlan: "No plan",
+      exceeded:
+        "Go over it and you get a `429 rate_limit_exceeded` with a `retry-after` header: the seconds to wait before trying again. The OpenAI SDKs already retry and respect it.",
+    },
+    troubleshooting: {
+      title: "Common problems",
+      items: {
+        cut: {
+          q: "The response arrived cut off",
+          a: "It has `finish_reason: \"length\"`: it reached `max_tokens`, or your balance or plan couldn't cover more output and we cut it. Raise `max_tokens`, add balance or wait for your plan to reset.",
+        },
+        modelNotFound: {
+          q: "`404 model_not_found` with a model that exists",
+          a: "Use the ID with its author, like `{model}`, not the name the model's maker uses. `GET /v1/models` lists them all.",
+        },
+        usageLimit: {
+          q: "`429` while sending few requests",
+          a: "If the code is `usage_limit_reached`, it isn't the rate limit: you used up your plan's 5-hour window or its week. `retry-after` says when it resets. To keep going with your balance, turn on overflow in Dashboard › Plan and limits.",
+        },
+        noCredits: {
+          q: "`402` while you have balance or a plan",
+          a: "Read the message. Either the request doesn't fit in what you have left (the prompt plus {tokens} output tokens), so lower `max_tokens` or the prompt; or the key can't use what you have: a Credits only key never uses the plan, and a Plan only key never uses your balance.",
+        },
+        cors: {
+          q: "A CORS error in the browser",
+          a: "The API doesn't accept calls from the browser. Call it from your server.",
+        },
+      },
     },
     errors: {
       title: "Errors",
       body: "Errors use OpenAI's format, so the SDKs read them as usual. Messages are always in English: they're meant for programs, and that way you can search for them.",
+      notCharged: "Errors aren't charged. The only exception is a `400` where the model still reports the tokens it used.",
       tableLabel: "Error codes",
-      when: "When",
+      when: "What happened, and what to do",
+      groups: {
+        request: "The request",
+        key: "Key and account",
+        money: "Balance and limits",
+        model: "Model ID",
+        upstream: "Model failures",
+      },
       codes: {
         invalid_request: "Invalid JSON, `model` or `messages` missing, or the model rejected a parameter",
         invalid_api_key: "The key is missing, malformed, doesn't exist or was revoked",
-        insufficient_credits: "Your workspace is out of credits",
+        insufficient_credits: "Your balance can't pay for the request",
         no_active_plan: "The key only uses a plan and your workspace has none",
         key_limit_exceeded: "The key reached its spending limit",
         model_not_allowed_for_key: "The key isn't allowed to use that model",
@@ -556,35 +689,41 @@ export const en = {
         model_not_found: "The model doesn't exist or isn't available to you",
         model_retired: "The model was retired",
         request_too_large: "The body is larger than {size} MB",
-        rate_limit_exceeded: "You hit the workspace rate limit (see `retry-after`)",
-        usage_limit_reached: "You used up your plan limit and overflow is off (see `retry-after`)",
+        rate_limit_exceeded: "You hit the workspace rate limit",
+        usage_limit_reached: "You used up your plan limit and overflow doesn't cover it",
         upstream_error: "The model failed with an error",
         no_upstream_available: "The model is temporarily unavailable",
         upstream_timeout: "The model took too long to start responding",
       },
+      fixes: {
+        invalid_request: "`error.message` says what's wrong. Fix it and retry.",
+        invalid_api_key: "Check that you copied the whole key, or create a new one.",
+        insufficient_credits: "Add balance. If you have some, lower `max_tokens` or the prompt.",
+        no_active_plan: "Buy a plan, or create a key that also pays with credits.",
+        key_limit_exceeded: "Raise the key's limit in Dashboard › API keys, or use another key.",
+        model_not_allowed_for_key: "Use a key that allows that model.",
+        account_suspended: "Your keys aren't revoked: they work again once the suspension is lifted.",
+        model_not_found: "Use an ID from `GET /v1/models`.",
+        model_retired: "Pick another model in the catalog.",
+        request_too_large: "Send fewer or smaller images, or shorten the conversation.",
+        rate_limit_exceeded: "Wait the seconds in `retry-after`. The SDKs retry on their own.",
+        usage_limit_reached: "Wait until `retry-after`, or turn on overflow in Dashboard › Plan and limits.",
+        upstream_error: "Retry. If it keeps failing, try another model.",
+        no_upstream_available: "Retry in a few minutes, or use another model.",
+        upstream_timeout: "Retry, or try another model.",
+      },
       requestId:
         "Every response from `/v1/chat/completions`, errors included, has an `x-request-id` header. If you need help with a request, send us that ID.",
     },
-    rateLimit: {
-      title: "Rate limit",
-      body: "By default, each workspace can make {count} requests per minute, across all its keys. Go over it and you get a `429` with a `retry-after` header: the seconds to wait before trying again. The OpenAI SDKs already retry and respect it.",
-    },
-    tools: {
-      title: "Compatible tools",
-      body: "Anything that lets you change the OpenAI base URL should work.",
-      tableLabel: "Compatible tools",
-      tool: "Tool",
-      status: "Status",
-      rows: {
-        openaiSdk: { name: "OpenAI SDK (Python, JS/TS)", status: "Works. It's the reference client." },
-        langchain: { name: "LangChain (`ChatOpenAI` with `base_url`)", status: "Works." },
-        vercelAiSdk: { name: "Vercel AI SDK (OpenAI-compatible provider)", status: "Works." },
-        editors: {
-          name: "Editors that accept an OpenAI base URL",
-          status: "Should work. We haven't tested them one by one yet.",
-        },
-        claudeCode: { name: "Claude Code", status: "Not yet: it needs `/v1/messages`, which comes later." },
-      },
+    streamFormat: {
+      title: "Stream format",
+      wireBody:
+        "Each event is a `data:` line with a `chat.completion.chunk`. With `include_usage`, the last one has empty `choices` and the `usage`. The stream ends with `data: [DONE]`.",
+      keepAlive:
+        "During long pauses, for example while a model reasons, you'll get `: keep-alive` comment lines. The SSE standard says to ignore them, and the SDKs already do.",
+      errorTitle: "Errors mid-stream",
+      errorBody:
+        "If the model fails after the stream has started, the HTTP status is already `200`. The error arrives as one last chunk, with an `error` object and `finish_reason: \"error\"`, followed by `[DONE]`. The OpenAI SDKs raise it as an `APIError`.",
     },
   },
   auth: {

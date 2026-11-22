@@ -24,7 +24,8 @@ function Tokens({ code }: { code: string }) {
     else if (/^(from|import|const|let|await|new|return|true|false|null|True|False|None)$/.test(token)) kind = "keyword";
     else if (token === "print" || /^[A-Za-z_$]/.test(token) && next.startsWith("(")) kind = "function";
     else if (token === "OpenAI") kind = "class-name";
-    else if (/^[A-Za-z_$]/.test(token) && next.startsWith(":")) kind = "property";
+    // `https://` no es una propiedad: los dos puntos de una URL no cuentan.
+    else if (/^[A-Za-z_$]/.test(token) && next.startsWith(":") && !next.startsWith("://")) kind = "property";
     return <span key={index} className={`nr-token nr-${kind}`}>{token}</span>;
   })}</>;
 }

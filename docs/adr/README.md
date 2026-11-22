@@ -79,6 +79,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0065](./0065-pagos-en-bitcoin.md) | También se cobra en Bitcoin on-chain: el servidor solo tiene una xpub, cada compra se cotiza con el precio fijo 15 minutos y un plan se compra solo al confirmarse | Aceptada | Usuario + Default |
 | [0066](./0066-reserva-por-request.md) | Cada request reserva su costo máximo antes de llamar al upstream; `max_tokens` se recorta a lo que alcanza | Aceptada (salida por defecto cambiada por 0067) | Usuario |
 | [0067](./0067-salida-maxima-por-modelo.md) | Sin `max_tokens` del cliente, el tope es la salida máxima de cada modelo según el proveedor, no 32 768 para todos | Aceptada | Usuario |
+| [0068](./0068-docs-un-solo-endpoint.md) | `/docs` gira alrededor de un solo endpoint con el formato de OpenAI y se ordena en empezar, usar y referencia; las cifras salen del código | Aceptada | Usuario + Default |
 
 ## Plantilla
 
