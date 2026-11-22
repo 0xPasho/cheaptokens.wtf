@@ -11,6 +11,8 @@ const officialModel = z.object({
   id: z.string().min(1),
   upstream_label: z.string().nullish(),
   input_token_limit: z.number().int().positive().optional(),
+  // Optional metadata: an unusable value drops the field, never the whole catalog.
+  max_output_tokens: z.number().int().positive().max(2_147_483_647).optional().catch(undefined),
   modality: z.string().optional(),
   reasoning_levels: z.array(z.string()).optional(),
   pricing: z.object({
@@ -107,7 +109,9 @@ export function importInferhubCatalog(payload: unknown, previous: CatalogEntry[]
         en: `${name}. ${row.modality.split(",").includes("image") ? "Accepts text and image input." : "Accepts text input."}`,
         es: `${name}. ${row.modality.split(",").includes("image") ? "Admite entradas de texto e imagen." : "Admite entradas de texto."}`,
       },
-      contextLength: row.input_token_limit, officialInput, officialOutput,
+      contextLength: row.input_token_limit,
+      ...(row.max_output_tokens ? { maxOutputTokens: row.max_output_tokens } : {}),
+      officialInput, officialOutput,
       officialPriceSourceUrl: creator.pricing,
       // Supplier-reported list prices have not been independently verified with the creator.
       officialPriceVerifiedAt: null, discountBps: discount, tags, status: "active",

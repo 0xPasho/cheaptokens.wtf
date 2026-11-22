@@ -54,12 +54,18 @@ export function mergeCatalog(sources: ProviderOffers[], previous: CatalogEntry[]
       status: curated ? before.status : "active",
       ...(curated && before.retiresOn ? { retiresOn: before.retiresOn } : {}),
     };
-    models.push(entry);
+    delete entry.maxOutputTokens;
 
     const kept = candidates
       .filter((candidate) => fitsUnderPrice(entry, candidate.offer.mapping))
       .sort((a, b) => a.offer.mapping.costOutputPer1M - b.offer.mapping.costOutputPer1M
         || a.offer.mapping.costInputPer1M - b.offer.mapping.costInputPer1M);
+    // La menor de las rutas que sirven: el fallback puede terminar en cualquiera (ADR-0067). Si ninguna la
+    // reporta, se conserva la que ya estaba, que pudo fijarse a mano.
+    const reported = kept.flatMap((candidate) => candidate.offer.entry.maxOutputTokens ?? []);
+    const maxOutputTokens = reported.length > 0 ? Math.min(...reported) : before?.maxOutputTokens;
+    if (maxOutputTokens !== undefined) entry.maxOutputTokens = maxOutputTokens;
+    models.push(entry);
     droppedRoutes += candidates.length - kept.length;
     kept.forEach((candidate, index) => {
       mappings.get(candidate.upstreamId)!.push({ ...candidate.offer.mapping, model: id, priority: index + 1 });

@@ -25,6 +25,15 @@ describe("official catalog import", () => {
     expect(result.mappings[0]).toMatchObject({ upstreamModel: "ant/claude-haiku-4-5", costInputPer1M: 200_000, costOutputPer1M: 1_000_000 });
   });
 
+  it("keeps each route's max output and drops an unusable one without failing the import (ADR-0067)", () => {
+    expect(importInferhubCatalog(payload(model({ max_output_tokens: 64_000 }))).models[0].maxOutputTokens).toBe(64_000);
+    for (const value of [undefined, 0, -1, 1.5, "64000", null]) {
+      const [imported] = importInferhubCatalog(payload(model({ max_output_tokens: value }))).models;
+      expect(imported.id).toBe("anthropic/claude-haiku-4.5");
+      expect(imported).not.toHaveProperty("maxOutputTokens");
+    }
+  });
+
   it("deduplicates routes and keeps the selected route's context and pricing together", () => {
     const cheap = model({ id: "cmc/anthropic/claude-haiku-4-5", input_token_limit: 100_000 });
     const expensive = model({ id: "kiro/claude-haiku-4.5", upstream_label: "Claude Haiku 4.5 (Kiro)", input_token_limit: 500_000, pricing: { official_in: 1, official_out: 5, asks_in: [0.5], asks_out: [2.5] } });

@@ -27,6 +27,8 @@ export const catalogEntrySchema = z.strictObject({
   author: z.string().regex(/^[a-z0-9-]+$/, "Must be lowercase letters, digits and hyphens"),
   description,
   contextLength: z.number().int().positive(),
+  // Cabe en `models.max_output_tokens` (int).
+  maxOutputTokens: z.number().int().positive().max(2_147_483_647).optional(),
   officialInput: microUsdPer1M.positive(),
   officialOutput: microUsdPer1M.positive(),
   officialPriceSourceUrl: z.url({ protocol: /^https$/, error: "Must be an https URL" }),

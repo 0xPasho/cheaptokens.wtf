@@ -13,6 +13,11 @@ export type CatalogEntry = {
   author: string;
   description: Record<"en", string> & Partial<Record<Locale, string>>;
   contextLength: number;
+  /**
+   * Salida máxima que reporta el proveedor (ADR-0067). Es el `max_tokens` que el gateway manda cuando el
+   * cliente no fija uno. Sin valor, el gateway usa 32 768 y la sincronización conserva lo que haya en la base.
+   */
+  maxOutputTokens?: number;
   /** µUSD por 1M de tokens (ADR-0007). */
   officialInput: number;
   officialOutput: number;

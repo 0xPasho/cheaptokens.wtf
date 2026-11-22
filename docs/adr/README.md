@@ -77,7 +77,8 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0063](./0063-una-sola-ventana-de-acceso.md) | Una sola ventana para entrar o crear cuenta, con código por correo | Aceptada | Usuario + Default |
 | [0064](./0064-foco-de-teclado-visible.md) | El foco de teclado se ve en todo el sitio, con su propio token `--focus-ring` | Aceptada | Default |
 | [0065](./0065-pagos-en-bitcoin.md) | También se cobra en Bitcoin on-chain: el servidor solo tiene una xpub, cada compra se cotiza con el precio fijo 15 minutos y un plan se compra solo al confirmarse | Aceptada | Usuario + Default |
-| [0066](./0066-reserva-por-request.md) | Cada request reserva su costo máximo antes de llamar al upstream; `max_tokens` se recorta a lo que alcanza | Aceptada | Usuario |
+| [0066](./0066-reserva-por-request.md) | Cada request reserva su costo máximo antes de llamar al upstream; `max_tokens` se recorta a lo que alcanza | Aceptada (salida por defecto cambiada por 0067) | Usuario |
+| [0067](./0067-salida-maxima-por-modelo.md) | Sin `max_tokens` del cliente, el tope es la salida máxima de cada modelo según el proveedor, no 32 768 para todos | Aceptada | Usuario |
 
 ## Plantilla
 

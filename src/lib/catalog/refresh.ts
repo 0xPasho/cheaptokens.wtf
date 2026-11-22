@@ -21,6 +21,7 @@ export async function loadStoredEntries(db: Db): Promise<CatalogEntry[]> {
     author: row.author,
     description: row.description,
     contextLength: row.contextLength,
+    ...(row.maxOutputTokens !== null ? { maxOutputTokens: row.maxOutputTokens } : {}),
     officialInput: Number(row.officialInputPriceMicroUsd),
     officialOutput: Number(row.officialOutputPriceMicroUsd),
     officialPriceSourceUrl: row.officialPriceSourceUrl,
@@ -53,7 +54,7 @@ function fingerprint(entries: CatalogEntry[], definitions: Pick<UpstreamDefiniti
   return JSON.stringify({
     models: entries.map((entry) => [
       entry.id, entry.name, entry.author, entry.description.en, entry.description.es ?? null, entry.contextLength,
-      entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
+      entry.maxOutputTokens ?? null, entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
       entry.discountBps, [...entry.tags].sort(), entry.status, entry.retiresOn ?? null,
     ]).sort(),
     upstreams: definitions.map((item) => [item.id, item.name, item.baseUrl, item.apiKeyEnv, item.sendsPriceCap]).sort(),

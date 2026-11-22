@@ -64,6 +64,7 @@ El [PR #1](https://github.com/0xPasho/cheaptokens.wtf/pull/1) trajo las reservas
 - [x] Probar en vivo contra InferHub tres casos: `max_tokens` mayor que la salida máxima del modelo, prompt + `max_tokens` mayor que el contexto, y un modelo de razonamiento con `max_tokens`. Hecho el 2026-11-21 con `cb/kimi-k2.5`, `cx/gpt-6-luna` y `oai/gpt-5.4-mini`: InferHub respondió `200` en los tres.
 - [x] Acotar el `max_tokens` que el gateway manda cuando el cliente no lo fija (32 768). No hizo falta: InferHub acepta un `max_tokens` mayor que la salida máxima y que el contexto libre. Hay que repetir la prueba con cada upstream nuevo; `GET /v1/models` de InferHub ya trae `max_output_tokens` por modelo, por si un vendedor lo rechaza.
 - [x] Descontar las reservas en curso antes de decidir que el plan alcanza. Con requests en paralelo, un asiento de socio o un workspace con paquetes salía recortado o con `429` sin que se consultara el tope ni el paquete (`admitUsage` en `src/lib/gateway/authenticate.ts`).
+- [x] Sin `max_tokens` del cliente, mandar la salida máxima de cada modelo según InferHub en vez de 32 768 para todos ([ADR-0067](./adr/0067-salida-maxima-por-modelo.md)).
 - [x] Liberar la reserva aunque `after()` falle (`afterThenRelease` en `src/lib/gateway/handler.ts`).
 - [x] «Cómo funciona», en la cabecera y en el menú móvil, apuntaba a `#how-it-works`, que ya no existe. Ahora lleva a `#why` (`src/components/site/site-header.tsx`).
 - [ ] Desplegar `main` en producción ([18 · Deploy](./18-deploy.md)).

@@ -24,6 +24,8 @@ export async function syncCatalog(db: Db, input: CatalogValidationInput): Promis
         author: entry.author,
         description: entry.description,
         contextLength: entry.contextLength,
+        // Sin valor en el catálogo no se toca: conserva el que se haya fijado a mano (ADR-0067).
+        ...(entry.maxOutputTokens !== undefined ? { maxOutputTokens: entry.maxOutputTokens } : {}),
         officialInputPriceMicroUsd: BigInt(entry.officialInput),
         officialOutputPriceMicroUsd: BigInt(entry.officialOutput),
         officialPriceSourceUrl: entry.officialPriceSourceUrl,

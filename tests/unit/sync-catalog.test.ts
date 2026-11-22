@@ -124,6 +124,23 @@ describe("syncCatalog", () => {
     });
   });
 
+  it("writes the reported max output and keeps the stored one when the catalog has none (ADR-0067)", async () => {
+    const maxOutput = async () => (await testDb.db.select().from(models).where(eq(models.id, entry.id)))[0].maxOutputTokens;
+    await syncCatalog(testDb.db, input());
+    expect(await maxOutput()).toBeNull();
+
+    const reported = input();
+    reported.models[0] = { ...entry, maxOutputTokens: 64_000 };
+    await syncCatalog(testDb.db, reported);
+    expect(await maxOutput()).toBe(64_000);
+
+    await syncCatalog(testDb.db, input());
+    expect(await maxOutput()).toBe(64_000);
+
+    reported.models[0] = { ...entry, maxOutputTokens: 0 };
+    await expect(syncCatalog(testDb.db, reported)).rejects.toThrow("maxOutputTokens");
+  });
+
   it("rejects missing IDs, including retired ones, before writing anything", async () => {
     await syncCatalog(testDb.db, input());
     const before = await rows();

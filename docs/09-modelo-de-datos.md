@@ -82,7 +82,7 @@ Es el dueño del plan, del saldo y de las keys. En el MVP hay uno por usuario de
 | `author` | text | `anthropic` |
 | `description` | jsonb | `{ "en": "...", "es": "..." }` |
 | `context_length` | int | |
-| `max_output_tokens` | int, null | |
+| `max_output_tokens` | int, null | La que reporta el proveedor; null: 32 768. La sincronización no la toca si el catálogo no trae valor ([ADR-0067](./adr/0067-salida-maxima-por-modelo.md)) |
 | `official_input_price_micro_usd` | bigint | Por 1M |
 | `official_output_price_micro_usd` | bigint | Por 1M |
 | `official_price_source_url` | text | |

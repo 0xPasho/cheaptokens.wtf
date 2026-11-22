@@ -1,6 +1,6 @@
 # ADR-0066: Cada request reserva su costo máximo antes de llamar al upstream
 
-- **Estado:** Aceptada. Reemplaza «Los créditos pueden quedar levemente negativos» y el acotamiento de lo absorbido de [ADR-0049](./0049-suscripcion-con-limites.md), y la reserva previa descartada en [ADR-0008](./0008-creditos-prepagados.md).
+- **Estado:** Aceptada. Reemplaza «Los créditos pueden quedar levemente negativos» y el acotamiento de lo absorbido de [ADR-0049](./0049-suscripcion-con-limites.md), y la reserva previa descartada en [ADR-0008](./0008-creditos-prepagados.md). La salida por defecto la cambió [ADR-0067](./0067-salida-maxima-por-modelo.md): es la máxima de cada modelo, y la sincronización llena `models.max_output_tokens`.
 - **Fecha:** 2026-11-19
 - **Origen:** Usuario (salió de una revisión de seguridad)
 

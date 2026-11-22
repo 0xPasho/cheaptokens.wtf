@@ -69,6 +69,18 @@ describe("mergeCatalog", () => {
     expect(merged.upstreams[0].models.map((m) => m.model)).toEqual(["acme/back", "acme/hidden", "acme/old"]);
   });
 
+  it("takes the smallest max output among the routes that serve, and keeps the previous one when none reports it", () => {
+    const withMax = (item: ProviderOffer, maxOutputTokens: number): ProviderOffer => ({ ...item, entry: { ...item.entry, maxOutputTokens } });
+    const merged = mergeCatalog([
+      // En acme/two la ruta de alpha no cabe bajo el precio: su salida máxima no cuenta.
+      { upstream: upstream("alpha"), offers: [withMax(offer("acme/one", 2_000, 7_400), 128_000), withMax(offer("acme/two", 4_000, 4_800), 8_000)] },
+      { upstream: upstream("beta"), offers: [withMax(offer("acme/one", 1_990, 7_400), 64_000), withMax(offer("acme/two", 2_000, 7_400), 32_000), offer("acme/three", 2_000, 7_400), offer("acme/four", 2_000, 7_400)] },
+    ], [entry("acme/three", 7_400, { maxOutputTokens: 4_096 })]);
+    expect(Object.fromEntries(merged.models.map((model) => [model.id, model.maxOutputTokens])))
+      .toEqual({ "acme/one": 64_000, "acme/two": 32_000, "acme/three": 4_096, "acme/four": undefined });
+    expect(merged.models.find((model) => model.id === "acme/four")).not.toHaveProperty("maxOutputTokens");
+  });
+
   it("puts the mock behind every real route at half the cheapest cost", () => {
     const merged = mergeCatalog([
       { upstream: upstream("alpha"), offers: [offer("acme/one", 2_000, 7_400)] },
@@ -116,6 +128,27 @@ describe("refreshCatalog", () => {
     expect(await db.select().from(models)).toMatchObject([{ discountBps: 6_100, outputPriceMicroUsd: BigInt(1_950_000) }]);
     expect(await routes()).toEqual(["alpha:acme/one:1500000:1"]);
     expect(await loadStoredEntries(db)).toEqual([entry("acme/one", 6_100)]);
+  });
+
+  it("stores the max output, follows a change and keeps it when the provider stops reporting it (ADR-0067)", async () => {
+    let maxOutputTokens: number | undefined = 128_000;
+    const alpha = provider("alpha", () => {
+      const item = offer("acme/one", 2_000, 7_400);
+      return [maxOutputTokens === undefined ? item : { ...item, entry: { ...item.entry, maxOutputTokens } }];
+    });
+    const stored = async () => (await db.select().from(models))[0].maxOutputTokens;
+    await refreshCatalog(db, { providers: [alpha], environment: "production" });
+    expect(await stored()).toBe(128_000);
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false });
+
+    maxOutputTokens = 64_000;
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: true });
+    expect(await stored()).toBe(64_000);
+
+    maxOutputTokens = undefined;
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false });
+    expect(await stored()).toBe(64_000);
+    expect(await loadStoredEntries(db)).toEqual([entry("acme/one", 7_400, { maxOutputTokens: 64_000 })]);
   });
 
   it("keeps the stored routes of a provider that fails and writes nothing when every provider fails", async () => {
