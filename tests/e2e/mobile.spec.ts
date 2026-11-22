@@ -54,7 +54,7 @@ test("móvil: Anterior y Siguiente siguen teniendo nombre aunque el texto se ocu
   expect(box.width).toBeLessThanOrEqual(1);
 });
 
-for (const path of ["/es", "/en/models", "/es/models/google/gemini-4-argon", "/es/pricing", "/en/faq", "/es/sign-in", "/en/sign-up"]) {
+for (const path of ["/es", "/en/models", "/es/models/google/gemini-4-carbon", "/es/pricing", "/en/faq", "/es/sign-in", "/en/sign-up"]) {
   test(`móvil: ${path} no se desborda y la navegación cabe`, async ({ page }) => {
     await page.goto(path);
     const overflow = await page.evaluate(

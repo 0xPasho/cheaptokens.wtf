@@ -3,25 +3,6 @@ import type { CatalogEntry } from "@/lib/catalog/types";
 
 export const IMPORTED_MODELS: CatalogEntry[] = [
   {
-    "id": "anthropic/claude-fable-5",
-    "name": "Claude Fable 5",
-    "author": "anthropic",
-    "description": {
-      "en": "Claude Fable 5. Accepts text and image input.",
-      "es": "Claude Fable 5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "officialInput": 10000000,
-    "officialOutput": 50000000,
-    "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
     "id": "anthropic/claude-fable-5.1",
     "name": "Claude Fable 5.1",
     "author": "anthropic",
@@ -30,11 +11,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Fable 5.1. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 10000000,
     "officialOutput": 50000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 6100,
     "tags": [
       "vision"
     ],
@@ -49,11 +31,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Fable 5.2. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 8000000,
     "officialOutput": 40000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 3500,
     "tags": [
       "vision"
     ],
@@ -68,6 +51,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Haiku 4.5. Admite entradas de texto e imagen."
     },
     "contextLength": 200000,
+    "maxOutputTokens": 64000,
     "officialInput": 1000000,
     "officialOutput": 5000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
@@ -90,11 +74,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Haiku 5.5. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 100000,
     "officialOutput": 500000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
+    "discountBps": 3500,
     "tags": [
       "vision",
       "reasoning"
@@ -110,11 +95,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 4.5. Admite entradas de texto e imagen."
     },
     "contextLength": 200000,
+    "maxOutputTokens": 64000,
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6100,
+    "discountBps": 4800,
     "tags": [
       "vision",
       "reasoning"
@@ -130,11 +116,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 4.6. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7300,
+    "discountBps": 6700,
     "tags": [
       "vision"
     ],
@@ -149,11 +136,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 4.7. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6400,
+    "discountBps": 4800,
     "tags": [
       "vision",
       "reasoning"
@@ -169,11 +157,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 4.8. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6900,
+    "discountBps": 7400,
     "tags": [
       "vision",
       "reasoning"
@@ -189,11 +178,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 5. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6700,
+    "discountBps": 7400,
     "tags": [
       "vision",
       "reasoning"
@@ -209,11 +199,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Opus 5.5. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 4000000,
     "officialOutput": 20000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8100,
+    "discountBps": 8000,
     "tags": [
       "vision",
       "reasoning"
@@ -229,11 +220,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Sonnet 4.6. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 64000,
     "officialInput": 3000000,
     "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 6900,
     "tags": [
       "vision"
     ],
@@ -248,11 +240,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Sonnet 5. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 64000,
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 4800,
     "tags": [
       "vision",
       "reasoning"
@@ -268,11 +261,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Claude Sonnet 5.5. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7100,
+    "discountBps": 7400,
     "tags": [
       "vision",
       "reasoning"
@@ -288,6 +282,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V3.2. Admite entradas de texto."
     },
     "contextLength": 164000,
+    "maxOutputTokens": 64000,
     "officialInput": 280000,
     "officialOutput": 420000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
@@ -305,11 +300,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 220000,
     "officialOutput": 660000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8600,
+    "discountBps": 7500,
     "tags": [
       "vision"
     ],
@@ -324,11 +320,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4 Flash 0731. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 220000,
     "officialOutput": 660000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 8400,
     "tags": [],
     "status": "active"
   },
@@ -341,11 +338,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4 Pro. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 660000,
     "officialOutput": 1980000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8600,
+    "discountBps": 7500,
     "tags": [
       "vision"
     ],
@@ -360,11 +358,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4 Pro 0813. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 660000,
     "officialOutput": 1980000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 8400,
     "tags": [],
     "status": "active"
   },
@@ -377,11 +376,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4.1 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 8900,
     "tags": [
       "vision",
       "fast",
@@ -392,21 +392,22 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
   },
   {
     "id": "deepseek/deepseek-v4.1-flash-1017",
-    "name": "DeepSeek V4.1 Flash (1017)",
+    "name": "DeepSeek V4.1 Flash 1017",
     "author": "deepseek",
     "description": {
-      "en": "DeepSeek V4.1 Flash (1017). Accepts text input.",
-      "es": "DeepSeek V4.1 Flash (1017). Admite entradas de texto."
+      "en": "DeepSeek V4.1 Flash 1017. Accepts text and image input.",
+      "es": "DeepSeek V4.1 Flash 1017. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
+    "maxOutputTokens": 393216,
+    "officialInput": 150000,
+    "officialOutput": 600000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 7400,
     "tags": [
-      "reasoning",
-      "vision"
+      "vision",
+      "reasoning"
     ],
     "status": "active"
   },
@@ -419,11 +420,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4.1 Flash Fast. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 160000,
     "officialOutput": 580000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 4800,
     "tags": [
       "reasoning"
     ],
@@ -438,11 +440,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "DeepSeek V4.1 Flash SG. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 8700,
     "tags": [
       "vision"
     ],
@@ -457,11 +460,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Gemini 3.8 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 65536,
     "officialInput": 750000,
     "officialOutput": 3750000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -469,19 +473,20 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "status": "active"
   },
   {
-    "id": "google/gemini-4-argon",
-    "name": "Gemini 4 Argon",
+    "id": "google/gemini-4-argon-contributor",
+    "name": "Gemini 4 Argon Contributor",
     "author": "google",
     "description": {
-      "en": "Gemini 4 Argon. Accepts text and image input.",
-      "es": "Gemini 4 Argon. Admite entradas de texto e imagen."
+      "en": "Gemini 4 Argon Contributor. Accepts text and image input.",
+      "es": "Gemini 4 Argon Contributor. Admite entradas de texto e imagen."
     },
-    "contextLength": 1000000,
-    "officialInput": 2000000,
-    "officialOutput": 12000000,
+    "contextLength": 1048576,
+    "maxOutputTokens": 65536,
+    "officialInput": 4000000,
+    "officialOutput": 20000000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 3500,
     "tags": [
       "vision",
       "reasoning"
@@ -497,11 +502,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Gemini 4 Carbon. Admite entradas de texto e imagen."
     },
     "contextLength": 1048576,
+    "maxOutputTokens": 262144,
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7300,
+    "discountBps": 7400,
     "tags": [
       "vision",
       "reasoning"
@@ -509,19 +515,20 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "status": "active"
   },
   {
-    "id": "google/gemini-4-hydrogen",
-    "name": "Gemini 4 Hydrogen",
+    "id": "google/gemini-4-neon",
+    "name": "Gemini 4 Neon",
     "author": "google",
     "description": {
-      "en": "Gemini 4 Hydrogen. Accepts text and image input.",
-      "es": "Gemini 4 Hydrogen. Admite entradas de texto e imagen."
+      "en": "Gemini 4 Neon. Accepts text and image input.",
+      "es": "Gemini 4 Neon. Admite entradas de texto e imagen."
     },
     "contextLength": 1048576,
-    "officialInput": 1500000,
-    "officialOutput": 7500000,
+    "maxOutputTokens": 262144,
+    "officialInput": 3000000,
+    "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8800,
+    "discountBps": 7300,
     "tags": [
       "vision",
       "reasoning"
@@ -533,10 +540,11 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "Muse Ember 1.0",
     "author": "meta-llama",
     "description": {
-      "en": "Muse Ember 1.0. Accepts text and image input.",
-      "es": "Muse Ember 1.0. Admite entradas de texto e imagen."
+      "en": "Muse Ember 1.0. Accepts text input.",
+      "es": "Muse Ember 1.0. Admite entradas de texto."
     },
     "contextLength": 1048576,
+    "maxOutputTokens": 524288,
     "officialInput": 100000,
     "officialOutput": 500000,
     "officialPriceSourceUrl": "https://www.meta.ai/",
@@ -573,10 +581,10 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "Muse Spark 1.2",
     "author": "meta-llama",
     "description": {
-      "en": "Muse Spark 1.2. Accepts text and image input.",
-      "es": "Muse Spark 1.2. Admite entradas de texto e imagen."
+      "en": "Muse Spark 1.2. Accepts text input.",
+      "es": "Muse Spark 1.2. Admite entradas de texto."
     },
-    "contextLength": 1048576,
+    "contextLength": 1000000,
     "officialInput": 1250000,
     "officialOutput": 4250000,
     "officialPriceSourceUrl": "https://www.meta.ai/",
@@ -593,10 +601,10 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "Muse Spark 1.2 Contributor",
     "author": "meta-llama",
     "description": {
-      "en": "Muse Spark 1.2 Contributor. Accepts text and image input.",
-      "es": "Muse Spark 1.2 Contributor. Admite entradas de texto e imagen."
+      "en": "Muse Spark 1.2 Contributor. Accepts text input.",
+      "es": "Muse Spark 1.2 Contributor. Admite entradas de texto."
     },
-    "contextLength": 1048576,
+    "contextLength": 1000000,
     "officialInput": 100000,
     "officialOutput": 200000,
     "officialPriceSourceUrl": "https://www.meta.ai/",
@@ -613,10 +621,10 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "Muse Spark 1.3",
     "author": "meta-llama",
     "description": {
-      "en": "Muse Spark 1.3. Accepts text and image input.",
-      "es": "Muse Spark 1.3. Admite entradas de texto e imagen."
+      "en": "Muse Spark 1.3. Accepts text input.",
+      "es": "Muse Spark 1.3. Admite entradas de texto."
     },
-    "contextLength": 1048576,
+    "contextLength": 1000000,
     "officialInput": 1250000,
     "officialOutput": 4250000,
     "officialPriceSourceUrl": "https://www.meta.ai/",
@@ -633,10 +641,10 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "Muse Spark 1.3 Contributor",
     "author": "meta-llama",
     "description": {
-      "en": "Muse Spark 1.3 Contributor. Accepts text and image input.",
-      "es": "Muse Spark 1.3 Contributor. Admite entradas de texto e imagen."
+      "en": "Muse Spark 1.3 Contributor. Accepts text input.",
+      "es": "Muse Spark 1.3 Contributor. Admite entradas de texto."
     },
-    "contextLength": 1048576,
+    "contextLength": 1000000,
     "officialInput": 100000,
     "officialOutput": 200000,
     "officialPriceSourceUrl": "https://www.meta.ai/",
@@ -686,23 +694,6 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "status": "active"
   },
   {
-    "id": "minimax/minimax-m2",
-    "name": "MiniMax M2",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2. Accepts text input.",
-      "es": "MiniMax M2. Admite entradas de texto."
-    },
-    "contextLength": 204800,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
-    "tags": [],
-    "status": "active"
-  },
-  {
     "id": "minimax/minimax-m2.1",
     "name": "MiniMax M2.1",
     "author": "minimax",
@@ -710,29 +701,13 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "en": "MiniMax M2.1. Accepts text input.",
       "es": "MiniMax M2.1. Admite entradas de texto."
     },
-    "contextLength": 204800,
+    "contextLength": 196000,
+    "maxOutputTokens": 64000,
     "officialInput": 300000,
     "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.1-highspeed",
-    "name": "MiniMax M2.1 HighSpeed",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.1 HighSpeed. Accepts text input.",
-      "es": "MiniMax M2.1 HighSpeed. Admite entradas de texto."
-    },
-    "contextLength": 204800,
-    "officialInput": 600000,
-    "officialOutput": 2400000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 4800,
     "tags": [],
     "status": "active"
   },
@@ -749,7 +724,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 7400,
     "tags": [],
     "status": "active"
   },
@@ -766,7 +741,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 2400000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 7400,
     "tags": [],
     "status": "active"
   },
@@ -778,12 +753,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "en": "MiniMax M2.7. Accepts text input.",
       "es": "MiniMax M2.7. Admite entradas de texto."
     },
-    "contextLength": 204800,
+    "contextLength": 1000000,
     "officialInput": 300000,
     "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 7500,
     "tags": [],
     "status": "active"
   },
@@ -800,7 +775,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 2400000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 7400,
     "tags": [],
     "status": "active"
   },
@@ -813,11 +788,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "MiniMax M3. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 48000,
     "officialInput": 300000,
     "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8800,
+    "discountBps": 8500,
     "tags": [
       "vision"
     ],
@@ -832,11 +808,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "MiniMax M3.1 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8500,
     "tags": [
       "vision",
       "reasoning"
@@ -852,6 +829,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "MiniMax M3.1 Flash Preview. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 524288,
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
@@ -872,11 +850,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Mistral Large 4. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 262144,
     "officialInput": 700000,
     "officialOutput": 2100000,
     "officialPriceSourceUrl": "https://mistral.ai/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 7400,
     "tags": [
       "reasoning"
     ],
@@ -895,7 +874,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 7500000,
     "officialPriceSourceUrl": "https://mistral.ai/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8800,
+    "discountBps": 8900,
     "tags": [
       "reasoning"
     ],
@@ -914,7 +893,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 8000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3600,
+    "discountBps": 5400,
     "tags": [
       "vision",
       "coding"
@@ -951,11 +930,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K2.5. Admite entradas de texto e imagen."
     },
     "contextLength": 164000,
+    "maxOutputTokens": 32000,
     "officialInput": 600000,
     "officialOutput": 3000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision"
     ],
@@ -970,11 +950,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K2.6. Admite entradas de texto e imagen."
     },
     "contextLength": 262144,
+    "maxOutputTokens": 32000,
     "officialInput": 950000,
     "officialOutput": 4000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision"
     ],
@@ -989,11 +970,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K2.7 Code. Admite entradas de texto e imagen."
     },
     "contextLength": 262144,
+    "maxOutputTokens": 32000,
     "officialInput": 950000,
     "officialOutput": 4000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "coding"
@@ -1028,11 +1010,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K2.8 Preview. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 32000,
     "officialInput": 950000,
     "officialOutput": 4000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1048,11 +1031,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K3. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 32000,
     "officialInput": 3000000,
     "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1068,6 +1052,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K3 (256K). Admite entradas de texto e imagen."
     },
     "contextLength": 262144,
+    "maxOutputTokens": 131072,
     "officialInput": 3000000,
     "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
@@ -1092,7 +1077,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8600,
+    "discountBps": 8400,
     "tags": [
       "vision",
       "reasoning"
@@ -1108,11 +1093,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Kimi K3.1 Pro HighSpeed. Admite entradas de texto e imagen."
     },
     "contextLength": 262144,
+    "maxOutputTokens": 131072,
     "officialInput": 4000000,
     "officialOutput": 20000000,
     "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3600,
+    "discountBps": 5400,
     "tags": [
       "vision",
       "reasoning"
@@ -1128,11 +1114,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.3 Codex. Admite entradas de texto e imagen."
     },
     "contextLength": 272000,
+    "maxOutputTokens": 128000,
     "officialInput": 1750000,
     "officialOutput": 14000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning",
@@ -1149,6 +1136,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.4. Admite entradas de texto e imagen."
     },
     "contextLength": 1050000,
+    "maxOutputTokens": 128000,
     "officialInput": 2500000,
     "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
@@ -1169,6 +1157,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.4 Mini. Admite entradas de texto e imagen."
     },
     "contextLength": 400000,
+    "maxOutputTokens": 128000,
     "officialInput": 750000,
     "officialOutput": 4500000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
@@ -1189,6 +1178,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.5. Admite entradas de texto e imagen."
     },
     "contextLength": 1050000,
+    "maxOutputTokens": 128000,
     "officialInput": 5000000,
     "officialOutput": 30000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
@@ -1209,11 +1199,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.6 Luna. Admite entradas de texto e imagen."
     },
     "contextLength": 272000,
+    "maxOutputTokens": 128000,
     "officialInput": 200000,
     "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8300,
+    "discountBps": 8000,
     "tags": [
       "vision",
       "reasoning"
@@ -1228,12 +1219,13 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "en": "GPT 5.6 Sol. Accepts text and image input.",
       "es": "GPT 5.6 Sol. Admite entradas de texto e imagen."
     },
-    "contextLength": 1050000,
-    "officialInput": 4000000,
-    "officialOutput": 20000000,
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "officialInput": 5000000,
+    "officialOutput": 30000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1249,6 +1241,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 5.6 Terra. Admite entradas de texto e imagen."
     },
     "contextLength": 1050000,
+    "maxOutputTokens": 128000,
     "officialInput": 2000000,
     "officialOutput": 12000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
@@ -1269,11 +1262,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 6 Astra. Admite entradas de texto e imagen."
     },
     "contextLength": 272000,
+    "maxOutputTokens": 128000,
     "officialInput": 10000000,
     "officialOutput": 50000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6100,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1289,11 +1283,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 6 Luna. Admite entradas de texto e imagen."
     },
     "contextLength": 272000,
+    "maxOutputTokens": 128000,
     "officialInput": 100000,
     "officialOutput": 500000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8300,
+    "discountBps": 8000,
     "tags": [
       "vision",
       "reasoning"
@@ -1309,11 +1304,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 6 Sol. Admite entradas de texto e imagen."
     },
     "contextLength": 272000,
+    "maxOutputTokens": 128000,
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6100,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1329,11 +1325,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GPT 6.1 Sol. Admite entradas de texto e imagen."
     },
     "contextLength": 500000,
+    "maxOutputTokens": 128000,
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6700,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1348,12 +1345,55 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "en": "GPT 6.1 Terra. Accepts text and image input.",
       "es": "GPT 6.1 Terra. Admite entradas de texto e imagen."
     },
-    "contextLength": 1050000,
+    "contextLength": 500000,
+    "maxOutputTokens": 128000,
     "officialInput": 1000000,
     "officialOutput": 5000000,
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.2-astra",
+    "name": "GPT 6.2 Astra",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.2 Astra. Accepts text and image input.",
+      "es": "GPT 6.2 Astra. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "officialInput": 8000000,
+    "officialOutput": 40000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.2-sol",
+    "name": "GPT 6.2 Sol",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.2 Sol. Accepts text and image input.",
+      "es": "GPT 6.2 Sol. Admite entradas de texto e imagen."
+    },
+    "contextLength": 500000,
+    "maxOutputTokens": 128000,
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "reasoning"
@@ -1369,6 +1409,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3 Coder Next. Admite entradas de texto."
     },
     "contextLength": 256000,
+    "maxOutputTokens": 64000,
     "officialInput": 300000,
     "officialOutput": 1500000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
@@ -1405,6 +1446,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.7 Max. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 2400000,
     "officialOutput": 9600000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
@@ -1422,11 +1464,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.7 Plus. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 1200000,
     "officialOutput": 4800000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
+    "discountBps": 3500,
     "tags": [
       "vision"
     ],
@@ -1441,11 +1484,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 2.4T-A95B. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 2000000,
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7500,
+    "discountBps": 3500,
     "tags": [],
     "status": "active"
   },
@@ -1458,11 +1502,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 27B. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 500000,
     "officialOutput": 3000000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 3500,
     "tags": [
       "vision"
     ],
@@ -1477,11 +1522,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 150000,
     "officialOutput": 470000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 8400,
     "tags": [
       "vision",
       "fast"
@@ -1497,11 +1543,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 Max. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 2000000,
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 8100,
     "tags": [
       "vision"
     ],
@@ -1516,11 +1563,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 Max 0902. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 2000000,
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6700,
+    "discountBps": 7400,
     "tags": [
       "vision"
     ],
@@ -1535,11 +1583,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen3.8 Omni Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 150000,
     "officialOutput": 470000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4100,
+    "discountBps": 7400,
     "tags": [
       "vision"
     ],
@@ -1554,11 +1603,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen4 Max. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 262144,
     "officialInput": 1500000,
     "officialOutput": 4500000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 6100,
     "tags": [
       "vision",
       "reasoning"
@@ -1574,11 +1624,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Qwen4 Max Preview. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 393216,
     "officialInput": 2000000,
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4900,
+    "discountBps": 3500,
     "tags": [
       "vision",
       "reasoning"
@@ -1598,7 +1649,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 6200,
     "tags": [
       "vision",
       "reasoning"
@@ -1618,7 +1669,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 6200,
     "tags": [],
     "status": "active"
   },
@@ -1635,7 +1686,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 6000000,
     "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 6200,
     "tags": [],
     "status": "active"
   },
@@ -1652,10 +1703,48 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialOutput": 12000000,
     "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 6200,
     "tags": [
       "reasoning"
     ],
+    "status": "active"
+  },
+  {
+    "id": "xiaomi/mimo-v2.5",
+    "name": "MiMo V2.5",
+    "author": "xiaomi",
+    "description": {
+      "en": "MiMo V2.5. Accepts text and image input.",
+      "es": "MiMo V2.5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "officialInput": 140000,
+    "officialOutput": 280000,
+    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "xiaomi/mimo-v2.5-pro",
+    "name": "MiMo V2.5 Pro",
+    "author": "xiaomi",
+    "description": {
+      "en": "MiMo V2.5 Pro. Accepts text input.",
+      "es": "MiMo V2.5 Pro. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "officialInput": 1740000,
+    "officialOutput": 3480000,
+    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
     "status": "active"
   },
   {
@@ -1667,6 +1756,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "MiMo V2.6 Flash. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 131072,
     "officialInput": 140000,
     "officialOutput": 280000,
     "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
@@ -1682,16 +1772,19 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "MiMo V2.6 Pro",
     "author": "xiaomi",
     "description": {
-      "en": "MiMo V2.6 Pro. Accepts text input.",
-      "es": "MiMo V2.6 Pro. Admite entradas de texto."
+      "en": "MiMo V2.6 Pro. Accepts text and image input.",
+      "es": "MiMo V2.6 Pro. Admite entradas de texto e imagen."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 435000,
     "officialOutput": 870000,
     "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [],
+    "discountBps": 7400,
+    "tags": [
+      "vision"
+    ],
     "status": "active"
   },
   {
@@ -1703,11 +1796,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 4.6V (vision). Admite entradas de texto e imagen."
     },
     "contextLength": 200000,
+    "maxOutputTokens": 128000,
     "officialInput": 300000,
     "officialOutput": 900000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 5400,
     "tags": [
       "vision"
     ],
@@ -1722,11 +1816,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5. Admite entradas de texto."
     },
     "contextLength": 200000,
+    "maxOutputTokens": 64000,
     "officialInput": 1000000,
     "officialOutput": 3200000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 4800,
     "tags": [],
     "status": "active"
   },
@@ -1739,11 +1834,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5.1. Admite entradas de texto e imagen."
     },
     "contextLength": 200000,
+    "maxOutputTokens": 48000,
     "officialInput": 1400000,
     "officialOutput": 4400000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8600,
+    "discountBps": 7500,
     "tags": [
       "vision"
     ],
@@ -1758,11 +1854,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5.2. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 48000,
     "officialInput": 1400000,
     "officialOutput": 4400000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "reasoning"
     ],
@@ -1777,11 +1874,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5.3. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 1400000,
     "officialOutput": 4400000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 8900,
     "tags": [
       "reasoning",
       "vision"
@@ -1797,14 +1895,15 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5.3 Flash. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 48000,
     "officialInput": 150000,
     "officialOutput": 500000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
+    "discountBps": 8700,
     "tags": [
-      "vision",
       "reasoning",
+      "vision",
       "fast"
     ],
     "status": "active"
@@ -1818,33 +1917,108 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "GLM 5.3 FlashX. Admite entradas de texto."
     },
     "contextLength": 1000000,
+    "maxOutputTokens": 128000,
     "officialInput": 370000,
     "officialOutput": 1250000,
     "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 2500,
+    "discountBps": 3500,
     "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "anthropic/claude-fable-5",
+    "name": "Claude Fable 5",
+    "author": "anthropic",
+    "description": {
+      "en": "Claude Fable 5. Accepts text and image input.",
+      "es": "Claude Fable 5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "officialInput": 10000000,
+    "officialOutput": 50000000,
+    "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "google/gemini-4-argon",
+    "name": "Gemini 4 Argon",
+    "author": "google",
+    "description": {
+      "en": "Gemini 4 Argon. Accepts text and image input.",
+      "es": "Gemini 4 Argon. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "officialInput": 2000000,
+    "officialOutput": 12000000,
+    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 9000,
+    "tags": [
+      "vision",
       "reasoning"
     ],
     "status": "retired"
   },
   {
-    "id": "xiaomi/mimo-v2.5",
-    "name": "MiMo V2.5",
-    "author": "xiaomi",
+    "id": "google/gemini-4-hydrogen",
+    "name": "Gemini 4 Hydrogen",
+    "author": "google",
     "description": {
-      "en": "MiMo V2.5. Accepts text and image input.",
-      "es": "MiMo V2.5. Admite entradas de texto e imagen."
+      "en": "Gemini 4 Hydrogen. Accepts text and image input.",
+      "es": "Gemini 4 Hydrogen. Admite entradas de texto e imagen."
     },
-    "contextLength": 1000000,
-    "officialInput": 140000,
-    "officialOutput": 280000,
-    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "contextLength": 1048576,
+    "officialInput": 1500000,
+    "officialOutput": 7500000,
+    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4500,
+    "discountBps": 8800,
     "tags": [
-      "vision"
+      "vision",
+      "reasoning"
     ],
+    "status": "retired"
+  },
+  {
+    "id": "minimax/minimax-m2",
+    "name": "MiniMax M2",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2. Accepts text input.",
+      "es": "MiniMax M2. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "officialInput": 300000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 9000,
+    "tags": [],
+    "status": "retired"
+  },
+  {
+    "id": "minimax/minimax-m2.1-highspeed",
+    "name": "MiniMax M2.1 HighSpeed",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.1 HighSpeed. Accepts text input.",
+      "es": "MiniMax M2.1 HighSpeed. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "officialInput": 600000,
+    "officialOutput": 2400000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 9000,
+    "tags": [],
     "status": "retired"
   },
   {
@@ -2041,5 +2215,105 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     ],
     "status": "retired",
     "retiresOn": "2027-01-15"
+  },
+  {
+    "id": "google/gemini-3.1-pro",
+    "name": "Gemini 3.1 Pro",
+    "author": "google",
+    "description": {
+      "en": "Gemini 3.1 Pro. Accepts text and image input.",
+      "es": "Gemini 3.1 Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "officialInput": 2000000,
+    "officialOutput": 12000000,
+    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "openai/gpt-6.1-sol-pro",
+    "name": "GPT 6.1 Sol Pro",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.1 Sol Pro. Accepts text and image input.",
+      "es": "GPT 6.1 Sol Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "openai/gpt-6-astra-pro",
+    "name": "GPT 6 Astra Pro",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Astra Pro. Accepts text and image input.",
+      "es": "GPT 6 Astra Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "officialInput": 10000000,
+    "officialOutput": 50000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "openai/gpt-6-luna-pro",
+    "name": "GPT 6 Luna Pro",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Luna Pro. Accepts text and image input.",
+      "es": "GPT 6 Luna Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "officialInput": 100000,
+    "officialOutput": 500000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "openai/gpt-6-sol-pro",
+    "name": "GPT 6 Sol Pro",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Sol Pro. Accepts text and image input.",
+      "es": "GPT 6 Sol Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
   }
 ];

@@ -13,7 +13,7 @@ export const PRICE_STRIP_MODELS = [
   "anthropic/claude-opus-5.5",
   "anthropic/claude-sonnet-5.5",
   "openai/gpt-6.1-sol",
-  "google/gemini-4-argon",
+  "google/gemini-4-carbon",
   "moonshotai/kimi-k3",
   "deepseek/deepseek-v4.1-flash",
 ] as const;
@@ -22,7 +22,7 @@ export const PRICE_STRIP_MODELS = [
 export const HERO_MODELS = [
   "anthropic/claude-sonnet-5.5",
   "openai/gpt-6.1-sol",
-  "google/gemini-4-argon",
+  "google/gemini-4-carbon",
   "deepseek/deepseek-v4.1-flash",
 ] as const;
 
@@ -31,7 +31,7 @@ export const ESTIMATOR_MODELS = [
   "anthropic/claude-sonnet-5.5",
   "anthropic/claude-opus-5.5",
   "openai/gpt-6.1-sol",
-  "google/gemini-4-argon",
+  "google/gemini-4-carbon",
   "deepseek/deepseek-v4.1-flash",
 ] as const;
 
@@ -44,7 +44,7 @@ export const USAGE_TABLE_MODELS = [
   "moonshotai/kimi-k3",
   "openai/gpt-5.3-codex",
   "x-ai/grok-4.7",
-  "google/gemini-4-argon",
+  "google/gemini-4-carbon",
   "qwen/qwen4-max",
   "z-ai/glm-5.3",
   "minimax/minimax-m3.1-flash",

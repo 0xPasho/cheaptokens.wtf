@@ -3,199 +3,192 @@ import type { UpstreamModelMapping } from "@/lib/catalog/types";
 
 export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
-    "model": "anthropic/claude-fable-5",
-    "upstreamModel": "ant/claude-fable-5",
-    "costInputPer1M": 5000000,
-    "costOutputPer1M": 25000000,
-    "priority": 1
-  },
-  {
     "model": "anthropic/claude-fable-5.1",
     "upstreamModel": "cc/claude-fable-5-1",
-    "costInputPer1M": 3500000,
-    "costOutputPer1M": 17500000,
+    "costInputPer1M": 3000000,
+    "costOutputPer1M": 15000000,
     "priority": 1
   },
   {
     "model": "anthropic/claude-fable-5.2",
     "upstreamModel": "cc/claude-fable-5-2",
-    "costInputPer1M": 2800000,
-    "costOutputPer1M": 14000000,
+    "costInputPer1M": 4000000,
+    "costOutputPer1M": 20000000,
     "priority": 1
   },
   {
     "model": "anthropic/claude-haiku-4.5",
     "upstreamModel": "kiro/claude-haiku-4.5",
-    "costInputPer1M": 399000,
-    "costOutputPer1M": 1995000,
+    "costInputPer1M": 400000,
+    "costOutputPer1M": 2000000,
     "priority": 1
   },
   {
     "model": "anthropic/claude-haiku-5.5",
     "upstreamModel": "cc/claude-haiku-5-5",
-    "costInputPer1M": 39700,
-    "costOutputPer1M": 198500,
+    "costInputPer1M": 49900,
+    "costOutputPer1M": 249500,
     "priority": 1
   },
   {
     "model": "anthropic/claude-opus-4.5",
     "upstreamModel": "cc/claude-opus-4-5",
-    "costInputPer1M": 1500000,
-    "costOutputPer1M": 7500000,
+    "costInputPer1M": 1985000,
+    "costOutputPer1M": 9925000,
     "priority": 1
   },
   {
     "model": "anthropic/claude-opus-4.6",
     "upstreamModel": "ag/claude-opus-4-6-thinking",
-    "costInputPer1M": 1005000,
-    "costOutputPer1M": 5025000,
-    "priority": 1
-  },
-  {
-    "model": "anthropic/claude-opus-4.7",
-    "upstreamModel": "cc/claude-opus-4-7",
-    "costInputPer1M": 1380000,
-    "costOutputPer1M": 6900000,
-    "priority": 1
-  },
-  {
-    "model": "anthropic/claude-opus-4.8",
-    "upstreamModel": "cc/claude-opus-4-8",
-    "costInputPer1M": 1175000,
-    "costOutputPer1M": 5875000,
-    "priority": 1
-  },
-  {
-    "model": "anthropic/claude-opus-5",
-    "upstreamModel": "cc/claude-opus-5",
     "costInputPer1M": 1250000,
     "costOutputPer1M": 6250000,
     "priority": 1
   },
   {
-    "model": "anthropic/claude-opus-5.5",
-    "upstreamModel": "cc/claude-opus-5-5",
-    "costInputPer1M": 560000,
-    "costOutputPer1M": 2800000,
+    "model": "anthropic/claude-opus-4.7",
+    "upstreamModel": "cc/claude-opus-4-7",
+    "costInputPer1M": 1985000,
+    "costOutputPer1M": 9925000,
     "priority": 1
   },
   {
-    "model": "anthropic/claude-sonnet-4.6",
-    "upstreamModel": "ag/claude-sonnet-4-6",
-    "costInputPer1M": 600000,
-    "costOutputPer1M": 3000000,
-    "priority": 1
-  },
-  {
-    "model": "anthropic/claude-sonnet-5",
-    "upstreamModel": "ant/claude-sonnet-5",
+    "model": "anthropic/claude-opus-4.8",
+    "upstreamModel": "cc/claude-opus-4-8",
     "costInputPer1M": 1000000,
     "costOutputPer1M": 5000000,
     "priority": 1
   },
   {
+    "model": "anthropic/claude-opus-5",
+    "upstreamModel": "cc/claude-opus-5",
+    "costInputPer1M": 1000000,
+    "costOutputPer1M": 5000000,
+    "priority": 1
+  },
+  {
+    "model": "anthropic/claude-opus-5.5",
+    "upstreamModel": "cc/claude-opus-5-5",
+    "costInputPer1M": 596000,
+    "costOutputPer1M": 2980000,
+    "priority": 1
+  },
+  {
+    "model": "anthropic/claude-sonnet-4.6",
+    "upstreamModel": "ag/claude-sonnet-4-6",
+    "costInputPer1M": 708000,
+    "costOutputPer1M": 3540000,
+    "priority": 1
+  },
+  {
+    "model": "anthropic/claude-sonnet-5",
+    "upstreamModel": "kiro/claude-sonnet-5",
+    "costInputPer1M": 800000,
+    "costOutputPer1M": 4000000,
+    "priority": 1
+  },
+  {
     "model": "anthropic/claude-sonnet-5.5",
     "upstreamModel": "ag/claude-sonnet-5-5",
-    "costInputPer1M": 440000,
-    "costOutputPer1M": 2200000,
+    "costInputPer1M": 400000,
+    "costOutputPer1M": 2000000,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v3.2",
     "upstreamModel": "kiro/deepseek-3.2",
-    "costInputPer1M": 140000,
-    "costOutputPer1M": 210000,
+    "costInputPer1M": 139720,
+    "costOutputPer1M": 209580,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4-flash",
     "upstreamModel": "cbcn/deepseek-v4-flash",
-    "costInputPer1M": 23320,
-    "costOutputPer1M": 69960,
+    "costInputPer1M": 40920,
+    "costOutputPer1M": 122760,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4-flash-0731",
     "upstreamModel": "alicn/deepseek-v4-flash-0731",
-    "costInputPer1M": 110000,
-    "costOutputPer1M": 330000,
+    "costInputPer1M": 26400,
+    "costOutputPer1M": 79200,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4-pro",
     "upstreamModel": "cbcn/deepseek-v4-pro",
-    "costInputPer1M": 69300,
-    "costOutputPer1M": 207900,
+    "costInputPer1M": 124740,
+    "costOutputPer1M": 374220,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4-pro-0813",
     "upstreamModel": "alicn/deepseek-v4-pro-0813",
-    "costInputPer1M": 330000,
-    "costOutputPer1M": 990000,
+    "costInputPer1M": 79200,
+    "costOutputPer1M": 237600,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4.1-flash",
     "upstreamModel": "cb/deepseek-v4.1-flash",
-    "costInputPer1M": 10500,
-    "costOutputPer1M": 42000,
+    "costInputPer1M": 11850,
+    "costOutputPer1M": 47400,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4.1-flash-1017",
-    "upstreamModel": "ds/deepseek-flash",
-    "costInputPer1M": 104400,
-    "costOutputPer1M": 417600,
+    "upstreamModel": "alicn/deepseek-v4.1-flash-1017",
+    "costInputPer1M": 30000,
+    "costOutputPer1M": 120000,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4.1-flash-fast",
     "upstreamModel": "cmc/deepseek/deepseek-v4.1-flash-fast",
-    "costInputPer1M": 79840,
-    "costOutputPer1M": 289420,
+    "costInputPer1M": 64000,
+    "costOutputPer1M": 232000,
     "priority": 1
   },
   {
     "model": "deepseek/deepseek-v4.1-flash-sg",
     "upstreamModel": "cb/deepseek-v4.1-flash-sg",
-    "costInputPer1M": 11100,
-    "costOutputPer1M": 44400,
+    "costInputPer1M": 13950,
+    "costOutputPer1M": 55800,
     "priority": 1
   },
   {
     "model": "google/gemini-3.8-flash",
     "upstreamModel": "ag/gemini-3.8-flash-high",
-    "costInputPer1M": 300000,
-    "costOutputPer1M": 1500000,
+    "costInputPer1M": 75000,
+    "costOutputPer1M": 375000,
     "priority": 1
   },
   {
-    "model": "google/gemini-4-argon",
-    "upstreamModel": "ag/gemini-4-argon",
-    "costInputPer1M": 140000,
-    "costOutputPer1M": 840000,
+    "model": "google/gemini-4-argon-contributor",
+    "upstreamModel": "ocg/gemini-4-argon-contributor",
+    "costInputPer1M": 2000000,
+    "costOutputPer1M": 10000000,
     "priority": 1
   },
   {
     "model": "google/gemini-4-carbon",
     "upstreamModel": "ag/gemini-4-carbon",
-    "costInputPer1M": 402000,
-    "costOutputPer1M": 2010000,
+    "costInputPer1M": 398000,
+    "costOutputPer1M": 1990000,
     "priority": 1
   },
   {
-    "model": "google/gemini-4-hydrogen",
-    "upstreamModel": "ag/gemini-4-hydrogen",
-    "costInputPer1M": 135000,
-    "costOutputPer1M": 675000,
+    "model": "google/gemini-4-neon",
+    "upstreamModel": "ag/gemini-4-neon",
+    "costInputPer1M": 603000,
+    "costOutputPer1M": 3015000,
     "priority": 1
   },
   {
     "model": "meta-llama/muse-ember-1.0",
-    "upstreamModel": "mai/muse-ember-1.0",
-    "costInputPer1M": 49700,
-    "costOutputPer1M": 248500,
+    "upstreamModel": "cmc/meta/muse-ember",
+    "costInputPer1M": 50000,
+    "costOutputPer1M": 250000,
     "priority": 1
   },
   {
@@ -207,30 +200,30 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   },
   {
     "model": "meta-llama/muse-spark-1.2",
-    "upstreamModel": "mai/muse-spark-1.2",
-    "costInputPer1M": 621250,
-    "costOutputPer1M": 2112250,
+    "upstreamModel": "cmc/meta/muse-spark-1.2",
+    "costInputPer1M": 625000,
+    "costOutputPer1M": 2125000,
     "priority": 1
   },
   {
     "model": "meta-llama/muse-spark-1.2-contributor",
-    "upstreamModel": "mai/muse-spark-1.2-contributor",
-    "costInputPer1M": 49700,
-    "costOutputPer1M": 99400,
+    "upstreamModel": "cmc/meta/muse-spark-1.2-contributor",
+    "costInputPer1M": 50000,
+    "costOutputPer1M": 100000,
     "priority": 1
   },
   {
     "model": "meta-llama/muse-spark-1.3",
-    "upstreamModel": "mai/muse-spark-1.3",
-    "costInputPer1M": 621250,
-    "costOutputPer1M": 2112250,
+    "upstreamModel": "cmc/meta/muse-spark-1.3",
+    "costInputPer1M": 625000,
+    "costOutputPer1M": 2125000,
     "priority": 1
   },
   {
     "model": "meta-llama/muse-spark-1.3-contributor",
-    "upstreamModel": "mai/muse-spark-1.3-contributor",
-    "costInputPer1M": 49700,
-    "costOutputPer1M": 99400,
+    "upstreamModel": "cmc/meta/muse-spark-1.3-contributor",
+    "costInputPer1M": 50000,
+    "costOutputPer1M": 100000,
     "priority": 1
   },
   {
@@ -248,66 +241,52 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
     "priority": 1
   },
   {
-    "model": "minimax/minimax-m2",
-    "upstreamModel": "mmcn/MiniMax-M2",
-    "costInputPer1M": 18300,
-    "costOutputPer1M": 73200,
-    "priority": 1
-  },
-  {
     "model": "minimax/minimax-m2.1",
-    "upstreamModel": "mm/MiniMax-M2.1",
-    "costInputPer1M": 30000,
-    "costOutputPer1M": 120000,
-    "priority": 1
-  },
-  {
-    "model": "minimax/minimax-m2.1-highspeed",
-    "upstreamModel": "mmcn/MiniMax-M2.1-highspeed",
-    "costInputPer1M": 36600,
-    "costOutputPer1M": 146400,
+    "upstreamModel": "kiro/minimax-m2.1",
+    "costInputPer1M": 120000,
+    "costOutputPer1M": 480000,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m2.5",
-    "upstreamModel": "mm/MiniMax-M2.5",
-    "costInputPer1M": 30000,
-    "costOutputPer1M": 120000,
+    "upstreamModel": "mmcn/MiniMax-M2.5",
+    "costInputPer1M": 59700,
+    "costOutputPer1M": 238800,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m2.5-highspeed",
     "upstreamModel": "mmcn/MiniMax-M2.5-highspeed",
-    "costInputPer1M": 36600,
-    "costOutputPer1M": 146400,
+    "costInputPer1M": 119400,
+    "costOutputPer1M": 477600,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m2.7",
-    "upstreamModel": "mm/MiniMax-M2.7",
-    "costInputPer1M": 30000,
-    "costOutputPer1M": 120000,
+    "upstreamModel": "cbcn/minimax-m2.7",
+    "costInputPer1M": 57000,
+    "costOutputPer1M": 228000,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m2.7-highspeed",
-    "upstreamModel": "mm/MiniMax-M2.7-highspeed",
-    "costInputPer1M": 60000,
-    "costOutputPer1M": 240000,
+    "upstreamModel": "mmcn/MiniMax-M2.7-highspeed",
+    "costInputPer1M": 119400,
+    "costOutputPer1M": 477600,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m3",
     "upstreamModel": "cb/minimax-m3",
-    "costInputPer1M": 27000,
-    "costOutputPer1M": 108000,
+    "costInputPer1M": 32700,
+    "costOutputPer1M": 130800,
     "priority": 1
   },
   {
     "model": "minimax/minimax-m3.1-flash",
     "upstreamModel": "cb/minimax-m3.1-flash",
-    "costInputPer1M": 12000,
-    "costOutputPer1M": 48000,
+    "costInputPer1M": 16350,
+    "costOutputPer1M": 65400,
     "priority": 1
   },
   {
@@ -320,55 +299,55 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
     "model": "mistralai/mistral-large-4",
     "upstreamModel": "mv/mistral-large-4",
-    "costInputPer1M": 70000,
-    "costOutputPer1M": 210000,
+    "costInputPer1M": 140000,
+    "costOutputPer1M": 420000,
     "priority": 1
   },
   {
     "model": "mistralai/mistral-medium-3.5",
     "upstreamModel": "mv/mistral-medium-3-5",
-    "costInputPer1M": 133500,
-    "costOutputPer1M": 667500,
+    "costInputPer1M": 120000,
+    "costOutputPer1M": 600000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-for-coding-highspeed-k2.7-code",
     "upstreamModel": "kcai/kimi-for-coding-highspeed",
-    "costInputPer1M": 932900,
-    "costOutputPer1M": 3928000,
+    "costInputPer1M": 665000,
+    "costOutputPer1M": 2800000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-for-coding-k2.8-preview",
     "upstreamModel": "kcai/kimi-for-coding",
-    "costInputPer1M": 466450,
-    "costOutputPer1M": 1964000,
+    "costInputPer1M": 465500,
+    "costOutputPer1M": 1960000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k2.5",
     "upstreamModel": "cb/kimi-k2.5",
-    "costInputPer1M": 48000,
-    "costOutputPer1M": 240000,
+    "costInputPer1M": 60000,
+    "costOutputPer1M": 300000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k2.6",
     "upstreamModel": "cb/kimi-k2.6",
-    "costInputPer1M": 76000,
-    "costOutputPer1M": 320000,
+    "costInputPer1M": 95000,
+    "costOutputPer1M": 400000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k2.7-code",
     "upstreamModel": "cb/kimi-k2.7",
-    "costInputPer1M": 76000,
-    "costOutputPer1M": 320000,
+    "costInputPer1M": 95000,
+    "costOutputPer1M": 400000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k2.7-code-highspeed",
-    "upstreamModel": "moon/kimi-k2.7-code-highspeed",
+    "upstreamModel": "cmc/moonshotai/Kimi-K2.7-Code-Highspeed",
     "costInputPer1M": 950000,
     "costOutputPer1M": 4000000,
     "priority": 1
@@ -376,15 +355,15 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
     "model": "moonshotai/kimi-k2.8-preview",
     "upstreamModel": "cb/kimi-k2.8-preview",
-    "costInputPer1M": 76000,
-    "costOutputPer1M": 320000,
+    "costInputPer1M": 94050,
+    "costOutputPer1M": 396000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k3",
     "upstreamModel": "cb/kimi-k3",
-    "costInputPer1M": 240000,
-    "costOutputPer1M": 1200000,
+    "costInputPer1M": 297000,
+    "costOutputPer1M": 1485000,
     "priority": 1
   },
   {
@@ -396,23 +375,23 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   },
   {
     "model": "moonshotai/kimi-k3.1-pro",
-    "upstreamModel": "cbcn/kimi-k3.1-pro",
-    "costInputPer1M": 212000,
-    "costOutputPer1M": 1060000,
+    "upstreamModel": "alicn/kimi-k3.1-pro",
+    "costInputPer1M": 240000,
+    "costOutputPer1M": 1200000,
     "priority": 1
   },
   {
     "model": "moonshotai/kimi-k3.1-pro-highspeed",
     "upstreamModel": "kcai/k3.1-pro-highspeed",
-    "costInputPer1M": 1964000,
-    "costOutputPer1M": 9820000,
+    "costInputPer1M": 1400000,
+    "costOutputPer1M": 7000000,
     "priority": 1
   },
   {
     "model": "openai/gpt-5.3-codex",
     "upstreamModel": "cb/gpt-5.3-codex",
-    "costInputPer1M": 129500,
-    "costOutputPer1M": 1036000,
+    "costInputPer1M": 175000,
+    "costOutputPer1M": 1400000,
     "priority": 1
   },
   {
@@ -439,15 +418,15 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
     "model": "openai/gpt-5.6-luna",
     "upstreamModel": "cx/gpt-5.6-luna",
-    "costInputPer1M": 25800,
-    "costOutputPer1M": 154800,
+    "costInputPer1M": 30000,
+    "costOutputPer1M": 180000,
     "priority": 1
   },
   {
     "model": "openai/gpt-5.6-sol",
-    "upstreamModel": "oai/gpt-5.6-sol",
-    "costInputPer1M": 1404000,
-    "costOutputPer1M": 7020000,
+    "upstreamModel": "cx/gpt-5.6-sol",
+    "costInputPer1M": 470000,
+    "costOutputPer1M": 2820000,
     "priority": 1
   },
   {
@@ -460,36 +439,50 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
     "model": "openai/gpt-6-astra",
     "upstreamModel": "cx/gpt-6-astra",
-    "costInputPer1M": 3000000,
-    "costOutputPer1M": 15000000,
+    "costInputPer1M": 940000,
+    "costOutputPer1M": 4700000,
     "priority": 1
   },
   {
     "model": "openai/gpt-6-luna",
     "upstreamModel": "cx/gpt-6-luna",
-    "costInputPer1M": 12900,
-    "costOutputPer1M": 64500,
+    "costInputPer1M": 15000,
+    "costOutputPer1M": 75000,
     "priority": 1
   },
   {
     "model": "openai/gpt-6-sol",
     "upstreamModel": "cx/gpt-6-sol",
-    "costInputPer1M": 600000,
-    "costOutputPer1M": 3000000,
+    "costInputPer1M": 188000,
+    "costOutputPer1M": 940000,
     "priority": 1
   },
   {
     "model": "openai/gpt-6.1-sol",
     "upstreamModel": "cx/gpt-6.1-sol",
-    "costInputPer1M": 502000,
-    "costOutputPer1M": 2510000,
+    "costInputPer1M": 190000,
+    "costOutputPer1M": 950000,
     "priority": 1
   },
   {
     "model": "openai/gpt-6.1-terra",
-    "upstreamModel": "oai/gpt-6.1-terra",
-    "costInputPer1M": 351000,
-    "costOutputPer1M": 1755000,
+    "upstreamModel": "cx/gpt-6.1-terra",
+    "costInputPer1M": 100000,
+    "costOutputPer1M": 500000,
+    "priority": 1
+  },
+  {
+    "model": "openai/gpt-6.2-astra",
+    "upstreamModel": "cx/gpt-6.2-astra",
+    "costInputPer1M": 784000,
+    "costOutputPer1M": 3920000,
+    "priority": 1
+  },
+  {
+    "model": "openai/gpt-6.2-sol",
+    "upstreamModel": "cx/gpt-6.2-sol",
+    "costInputPer1M": 200000,
+    "costOutputPer1M": 1000000,
     "priority": 1
   },
   {
@@ -502,162 +495,183 @@ export const INFERHUB_MODELS: UpstreamModelMapping[] = [
   {
     "model": "qwen/qwen3.6-flash",
     "upstreamModel": "alitp/qwen3.6-flash",
-    "costInputPer1M": 124750,
-    "costOutputPer1M": 748500,
+    "costInputPer1M": 123750,
+    "costOutputPer1M": 742500,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.7-max",
     "upstreamModel": "alitp/qwen3.7-max",
-    "costInputPer1M": 1197600,
-    "costOutputPer1M": 4790400,
+    "costInputPer1M": 1188000,
+    "costOutputPer1M": 4752000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.7-plus",
-    "upstreamModel": "ocg/qwen3.7-plus",
-    "costInputPer1M": 420000,
-    "costOutputPer1M": 1680000,
+    "upstreamModel": "alitp/qwen3.7-plus",
+    "costInputPer1M": 594000,
+    "costOutputPer1M": 2376000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-2.4t-a95b",
     "upstreamModel": "ali/qwen3.8-2.4t-a95b",
-    "costInputPer1M": 384000,
-    "costOutputPer1M": 1152000,
+    "costInputPer1M": 996000,
+    "costOutputPer1M": 2988000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-27b",
     "upstreamModel": "ali/qwen3.8-27b",
-    "costInputPer1M": 49000,
-    "costOutputPer1M": 294000,
+    "costInputPer1M": 249500,
+    "costOutputPer1M": 1497000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-flash",
-    "upstreamModel": "ali/qwen3.8-flash",
-    "costInputPer1M": 75000,
-    "costOutputPer1M": 235000,
+    "upstreamModel": "alicn/qwen3.8-flash",
+    "costInputPer1M": 18000,
+    "costOutputPer1M": 56400,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-max",
     "upstreamModel": "alicn/qwen3.8-max",
-    "costInputPer1M": 1000000,
-    "costOutputPer1M": 3000000,
+    "costInputPer1M": 288000,
+    "costOutputPer1M": 864000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-max-0902",
-    "upstreamModel": "ali/qwen3.8-max-0902",
-    "costInputPer1M": 500000,
-    "costOutputPer1M": 1500000,
+    "upstreamModel": "alicn/qwen3.8-max-0902",
+    "costInputPer1M": 400000,
+    "costOutputPer1M": 1200000,
     "priority": 1
   },
   {
     "model": "qwen/qwen3.8-omni-flash",
-    "upstreamModel": "ali/qwen3.8-omni-flash",
-    "costInputPer1M": 67500,
-    "costOutputPer1M": 211500,
+    "upstreamModel": "alicn/qwen3.8-omni-flash",
+    "costInputPer1M": 30000,
+    "costOutputPer1M": 94000,
     "priority": 1
   },
   {
     "model": "qwen/qwen4-max",
     "upstreamModel": "ali/qwen4-max",
-    "costInputPer1M": 75000,
-    "costOutputPer1M": 225000,
+    "costInputPer1M": 450000,
+    "costOutputPer1M": 1350000,
     "priority": 1
   },
   {
     "model": "qwen/qwen4-max-preview",
     "upstreamModel": "alitp/qwen4-max-preview",
-    "costInputPer1M": 780000,
-    "costOutputPer1M": 2340000,
+    "costInputPer1M": 988000,
+    "costOutputPer1M": 2964000,
     "priority": 1
   },
   {
     "model": "x-ai/grok-4.5",
     "upstreamModel": "grok/grok-4.5",
-    "costInputPer1M": 400000,
-    "costOutputPer1M": 1200000,
+    "costInputPer1M": 580000,
+    "costOutputPer1M": 1740000,
     "priority": 1
   },
   {
     "model": "x-ai/grok-4.6",
     "upstreamModel": "grok/grok-4.6",
-    "costInputPer1M": 394000,
-    "costOutputPer1M": 1182000,
+    "costInputPer1M": 580000,
+    "costOutputPer1M": 1740000,
     "priority": 1
   },
   {
     "model": "x-ai/grok-4.7",
     "upstreamModel": "grok/grok-4.7",
-    "costInputPer1M": 400000,
-    "costOutputPer1M": 1200000,
+    "costInputPer1M": 580000,
+    "costOutputPer1M": 1740000,
     "priority": 1
   },
   {
     "model": "x-ai/grok-4.7-fast",
     "upstreamModel": "grok/grok-4.7-build-fast",
-    "costInputPer1M": 800000,
-    "costOutputPer1M": 2400000,
+    "costInputPer1M": 1160000,
+    "costOutputPer1M": 3480000,
+    "priority": 1
+  },
+  {
+    "model": "xiaomi/mimo-v2.5",
+    "upstreamModel": "cp/cline-pass/mimo-v2.5",
+    "costInputPer1M": 70000,
+    "costOutputPer1M": 140000,
+    "priority": 1
+  },
+  {
+    "model": "xiaomi/mimo-v2.5-pro",
+    "upstreamModel": "cp/cline-pass/mimo-v2.5-pro",
+    "costInputPer1M": 870000,
+    "costOutputPer1M": 1740000,
     "priority": 1
   },
   {
     "model": "xiaomi/mimo-v2.6-flash",
     "upstreamModel": "ocg/mimo-v2.6-flash",
-    "costInputPer1M": 63000,
-    "costOutputPer1M": 126000,
+    "costInputPer1M": 62860,
+    "costOutputPer1M": 125720,
     "priority": 1
   },
   {
     "model": "xiaomi/mimo-v2.6-pro",
-    "upstreamModel": "mimo/mimo-v2.6-pro",
-    "costInputPer1M": 217500,
-    "costOutputPer1M": 435000,
+    "upstreamModel": "cbcn/mimo-v2.6-pro",
+    "costInputPer1M": 87000,
+    "costOutputPer1M": 174000,
     "priority": 1
   },
   {
     "model": "z-ai/glm-4.6v-vision",
     "upstreamModel": "zai/glm-4.6v",
-    "costInputPer1M": 60000,
-    "costOutputPer1M": 180000,
+    "costInputPer1M": 104700,
+    "costOutputPer1M": 314100,
     "priority": 1
   },
   {
     "model": "z-ai/glm-5",
     "upstreamModel": "kiro/glm-5",
-    "costInputPer1M": 500000,
-    "costOutputPer1M": 1600000,
+    "costInputPer1M": 398000,
+    "costOutputPer1M": 1273600,
     "priority": 1
   },
   {
     "model": "z-ai/glm-5.1",
     "upstreamModel": "cbcn/glm-5.1",
-    "costInputPer1M": 148400,
-    "costOutputPer1M": 466400,
+    "costInputPer1M": 266000,
+    "costOutputPer1M": 836000,
     "priority": 1
   },
   {
     "model": "z-ai/glm-5.2",
     "upstreamModel": "cb/glm-5.2",
-    "costInputPer1M": 112000,
-    "costOutputPer1M": 352000,
+    "costInputPer1M": 140000,
+    "costOutputPer1M": 440000,
     "priority": 1
   },
   {
     "model": "z-ai/glm-5.3",
-    "upstreamModel": "cb/glm-5.3",
-    "costInputPer1M": 102200,
-    "costOutputPer1M": 321200,
+    "upstreamModel": "zai/glm-5.3",
+    "costInputPer1M": 117600,
+    "costOutputPer1M": 369600,
     "priority": 1
   },
   {
     "model": "z-ai/glm-5.3-flash",
-    "upstreamModel": "mv/zai-glm-5-3-flash",
-    "costInputPer1M": 2700,
-    "costOutputPer1M": 9000,
+    "upstreamModel": "cb/glm-5.3-flash",
+    "costInputPer1M": 14850,
+    "costOutputPer1M": 49500,
+    "priority": 1
+  },
+  {
+    "model": "z-ai/glm-5.3-flashx",
+    "upstreamModel": "cmc/z-ai/glm-5.3-flashx",
+    "costInputPer1M": 185000,
+    "costOutputPer1M": 625000,
     "priority": 1
   }
 ];

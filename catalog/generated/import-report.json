@@ -1,12 +1,12 @@
 {
   "source": "https://api.inferhub.dev/v1/models",
-  "fetchedAt": "2026-11-17T20:32:14.166Z",
-  "received": 488,
-  "published": 94,
-  "retired": 11,
+  "fetchedAt": "2026-11-22T08:53:32.302Z",
+  "received": 533,
+  "published": 96,
+  "retired": 14,
   "skipped": {
     "missing-chat-metadata": 14,
-    "unattributed-creator": 13,
-    "free-or-alias": 238
+    "unattributed-creator": 19,
+    "free-or-alias": 242
   }
 }
