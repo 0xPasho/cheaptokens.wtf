@@ -132,9 +132,11 @@ export function DepositPanel({ initial, locale, labels, errorLabel, needMicroUsd
       <Tabs value={current?.id ?? "bitcoin"} onValueChange={(value) => setNetwork(value as typeof network)}>
         <TabsList aria-label={labels.network}>
           {deposit.networks.map((candidate) => (
-            <TabsTrigger key={candidate.id} value={candidate.id} className="px-4">{labels.networks[candidate.id]}</TabsTrigger>
+            <TabsTrigger key={candidate.id} value={candidate.id} className="px-4">
+              <NetworkLogo network={candidate.id} />{labels.networks[candidate.id]}
+            </TabsTrigger>
           ))}
-          {bitcoin ? <TabsTrigger value="bitcoin" className="px-4">{bitcoin.label}</TabsTrigger> : null}
+          {bitcoin ? <TabsTrigger value="bitcoin" className="px-4"><NetworkLogo network="bitcoin" />{bitcoin.label}</TabsTrigger> : null}
         </TabsList>
         {deposit.networks.map((candidate) => (
           <TabsContent key={candidate.id} value={candidate.id} className="pt-3">
@@ -179,10 +181,9 @@ export function DepositPanel({ initial, locale, labels, errorLabel, needMicroUsd
                 <dd className="font-medium">{t(labels.exchangeAmountValue, { min: minLabel })}</dd>
               </dl>
               <p className="mt-3 text-muted-foreground">{labels.exchangeHint[current.id]}</p>
+              <p className="mt-2 text-muted-foreground">{labels.otherAssets}</p>
             </Disclosure>
           </div>
-
-          <p className="text-xs text-muted-foreground">{labels.otherAssets}</p>
 
           {deposit.simulate ? (
             <Button variant="outline" disabled={checking} onClick={() => startChecking(async () => {
@@ -213,12 +214,12 @@ function NetworkPanel({ network, minLabel, needMicroUsd, labels }: {
     ? walletUrlWithAmount(network.id, network.walletUrl, needMicroUsd)
     : network.walletUrl;
   return (
-    <div className="grid gap-6 sm:grid-cols-[11rem_minmax(0,1fr)]">
+    <div className="grid gap-6 sm:grid-cols-[10rem_minmax(0,1fr)]">
       <div className="flex flex-col items-center gap-3">
         <QrCode
           value={mode === "wallet" ? walletUrl : network.address}
           label={t(mode === "wallet" ? labels.qrWalletLabel : labels.qrAddressLabel, { network: networkName })}
-          className="size-44"
+          className="size-40"
         />
         <ToggleGroup
           spacing={1}
@@ -230,28 +231,22 @@ function NetworkPanel({ network, minLabel, needMicroUsd, labels }: {
           <ToggleGroupItem value="address" className="flex-1">{labels.qrAddress}</ToggleGroupItem>
           <ToggleGroupItem value="wallet" className="flex-1">{network.id === "solana" ? "Solana Pay" : labels.qrWallet}</ToggleGroupItem>
         </ToggleGroup>
-        <p className="text-center text-xs text-muted-foreground">
-          {mode === "wallet" ? labels.qrWalletHint[network.id] : labels.qrAddressHint}
-        </p>
+        {mode === "wallet" ? <p className="text-center text-xs text-muted-foreground">{labels.qrWalletHint[network.id]}</p> : null}
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{labels.address}</span>
-            <CopyButton value={network.address} copyLabel={labels.copy} copiedLabel={labels.copied} showLabel />
-          </div>
-          <p className="rounded-xl glass-control px-3 py-2.5 font-mono text-sm break-all">{network.address}</p>
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <Badge variant="outline">USDC</Badge>
-            <Badge variant="outline">{networkName}</Badge>
-            {network.testnet ? <Badge variant="warning">{labels.testnet}</Badge> : null}
-          </div>
+      <div className="flex min-w-0 flex-col gap-3">
+        <p className="flex items-center gap-2 font-medium">
+          {labels.address}
+          {network.testnet ? <Badge variant="warning">{labels.testnet}</Badge> : null}
+        </p>
+        <div className="flex items-start gap-2 rounded-xl glass-control py-1.5 pr-1.5 pl-3">
+          <p className="min-w-0 flex-1 py-1 font-mono text-sm break-all">{network.address}</p>
+          <CopyButton value={network.address} copyLabel={labels.copy} copiedLabel={labels.copied} showLabel />
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-pretty text-muted-foreground">
           {labels.addressHint} {t(labels.only, { network: networkName, min: minLabel })}
         </p>
-        <a href={walletUrl} className={cn(buttonVariants({ variant: "outline" }), "self-start")}>
+        <a href={walletUrl} className={cn(buttonVariants({ variant: "outline" }), "mt-1 self-start")}>
           <WalletIcon data-icon="inline-start" />{labels.openWallet}
         </a>
       </div>
@@ -275,7 +270,7 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, error, onC
   return (
     <div className="flex flex-col gap-2" aria-live="polite">
       {fresh.map((credit) => (
-        <div key={credit.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/20">
+        <div key={credit.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-success/10 px-3 py-2.5 dark:bg-success/20">
           <p className="flex items-center gap-3 font-medium">
             <CircleCheckIcon size={20} aria-hidden />
             {t(labels.credited, { amount: formatUsd(Number(credit.amountMicroUsd), locale) })}
@@ -291,7 +286,7 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, error, onC
         const amount = BigInt(network.incomingMicroUsd);
         const waitsForMinimum = !network.sweeping && amount < minimum;
         return (
-          <div key={network.id} className="flex items-start gap-3 rounded-2xl glass-control p-4">
+          <div key={network.id} className="flex items-start gap-3 rounded-xl glass-control px-3 py-2.5">
             <Spinner className="mt-0.5 text-muted-foreground" aria-hidden />
             <div className="flex flex-col gap-0.5">
               <p className="font-medium">
@@ -305,15 +300,12 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, error, onC
         );
       })}
       {incoming.length === 0 && fresh.length === 0 ? (
-        <div className="flex flex-col gap-3 rounded-2xl glass-control p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Spinner className="mt-0.5 text-muted-foreground" aria-hidden />
-            <div className="flex flex-col gap-0.5">
-              <p className="font-medium">{labels.waiting}</p>
-              <p className="text-muted-foreground">{labels.waitingHint}</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" disabled={checking} onClick={onCheck}>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl glass-control py-2 pr-2 pl-3">
+          <p className="flex min-w-0 items-start gap-3">
+            <Spinner className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="flex flex-col"><span className="font-medium">{labels.waiting}</span><span className="text-muted-foreground">{labels.waitingHint}</span></span>
+          </p>
+          <Button variant="ghost" size="sm" disabled={checking} onClick={onCheck}>
             {checking ? labels.checking : labels.checkNow}
           </Button>
         </div>
@@ -321,6 +313,13 @@ function DepositStatus({ deposit, fresh, minimum, minLabel, checking, error, onC
       {error ? <p role="alert" className="text-destructive">{error}</p> : null}
     </div>
   );
+}
+
+/** El símbolo de cada red de pago, decorativo: el nombre va escrito al lado (public/brand/logos/README.md). */
+function NetworkLogo({ network }: { network: DepositNetworkView["id"] | "bitcoin" }) {
+  const file = { solana: "solana", base: "base", bitcoin: "bitcoin-color" }[network];
+  // eslint-disable-next-line @next/next/no-img-element -- SVG local y pequeño, como los logos de modelos.
+  return <img src={`/brand/logos/${file}.svg`} alt="" width={16} height={16} className="size-4 shrink-0" />;
 }
 
 function Disclosure({ title, children }: { title: string; children: React.ReactNode }) {

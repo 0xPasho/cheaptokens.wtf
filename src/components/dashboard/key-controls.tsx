@@ -1,12 +1,15 @@
 "use client";
 
+import ChevronDownIcon from "kubai-icons-react/icons/chevron-down";
 import PlusIcon from "kubai-icons-react/icons/circle-plus";
 import RotateIcon from "kubai-icons-react/icons/rotate-cw";
+import SearchIcon from "kubai-icons-react/icons/search";
 import { startTransition, useActionState, useRef, useState, useTransition } from "react";
 
 import {
   type ActionError, createKeyAction, type KeyResult, revokeKeyAction, rotateKeyAction,
 } from "@/app/[lang]/(site)/dashboard/actions";
+import { ModelLogo, providerName } from "@/components/catalog/provider-logo";
 import { CopyButton } from "@/components/copy-button";
 import { RichText } from "@/components/docs/rich-text";
 import { QuickstartSnippet } from "@/components/quickstart-snippet";
@@ -16,22 +19,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
-import { t } from "@/lib/i18n/dictionaries";
+import { formatUsd } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/config";
+import { plural, t } from "@/lib/i18n/dictionaries";
 import { cn } from "@/lib/utils";
 
 type Source = "plan_then_prepaid" | "plan_only" | "prepaid_only";
 
 export interface KeyLabels {
   create: string; createTitle: string; createDescription: string; name: string; namePlaceholder: string; limit: string; limitHint: string;
+  limitPlaceholder: string; limitSummary: string; moreOptions: string; searchModels: string; noModelsMatch: string; modelCount: string; modelCountOne: string;
   source: string; models: string; allModels: string; pickModels: string; pickModelsHint: string; createdTitle: string; createdDescription: string;
   rotatedTitle: string; rotatedDescription: string; done: string; keyLabel: string; cancel: string; close: string;
   rotate: string; rotateTitle: string; rotateBody: string; rotateConfirm: string; revoke: string; revokeTitle: string; revokeBody: string; revokeConfirm: string;
@@ -55,8 +62,9 @@ function KeyReveal({ apiKey, labels, snippet }: { apiKey: string; labels: KeyLab
   );
 }
 
-export function CreateKeyDialog({ labels, models, errors, snippet, disabled }: {
+export function CreateKeyDialog({ labels, models, errors, snippet, disabled, locale }: {
   labels: KeyLabels;
+  locale: Locale;
   models: { id: string; name: string }[];
   errors: Record<ActionError, string>;
   snippet: SnippetProps;
@@ -71,13 +79,27 @@ export function CreateKeyDialog({ labels, models, errors, snippet, disabled }: {
         {labels.create}
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl" closeLabel={labels.close}>
-        <CreateKeyForm key={formKey} labels={labels} models={models} errors={errors} snippet={snippet} />
+        <CreateKeyForm key={formKey} labels={labels} models={models} errors={errors} snippet={snippet} locale={locale} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels; models: { id: string; name: string }[]; errors: Record<ActionError, string>; snippet: SnippetProps }) {
+/** Igual que el servidor (`parseUsd` en actions.ts): dólares con hasta dos decimales. */
+function limitMicros(text: string): number | null {
+  const match = /^(\d{1,7})(?:\.(\d{1,2}))?$/.exec(text.trim().replace(",", "."));
+  return match ? Number(match[1]) * 1_000_000 + Number((match[2] ?? "").padEnd(2, "0")) * 10_000 : null;
+}
+
+const SOURCES = ["plan_then_prepaid", "plan_only", "prepaid_only"] as const;
+
+function CreateKeyForm({ labels, models, errors, snippet, locale }: {
+  labels: KeyLabels;
+  models: { id: string; name: string }[];
+  errors: Record<ActionError, string>;
+  snippet: SnippetProps;
+  locale: Locale;
+}) {
   const [state, action, pending] = useActionState<KeyResult, FormData>(async (previous, form) => {
     try {
       return await createKeyAction(previous, form);
@@ -87,6 +109,13 @@ function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels;
     }
   }, null);
   const [scope, setScope] = useState<"all" | "pick">("all");
+  const [source, setSource] = useState<Source>("plan_then_prepaid");
+  const [limit, setLimit] = useState("");
+  const [picked, setPicked] = useState<ReadonlySet<string>>(() => new Set());
+  const [query, setQuery] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
+  // Un error de algo que está en «Más opciones» las abre, hasta que la persona las vuelva a cerrar.
+  const [dismissed, setDismissed] = useState<KeyResult>(null);
   if (state?.ok) {
     return (
       <>
@@ -100,6 +129,30 @@ function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels;
     );
   }
   const error = state && !state.ok ? state.error : null;
+  const optionsError = error === "limitInvalid" || error === "pickOne";
+  const open = moreOpen || (optionsError && dismissed !== state);
+  const micros = limitMicros(limit);
+  const count = (value: number) => t(plural(locale, value, labels.modelCountOne, labels.modelCount), { count: String(value) });
+  // Lo que hoy queda elegido, a la vista sin abrir las opciones.
+  const summary = [
+    labels.sources[source],
+    scope === "all" ? labels.allModels : count(picked.size),
+    micros ? t(labels.limitSummary, { amount: formatUsd(micros, locale) }) : labels.limitPlaceholder,
+  ].join(" · ");
+  const needle = query.trim().toLocaleLowerCase(locale);
+  const groups = new Map<string, typeof models>();
+  for (const model of models) {
+    const author = model.id.split("/")[0];
+    groups.set(author, [...(groups.get(author) ?? []), model]);
+  }
+  const matches = (model: (typeof models)[number]) => !needle || model.name.toLocaleLowerCase(locale).includes(needle) || model.id.includes(needle);
+  const toggle = (id: string, checked: boolean) => setPicked((current) => {
+    const next = new Set(current);
+    if (checked) next.add(id);
+    else next.delete(id);
+    return next;
+  });
+
   return (
     <form
       // Sin `action` en el form: React lo vacía al terminar y un error de validación borraría lo escrito.
@@ -114,53 +167,132 @@ function CreateKeyForm({ labels, models, errors, snippet }: { labels: KeyLabels;
         <DialogTitle>{labels.createTitle}</DialogTitle>
         <DialogDescription>{labels.createDescription}</DialogDescription>
       </DialogHeader>
-      <FieldGroup>
-        <Field data-invalid={error === "nameRequired" || undefined}>
-          <FieldLabel htmlFor="key-name">{labels.name}</FieldLabel>
-          <Input id="key-name" name="name" required maxLength={60} autoComplete="off" placeholder={labels.namePlaceholder} aria-invalid={error === "nameRequired" || undefined} />
-          {error === "nameRequired" ? <FieldError>{errors.nameRequired}</FieldError> : null}
-        </Field>
-        <Field data-invalid={error === "limitInvalid" || undefined}>
-          <FieldLabel htmlFor="key-limit">{labels.limit}</FieldLabel>
-          <Input id="key-limit" name="limit" inputMode="decimal" className="tabular-nums" aria-invalid={error === "limitInvalid" || undefined} />
-          {error === "limitInvalid" ? <FieldError>{errors.limitInvalid}</FieldError> : <FieldDescription>{labels.limitHint}</FieldDescription>}
-        </Field>
-        <RadioGroup name="source" defaultValue="plan_then_prepaid" aria-label={labels.source}>
-          {(["plan_then_prepaid", "plan_only", "prepaid_only"] as const).map((source) => (
-            <FieldLabel key={source} htmlFor={`source-${source}`}>
-              <Field orientation="horizontal">
-                <RadioGroupItem value={source} id={`source-${source}`} />
-                <FieldContent>
-                  <FieldTitle>{labels.sources[source]}</FieldTitle>
-                  <FieldDescription>{labels.sourceDescriptions[source]}</FieldDescription>
-                </FieldContent>
-              </Field>
-            </FieldLabel>
-          ))}
-        </RadioGroup>
-        <Field data-invalid={error === "pickOne" || undefined}>
-          <FieldTitle>{labels.models}</FieldTitle>
-          <RadioGroup name="models" value={scope} onValueChange={(value) => setScope(value as typeof scope)} aria-label={labels.models} className="flex flex-wrap gap-6">
-            {(["all", "pick"] as const).map((value) => (
-              <div key={value} className="flex items-center gap-3">
-                <RadioGroupItem value={value} id={`models-${value}`} />
-                <Label htmlFor={`models-${value}`}>{value === "all" ? labels.allModels : labels.pickModels}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-          {scope === "pick" ? (
-            <div className="grid max-h-48 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
-              {models.map((model) => (
-                <div key={model.id} className="flex items-center gap-3">
-                  <Checkbox id={`model-${model.id}`} name="model" value={model.id} />
-                  <Label htmlFor={`model-${model.id}`} className="truncate">{model.name}</Label>
+      <Field data-invalid={error === "nameRequired" || undefined}>
+        <FieldLabel htmlFor="key-name">{labels.name}</FieldLabel>
+        <Input id="key-name" name="name" required maxLength={60} autoComplete="off" placeholder={labels.namePlaceholder} aria-invalid={error === "nameRequired" || undefined} />
+        {error === "nameRequired" ? <FieldError>{errors.nameRequired}</FieldError> : null}
+      </Field>
+
+      <Collapsible
+        open={open}
+        onOpenChange={(next) => { setMoreOpen(next); if (!next) setDismissed(state); }}
+        className="group/options rounded-2xl border"
+      >
+        <CollapsibleTrigger className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl px-4 py-3 text-left text-sm outline-none hover:bg-glass-control-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)">
+          <span className="font-medium">{labels.moreOptions}</span>
+          {/* En pantallas angostas el resumen baja a su propia línea en vez de cortarse. */}
+          <span className="order-last basis-full truncate text-muted-foreground sm:order-none sm:min-w-0 sm:flex-1 sm:basis-0">{summary}</span>
+          <ChevronDownIcon size={16} aria-hidden className="ml-auto shrink-0 text-muted-foreground transition-transform group-data-open/options:rotate-180" />
+        </CollapsibleTrigger>
+        {/* Montado aunque esté cerrado: sus campos viajan con el formulario igual. */}
+        <CollapsibleContent keepMounted className="px-4 pt-1 pb-4 data-closed:hidden">
+          <FieldGroup className="gap-5">
+            <Field data-invalid={error === "limitInvalid" || undefined}>
+              <FieldLabel htmlFor="key-limit">{labels.limit}</FieldLabel>
+              <InputGroup className="sm:max-w-56">
+                <InputGroupAddon><InputGroupText>$</InputGroupText></InputGroupAddon>
+                <InputGroupInput
+                  id="key-limit"
+                  name="limit"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder={labels.limitPlaceholder}
+                  value={limit}
+                  onChange={(event) => setLimit(event.target.value)}
+                  className="tabular-nums"
+                  aria-invalid={error === "limitInvalid" || undefined}
+                />
+              </InputGroup>
+              {error === "limitInvalid" ? <FieldError>{errors.limitInvalid}</FieldError> : <FieldDescription>{labels.limitHint}</FieldDescription>}
+            </Field>
+
+            <Field>
+              <FieldTitle id="key-source-title">{labels.source}</FieldTitle>
+              <RadioGroup
+                name="source"
+                value={source}
+                onValueChange={(value) => setSource(value as Source)}
+                aria-labelledby="key-source-title"
+                className="flex flex-wrap gap-x-6 gap-y-2"
+              >
+                {SOURCES.map((value) => (
+                  <div key={value} className="flex items-center gap-3">
+                    <RadioGroupItem value={value} id={`source-${value}`} />
+                    <Label htmlFor={`source-${value}`}>{labels.sources[value]}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              <FieldDescription aria-live="polite">{labels.sourceDescriptions[source]}</FieldDescription>
+            </Field>
+
+            <Field data-invalid={error === "pickOne" || undefined}>
+              <FieldTitle id="key-models-title">{labels.models}</FieldTitle>
+              <RadioGroup
+                name="models"
+                value={scope}
+                onValueChange={(value) => setScope(value as typeof scope)}
+                aria-labelledby="key-models-title"
+                className="flex flex-wrap gap-x-6 gap-y-2"
+              >
+                {(["all", "pick"] as const).map((value) => (
+                  <div key={value} className="flex items-center gap-3">
+                    <RadioGroupItem value={value} id={`models-${value}`} />
+                    <Label htmlFor={`models-${value}`}>{value === "all" ? labels.allModels : labels.pickModels}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              {scope === "pick" ? (
+                <div className="flex flex-col overflow-hidden rounded-xl border">
+                  <div className="flex items-center gap-2 border-b px-3">
+                    <SearchIcon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+                    <input
+                      type="search"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      aria-label={labels.searchModels}
+                      placeholder={labels.searchModels}
+                      className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums" aria-live="polite">{count(picked.size)}</span>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto p-1">
+                    {[...groups].toSorted(([a], [b]) => providerName(a).localeCompare(providerName(b))).map(([author, group]) => {
+                      const visible = group.some(matches);
+                      // Los que no coinciden con la búsqueda se ocultan sin desmontarse: lo marcado sigue en el formulario.
+                      return (
+                        <div key={author} role="group" aria-label={providerName(author)} hidden={!visible}>
+                          <p className="px-2 pt-2 pb-1 text-xs text-muted-foreground" aria-hidden>{providerName(author)}</p>
+                          {group.map((model) => (
+                            <label
+                              key={model.id}
+                              htmlFor={`model-${model.id}`}
+                              hidden={!matches(model)}
+                              className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-glass-control-hover"
+                            >
+                              <Checkbox
+                                id={`model-${model.id}`}
+                                name="model"
+                                value={model.id}
+                                checked={picked.has(model.id)}
+                                onCheckedChange={(checked) => toggle(model.id, checked)}
+                              />
+                              <ModelLogo modelId={model.id} />
+                              <span className="truncate">{model.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    {models.some(matches) ? null : <p className="px-2 py-3 text-sm text-muted-foreground">{labels.noModelsMatch}</p>}
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : null}
-          {error === "pickOne" ? <FieldError>{errors.pickOne}</FieldError> : scope === "pick" ? <FieldDescription><RichText text={labels.pickModelsHint} /></FieldDescription> : null}
-        </Field>
-      </FieldGroup>
+              ) : null}
+              {error === "pickOne" ? <FieldError>{errors.pickOne}</FieldError> : scope === "pick" ? <FieldDescription><RichText text={labels.pickModelsHint} /></FieldDescription> : null}
+            </Field>
+          </FieldGroup>
+        </CollapsibleContent>
+      </Collapsible>
+
       {error && !["nameRequired", "limitInvalid", "pickOne"].includes(error) ? <p role="alert" className="text-sm text-destructive">{errors[error]}</p> : null}
       <DialogFooter>
         <DialogClose render={<Button variant="outline" type="button" />}>{labels.cancel}</DialogClose>

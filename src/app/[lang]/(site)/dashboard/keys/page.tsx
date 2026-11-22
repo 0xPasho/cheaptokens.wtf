@@ -2,6 +2,7 @@ import KeyRoundIcon from "kubai-icons-react/icons/key-round";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { ModelLogo } from "@/components/catalog/provider-logo";
 import { actionErrors } from "@/components/dashboard/action-errors";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { CreateKeyDialog, KeyActions, type KeyLabels } from "@/components/dashboard/key-controls";
@@ -46,7 +47,8 @@ function keyLabels(dict: Dictionary): KeyLabels {
   const d = dict.dashboard.keys;
   return {
     create: d.create, createTitle: d.createTitle, createDescription: d.createDescription, name: d.name, namePlaceholder: d.namePlaceholder,
-    limit: d.limit, limitHint: d.limitHint, source: d.source, models: d.models, allModels: d.allModels, pickModels: d.pickModels,
+    limit: d.limit, limitHint: d.limitHint, limitPlaceholder: d.limitPlaceholder, limitSummary: d.limitSummary, moreOptions: d.moreOptions,
+    searchModels: d.searchModels, noModelsMatch: d.noModelsMatch, modelCount: d.modelCount, modelCountOne: d.modelCountOne, source: d.source, models: d.models, allModels: d.allModels, pickModels: d.pickModels,
     pickModelsHint: d.pickModelsHint, createdTitle: d.createdTitle, createdDescription: d.createdDescription, rotatedTitle: d.rotatedTitle,
     rotatedDescription: d.rotatedDescription, done: d.done, keyLabel: d.keyLabel, cancel: d.cancel, rotate: d.rotate, rotateTitle: d.rotateTitle,
     rotateBody: d.rotateBody, rotateConfirm: d.rotateConfirm, revoke: d.revoke, revokeTitle: d.revokeTitle, revokeBody: d.revokeBody,
@@ -66,16 +68,13 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     .toSorted((a, b) => a.name.localeCompare(b.name, locale));
   const names = new Map(models.map((model) => [model.id, model.name]));
   const active = keys.filter((key) => key.revokedAt === null && (key.expiresAt === null || key.expiresAt.getTime() > now)).length;
-  const create = <CreateKeyDialog labels={labels} models={models} errors={errors} snippet={snippet} disabled={active >= MAX_ACTIVE_KEYS} />;
+  const create = <CreateKeyDialog labels={labels} models={models} errors={errors} snippet={snippet} disabled={active >= MAX_ACTIVE_KEYS} locale={locale} />;
 
   // El botón de crear queda siempre en el mismo lugar: si cambiara de sitio al pasar del estado vacío a la
   // tabla, el diálogo se desmontaría justo cuando muestra la key recién creada.
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{d.rotationNote}</p>
-        {create}
-      </div>
+      <div className="flex justify-end">{create}</div>
       {keys.length === 0 ? (
         <Empty className="border">
           <EmptyHeader>
@@ -119,7 +118,17 @@ async function Keys({ locale, dict }: { locale: Locale; dict: Dictionary }) {
                   <TableCell>
                     {key.allowedModels === null
                       ? d.everyModel
-                      : <span title={key.allowedModels.map((id) => names.get(id) ?? id).join(", ")}>{t(plural(locale, key.allowedModels.length, d.modelCountOne, d.modelCount), { count: formatCount(key.allowedModels.length, locale) })}</span>}
+                      : (
+                        // Los logos de los primeros modelos permitidos, y la lista completa al pasar el puntero.
+                        <span className="flex items-center gap-2" title={key.allowedModels.map((id) => names.get(id) ?? id).join(", ")}>
+                          <span className="flex -space-x-1" aria-hidden>
+                            {key.allowedModels.slice(0, 4).map((id) => (
+                              <span key={id} className="flex size-6 items-center justify-center rounded-full bg-muted ring-2 ring-card"><ModelLogo modelId={id} /></span>
+                            ))}
+                          </span>
+                          {t(plural(locale, key.allowedModels.length, d.modelCountOne, d.modelCount), { count: formatCount(key.allowedModels.length, locale) })}
+                        </span>
+                      )}
                   </TableCell>
                   <TableCell className="min-w-40">
                     {key.spendLimitMicroUsd === null ? (

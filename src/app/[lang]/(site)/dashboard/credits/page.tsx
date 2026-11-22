@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { ModelLogo } from "@/components/catalog/provider-logo";
@@ -63,6 +64,12 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const catalog = await getLiveCatalog();
   const names = new Map(catalog.map((model) => [model.id, model.name]));
   const money = (micros: bigint) => formatUsd(Number(micros), locale);
+  // Una línea con lo que hoy pasa al cobrar, con los datos de la cuenta, en vez de explicar el orden en una card.
+  const charge = account.plan === null
+    ? d.chargeNoPlan
+    : account.overflow.mode === "continue" && account.overflow.credits
+      ? t(d.chargeOverflow, { cap: money(account.overflow.capMicroUsd) })
+      : d.chargeStop;
   const concept = (payment: (typeof history)[number]) => {
     const { kind, item } = payment;
     if (kind === "subscription" && item && item in PLANS) return t(d.kinds.subscription, { plan: dict.dashboard.plans[item as PlanId].name });
@@ -80,13 +87,20 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         labels={dict.dashboard.bitcoin}
       />
 
+      <section className="flex flex-col gap-2" aria-label={d.balance}>
+        <Stat label={d.balance} value={<Price micros={Number(account.balanceMicroUsd)} locale={locale} />} />
+        <p className="text-sm text-pretty text-muted-foreground">
+          {charge}{" "}
+          <Link href={`/${locale}/dashboard/plan`} className="nr-documentation-link">{d.chargeChange}</Link>
+        </p>
+      </section>
+
       <Card>
         <CardHeader>
           <CardTitle>{dict.dashboard.deposit.title}</CardTitle>
           <CardDescription>{dict.dashboard.deposit.description}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <Stat label={d.balance} value={<Price micros={Number(account.balanceMicroUsd)} locale={locale} />} hint={d.balanceHint} />
+        <CardContent>
           {deposit || bitcoin ? (
             <DepositPanel
               initial={deposit ? depositView(crypto, chains, deposit) : emptyDepositView(account.balanceMicroUsd.toString())}
@@ -108,23 +122,6 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
               } : undefined}
             />
           ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{d.orderTitle}</CardTitle>
-          <CardDescription>{d.orderNote}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ol className="grid gap-x-8 md:grid-cols-2">
-            {[[d.order1, d.order1Hint], [d.order2, d.order2Hint]].map(([title, hint], index) => (
-              <li key={title} className="flex gap-4 border-t py-4 first:border-t-0 first:pt-0 md:border-t-0 md:py-0">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium tabular-nums">{index + 1}</span>
-                <span className="flex flex-col gap-0.5"><span className="text-sm font-medium">{title}</span><span className="text-sm text-muted-foreground">{hint}</span></span>
-              </li>
-            ))}
-          </ol>
         </CardContent>
       </Card>
 

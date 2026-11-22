@@ -1,4 +1,6 @@
+import ChartBarIcon from "kubai-icons-react/icons/chart-bar";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { ModelLogo } from "@/components/catalog/provider-logo";
@@ -8,17 +10,20 @@ import { PageHeader } from "@/components/page-header";
 import { Price } from "@/components/price";
 import { Stat } from "@/components/stat";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getLiveCatalog } from "@/lib/catalog/live";
 import { getUsageSummary, listKeys, listRequests, type UsageFilters as Filters, type UsageSource } from "@/lib/dashboard/queries";
 import { requireDashboard } from "@/lib/dashboard/session";
 import { getDb } from "@/lib/db/client";
-import { formatCount, formatDateTime, formatMilliseconds, formatPercent, formatTokens, formatUsd, totalKind } from "@/lib/format";
+import { formatCount, formatDateTime, formatMilliseconds, formatTokens, formatUsd, totalKind } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
 const RANGES = ["today", "24h", "7d", "30d"] as const;
@@ -85,6 +90,10 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
   const split = dict.dashboard.split;
   // Los paquetes por modelo ya no se venden (ADR-0058): solo aparecen si pagaron algo en este rango.
   const hadPacks = summary.pack > BigInt(0) || filters.source === "pack";
+  const usd = (micros: bigint) => formatUsd(Number(micros), locale, totalKind(Number(micros)));
+  // El valor de uso partido por fuente: una barra bajo la cifra, en vez de otra card con dos números.
+  const sources = ([["plan", summary.plan, "bg-foreground"], ...(hadPacks ? [["pack", summary.pack, "bg-muted-foreground"] as const] : []), ["credits", summary.credits, "bg-muted-foreground/40"]] as const);
+  const filtered = filters.keyId !== null || filters.modelId !== null || filters.source !== null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,78 +109,109 @@ async function Usage({ locale, dict, searchParams }: { locale: Locale; dict: Dic
         ]}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card><CardContent><Stat label={dict.dashboard.overview.requests} value={formatCount(summary.requests, locale)} /></CardContent></Card>
-        <Card><CardContent><Stat label={dict.dashboard.overview.tokens} value={formatTokens(summary.tokens, locale)} /></CardContent></Card>
-        <Card><CardContent><Stat label={dict.dashboard.overview.value} value={<Price micros={Number(summary.value)} locale={locale} kind={totalKind(Number(summary.value))} />} /></CardContent></Card>
-        <Card><CardContent><Stat label={dict.dashboard.overview.saved} value={<Price micros={Number(summary.saved)} locale={locale} kind={totalKind(Number(summary.saved))} />} hint={dict.dashboard.overview.savedHint} tone="success" /></CardContent></Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{d.bySource}</CardTitle>
-          <CardDescription>
-            {d.bySourceHint}
-            {summary.absorbed > BigInt(0) ? ` · ${t(d.absorbed, { amount: formatUsd(Number(summary.absorbed), locale, totalKind(Number(summary.absorbed))) })}` : ""}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className={hadPacks ? "grid gap-6 sm:grid-cols-3" : "grid gap-6 sm:grid-cols-2"}>
-          {([["plan", summary.plan], ...(hadPacks ? [["pack", summary.pack] as const] : []), ["credits", summary.credits]] as const).map(([key, amount]) => (
-            <Stat key={key} size="sm" label={split[key]} value={<Price micros={Number(amount)} locale={locale} kind={totalKind(Number(amount))} />} hint={sourceTotal > 0 ? formatPercent(Number(amount) / sourceTotal, locale) : undefined} />
-          ))}
-        </CardContent>
-      </Card>
-
       <Card className="py-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{d.date}</TableHead>
-              <TableHead>{d.model}</TableHead>
-              <TableHead>{d.key}</TableHead>
-              <TableHead className="text-right">{d.input}</TableHead>
-              <TableHead className="text-right">{d.output}</TableHead>
-              <TableHead className="text-right">{d.value}</TableHead>
-              <TableHead>{d.source}</TableHead>
-              <TableHead className="text-right">{d.saved}</TableHead>
-              <TableHead className="text-right">{d.latency}</TableHead>
-              <TableHead>{d.status}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow><TableCell colSpan={10} className="text-muted-foreground">{d.empty}</TableCell></TableRow>
-            ) : rows.map((row) => {
-              const parts = ([["plan", row.planMicroUsd], ["pack", row.packMicroUsd], ["credits", row.creditsMicroUsd], ["absorbed", row.absorbedMicroUsd]] as const)
-                .filter(([, amount]) => amount > BigInt(0));
-              return (
-                <TableRow key={row.id}>
-                  <TableCell className="tabular-nums">{formatDateTime(row.createdAt, locale)}</TableCell>
-                  <TableCell><span className="flex items-center gap-2"><ModelLogo modelId={row.modelId} />{names.get(row.modelId) ?? row.modelId}</span></TableCell>
-                  <TableCell>{row.keyName}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCount(row.promptTokens, locale)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCount(row.completionTokens, locale)}</TableCell>
-                  <TableCell className="text-right"><Price micros={Number(row.costMicroUsd)} locale={locale} kind="cost" /></TableCell>
-                  <TableCell>
-                    <span className="flex flex-wrap gap-1">
-                      {parts.length === 0 ? <Badge variant="outline">{split.none}</Badge> : parts.map(([key]) => <Badge key={key} variant="outline">{split[key]}</Badge>)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right text-success">
-                    {row.officialCostMicroUsd > row.costMicroUsd ? <Price micros={Number(row.officialCostMicroUsd - row.costMicroUsd)} locale={locale} kind="cost" /> : null}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMilliseconds(row.latencyMs, locale)}</TableCell>
-                  <TableCell>
-                    {row.status === "success"
-                      ? <Badge variant="outline">{row.httpStatus}</Badge>
-                      : <Badge variant="destructive">{row.httpStatus} · {row.errorCode ?? row.status}</Badge>}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            <Stat key="requests" label={dict.dashboard.overview.requests} value={formatCount(summary.requests, locale)} />,
+            <Stat key="tokens" label={dict.dashboard.overview.tokens} value={formatTokens(summary.tokens, locale)} />,
+            <div key="value" className="flex flex-col gap-2">
+              <Stat label={dict.dashboard.overview.value} value={<Price micros={Number(summary.value)} locale={locale} kind={totalKind(Number(summary.value))} />} />
+              <div className="flex h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                {sourceTotal > 0 ? sources.map(([key, amount, tone]) => <span key={key} className={tone} style={{ width: `${(Number(amount) / sourceTotal) * 100}%` }} />) : null}
+              </div>
+              <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label={d.bySource}>
+                {sources.map(([key, amount, tone]) => (
+                  <li key={key} className="flex items-center gap-1.5">
+                    <span className={cn("size-2 rounded-full", tone)} aria-hidden />
+                    {split[key]} <span className="text-foreground tabular-nums">{usd(amount)}</span>
+                  </li>
+                ))}
+                {summary.absorbed > BigInt(0) ? <li>{t(d.absorbed, { amount: usd(summary.absorbed) })}</li> : null}
+              </ul>
+            </div>,
+            <Stat key="saved" label={dict.dashboard.overview.saved} value={<Price micros={Number(summary.saved)} locale={locale} kind={totalKind(Number(summary.saved))} />} hint={dict.dashboard.overview.savedHint} tone="success" />,
+          ].map((cell, index) => (
+            <div key={index} className="border-border p-5 max-sm:not-first:border-t sm:max-lg:even:border-l sm:max-lg:nth-[n+3]:border-t lg:not-first:border-l">{cell}</div>
+          ))}
+        </div>
       </Card>
+
+      {rows.length === 0 ? (
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><ChartBarIcon /></EmptyMedia>
+            <EmptyTitle>{d.empty}</EmptyTitle>
+            <EmptyDescription>{filtered ? d.emptyFiltered : d.emptyHint}</EmptyDescription>
+          </EmptyHeader>
+          {filtered ? null : (
+            <EmptyContent className="flex-row flex-wrap justify-center">
+              {keys.length === 0
+                ? <Link href={`/${locale}/dashboard/keys`} className={buttonVariants()}>{d.emptyCreateKey}</Link>
+                : <Link href={`/${locale}/docs`} className={buttonVariants({ variant: "outline" })}>{d.emptyDocs}</Link>}
+            </EmptyContent>
+          )}
+        </Empty>
+      ) : (
+        <Card className="py-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{d.date}</TableHead>
+                <TableHead>{d.model}</TableHead>
+                <TableHead className="text-right">{d.tokens}</TableHead>
+                <TableHead className="text-right">{d.value}</TableHead>
+                <TableHead>{d.source}</TableHead>
+                <TableHead className="text-right">{d.latency}</TableHead>
+                <TableHead>{d.status}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => {
+                const parts = ([["plan", row.planMicroUsd], ["pack", row.packMicroUsd], ["credits", row.creditsMicroUsd], ["absorbed", row.absorbedMicroUsd]] as const)
+                  .filter(([, amount]) => amount > BigInt(0));
+                const saved = row.officialCostMicroUsd - row.costMicroUsd;
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-muted-foreground tabular-nums">{formatDateTime(row.createdAt, locale)}</TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-2.5">
+                        <ModelLogo modelId={row.modelId} />
+                        <span className="flex min-w-0 flex-col">
+                          <span className="font-medium">{names.get(row.modelId) ?? row.modelId}</span>
+                          <span className="text-xs text-muted-foreground"><span className="sr-only">{d.key}: </span>{row.keyName}</span>
+                        </span>
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <span className="sr-only">{d.input}: </span>{formatCount(row.promptTokens, locale)}
+                      <span className="text-muted-foreground" aria-hidden> → </span>
+                      <span className="sr-only">, {d.output}: </span>{formatCount(row.completionTokens, locale)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="flex flex-col items-end">
+                        <Price micros={Number(row.costMicroUsd)} locale={locale} kind="cost" />
+                        {saved > BigInt(0) ? <span className="text-xs text-success tabular-nums">{t(d.savedAmount, { amount: formatUsd(Number(saved), locale, "cost") })}</span> : null}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex flex-wrap gap-1">
+                        {parts.length === 0 ? <Badge variant="outline">{split.none}</Badge> : parts.map(([key]) => <Badge key={key} variant="outline">{split[key]}</Badge>)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground tabular-nums">{formatMilliseconds(row.latencyMs, locale)}</TableCell>
+                    <TableCell>
+                      {/* Solo resalta lo que falló: un 200 no necesita badge. */}
+                      {row.status === "success"
+                        ? <span className="text-muted-foreground tabular-nums">{row.httpStatus}</span>
+                        : <Badge variant="destructive">{row.httpStatus} · {row.errorCode ?? row.status}</Badge>}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       {total > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">

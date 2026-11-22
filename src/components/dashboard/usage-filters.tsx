@@ -3,7 +3,9 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 
+import { ModelLogo, providerName } from "@/components/catalog/provider-logo";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Option = { value: string; label: string };
@@ -39,6 +41,15 @@ export function UsageFilters({ ranges, keys, models, sources, labels }: {
       {options.map((option) => <NativeSelectOption key={option.value} value={option.value}>{option.label}</NativeSelectOption>)}
     </NativeSelect>
   );
+  // Los modelos, con su logo y agrupados por proveedor: un select nativo no puede mostrar imágenes.
+  const [allModels, ...catalog] = models;
+  const groups = new Map<string, Option[]>();
+  for (const option of catalog) {
+    const author = option.value.split("/")[0];
+    groups.set(author, [...(groups.get(author) ?? []), option]);
+  }
+  const modelLabel = new Map(models.map((option) => [option.value, option.label]));
+  const model = current.get("model") ?? "all";
   return (
     <div className="flex flex-wrap items-center gap-3" aria-busy={pending}>
       <ToggleGroup
@@ -51,7 +62,30 @@ export function UsageFilters({ ranges, keys, models, sources, labels }: {
         {ranges.map((range) => <ToggleGroupItem key={range.value} value={range.value}>{range.label}</ToggleGroupItem>)}
       </ToggleGroup>
       {select("key", labels.key, keys)}
-      {select("model", labels.model, models)}
+      <Select value={model} onValueChange={(value) => update("model", value ?? "all")}>
+        <SelectTrigger aria-label={labels.model} className="min-w-48">
+          <SelectValue>
+            {(value: string) => (
+              <>
+                {value === "all" ? null : <ModelLogo modelId={value} />}
+                <span className="truncate">{modelLabel.get(value) ?? value}</span>
+              </>
+            )}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-[min(24rem,var(--available-height))]">
+          <SelectItem value={allModels.value}>{allModels.label}</SelectItem>
+          {[...groups].toSorted(([a], [b]) => providerName(a).localeCompare(providerName(b))).map(([author, options]) => (
+            <SelectGroup key={author}>
+              <SelectSeparator />
+              <SelectLabel>{providerName(author)}</SelectLabel>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}><ModelLogo modelId={option.value} />{option.label}</SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
       {select("source", labels.source, sources)}
     </div>
   );
