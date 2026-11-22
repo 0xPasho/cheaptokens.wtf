@@ -513,6 +513,16 @@ describe("gateway handler", () => {
     expect(await harness.db.select().from(requests)).toMatchObject([{ latencyMs: 0 }]);
   });
 
+  it("frees the hold when after() refuses the charge task", async () => {
+    const harness = await start();
+    const holds = createHoldBook();
+    const response = await handleChatCompletion(directRequest(harness), directDeps(harness, {
+      holds, after: () => { throw new Error("after() called outside a request scope"); },
+    }));
+    await failure(response, 502, "upstream_error");
+    expect(holds.held(harness.workspaceId, harness.apiKeyId, holds.mark())).toEqual({ workspace: BigInt(0), key: BigInt(0) });
+  });
+
   it("returns 502 and records upstream_error when sanitizing a completion throws", async () => {
     const harness = await start();
     const tasks: (() => Promise<void>)[] = [];

@@ -252,14 +252,18 @@ export type CheckAccount = (
   modelId: string,
 ) => Extract<GatewayErrorCode, "key_limit_exceeded" | "account_suspended" | "model_not_allowed_for_key"> | null;
 
-/** Una admisión con lo máximo que se le puede cobrar al request sin absorber nada ni dejar saldo negativo. */
-export type BudgetedAdmission = (Extract<Admission, { ok: true }> & { budgetMicroUsd: MicroUsd }) | AdmissionFailure;
+/**
+ * Una admisión con lo máximo que se le puede cobrar al request sin absorber nada ni dejar saldo negativo.
+ * `planOnly`: el plan alcanzaba solo, así que el presupuesto no incluye paquetes ni excedente de socio.
+ */
+export type BudgetedAdmission = (Extract<Admission, { ok: true }> & { budgetMicroUsd: MicroUsd; planOnly: boolean }) | AdmissionFailure;
 
 /**
- * Plan, paquetes y créditos (ADR-0049, ADR-0066). `wantedMicroUsd` es lo máximo que puede costar el request:
- * si el plan lo cubre, no se consultan paquetes ni el excedente de socio.
+ * Plan, paquetes y créditos (ADR-0049, ADR-0066). `planMustCoverMicroUsd` es lo que el plan tiene que cubrir
+ * solo para saltarse las consultas de paquetes y de excedente de socio: lo máximo que puede costar el request
+ * más lo que ya reservan los requests en curso. Con `null` se consultan siempre.
  */
-export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number, wantedMicroUsd: MicroUsd) => Promise<BudgetedAdmission>;
+export type AdmitUsage = (context: AuthContext, modelId: string, db: Db, now: number, planMustCoverMicroUsd: MicroUsd | null) => Promise<BudgetedAdmission>;
 
 // ─── Reservas (ADR-0066) ──────────────────────────────────────────────────────
 

@@ -96,10 +96,12 @@ export const checkAccount: CheckAccount = (context, modelId) => {
   return null;
 };
 
-export const admitUsage: AdmitUsage = async (context, modelId, db, now, wantedMicroUsd) => {
+export const admitUsage: AdmitUsage = async (context, modelId, db, now, planMustCoverMicroUsd) => {
   const { billingSource: source, plan, overflow } = context;
-  // El plan alcanza si cubre lo máximo que puede costar el request (ADR-0066): entonces sobran las dos queries.
-  const planCovers = source !== "prepaid_only" && plan !== null && planRemaining(plan, now) >= wantedMicroUsd;
+  // El plan alcanza solo si cubre lo máximo que puede costar el request más lo que ya reservan los requests en
+  // curso (ADR-0066): entonces sobran las dos queries.
+  const planCovers = planMustCoverMicroUsd !== null && source !== "prepaid_only" && plan !== null
+    && planRemaining(plan, now) >= planMustCoverMicroUsd;
   const needsPacks = !planCovers && prepaidRules(source, plan !== null, overflow).packs;
   const input = {
     source, plan, overflow, now,
@@ -108,5 +110,5 @@ export const admitUsage: AdmitUsage = async (context, modelId, db, now, wantedMi
     packBalanceMicroUsd: needsPacks ? await packBalance(db, context.workspaceId, modelId, now) : BigInt(0),
   };
   const admission = admit(input);
-  return admission.ok ? { ...admission, budgetMicroUsd: admissionBudget(input) } : admission;
+  return admission.ok ? { ...admission, budgetMicroUsd: admissionBudget(input), planOnly: planCovers } : admission;
 };

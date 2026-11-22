@@ -7,7 +7,7 @@ import { UPSTREAMS } from "../fixtures/catalog-upstreams";
 import { grantCredits } from "@/lib/billing/ledger";
 import { HOUR_MS, PLANS } from "@/lib/billing/plans";
 import { reconcile } from "@/lib/billing/reconcile";
-import { apiKeys, requests, subscriptions, upstreams, usageWindows, workspaces } from "@/lib/db/schema";
+import { apiKeys, modelPacks, requests, subscriptions, upstreams, usageWindows, workspaces } from "@/lib/db/schema";
 import { loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
 import { HOLD_MESSAGES } from "@/lib/gateway/errors";
 import { DEFAULT_MAX_OUTPUT_TOKENS, estimatePromptTokens, MIN_OUTPUT_TOKENS, sizeHold } from "@/lib/gateway/request-cost";
@@ -241,6 +241,38 @@ describe("gateway money under load", () => {
     const [window] = await harness.db.select().from(usageWindows)
       .where(and(eq(usageWindows.workspaceId, harness.workspaceId), eq(usageWindows.kind, "five_hour")));
     expect(window.usedMicroUsd).toBeLessThanOrEqual(PLANS.plus.fiveHourLimitMicroUsd);
+  });
+
+  it("lets concurrent requests reach the model pack when the plan only covers the first one", async () => {
+    const harness = await start({ balanceUsd: "0" });
+    const now = Date.now();
+    const body = { ...basicBody, stream: true, max_tokens: MIN_OUTPUT_TOKENS, x_mock: { chunks: 8, latencyMs: 1500, chunkDelayMs: 30 } };
+    const hold = await holdFor(harness, body);
+    await harness.db.insert(subscriptions).values({
+      workspaceId: harness.workspaceId, planId: "plus", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - DAY_MS), currentPeriodEnd: new Date(now + DAY_MS),
+    });
+    // Al plan le queda reserva y media: solo, cubre un request. El paquete del modelo cubre los demás.
+    await harness.db.insert(usageWindows).values({
+      workspaceId: harness.workspaceId, kind: "five_hour", startedAt: new Date(now - HOUR_MS), resetsAt: new Date(now + HOUR_MS),
+      usedMicroUsd: PLANS.plus.fiveHourLimitMicroUsd - hold * BigInt(3) / BigInt(2),
+    });
+    await harness.db.insert(modelPacks).values({
+      workspaceId: harness.workspaceId, modelId: model, paidMicroUsd: hold * BigInt(10), grantedMicroUsd: hold * BigInt(10),
+      balanceMicroUsd: hold * BigInt(10), expiresAt: new Date(now + DAY_MS),
+    });
+
+    const responses = await Promise.all(Array.from({ length: 6 }, () => post(harness, body)));
+    expect(responses.map((response) => response.status)).toEqual([200, 200, 200, 200, 200, 200]);
+    for (const response of responses) expect(await response.text()).toContain("data: [DONE]");
+    await harness.flushAfter();
+
+    // Ninguno salió recortado: el upstream recibió la salida que pidió el cliente.
+    for (const request of harness.mock.requests) expect((request.body as Record<string, unknown>).max_tokens).toBe(MIN_OUTPUT_TOKENS);
+    const rows = await harness.db.select().from(requests);
+    expect(rows).toHaveLength(6);
+    for (const row of rows) expect(row.absorbedMicroUsd).toBe(BigInt(0));
+    await expectReconciled(harness);
   });
 
   it("rejects a prompt that alone does not fit the balance without calling the upstream", async () => {

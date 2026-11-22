@@ -190,6 +190,27 @@ describe("authenticate: database lookup", () => {
       .resolves.toEqual({ ok: false, code: "insufficient_credits", retryAt: null });
   });
 
+  it("reports whether the plan alone covered the request, and always checks prepaid when told to", async () => {
+    const now = Date.UTC(2026, 10, 15, 15);
+    const { generated, workspace } = await seed({ balanceMicroUsd: BigInt(5_000_000) });
+    await testDb.db.insert(subscriptions).values({
+      workspaceId: workspace.id, planId: "plus", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - 86_400_000), currentPeriodEnd: new Date(now + 86_400_000),
+    });
+    const result = await authenticate(`Bearer ${generated.key}`, testDb.db, now);
+    if (!result.ok) throw new Error("Expected valid credentials");
+    const planLeft = PLANS.plus.fiveHourLimitMicroUsd;
+    const admit = (planMustCover: bigint | null) => admitUsage(result.context, "anthropic/claude-opus-5.5", testDb.db, now, planMustCover);
+
+    const budgetMicroUsd = planLeft + BigInt(5_000_000);
+
+    // El plan cubre el request y lo ya reservado: no se consultan paquetes ni excedente de socio.
+    await expect(admit(planLeft)).resolves.toEqual({ ok: true, usesPlan: true, budgetMicroUsd, planOnly: true });
+    // Un micro más (otra reserva en curso) y ya se consultan.
+    await expect(admit(planLeft + BigInt(1))).resolves.toEqual({ ok: true, usesPlan: true, budgetMicroUsd, planOnly: false });
+    await expect(admit(null)).resolves.toEqual({ ok: true, usesPlan: true, budgetMicroUsd, planOnly: false });
+  });
+
   it("leaves suspension, balance and spend checks to checkAccount", async () => {
     const { generated } = await seed(
       { suspendedAt: new Date(), balanceMicroUsd: BigInt(-1) },
