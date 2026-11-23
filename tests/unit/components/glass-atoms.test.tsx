@@ -107,8 +107,8 @@ describe("Card, Alert y CodeBlock (refs 7 y 12: contenido opaco con borde lumino
   });
 });
 
-describe("Dialog y AlertDialog (refs 5, 10, 11: marco doble)", () => {
-  it("Dialog: marco de vidrio por fuera y panel opaco por dentro, con radios concéntricos", () => {
+describe("Dialog y AlertDialog (una sola superficie)", () => {
+  it("Dialog: un panel con un solo borde, sin bisel alrededor ni línea sobre el pie", () => {
     render(
       <Dialog defaultOpen>
         <DialogContent closeLabel="Cerrar">
@@ -118,17 +118,18 @@ describe("Dialog y AlertDialog (refs 5, 10, 11: marco doble)", () => {
       </Dialog>,
     );
     const frame = screen.getByRole("dialog");
-    expect(frame).toHaveClass("glass-bezel", "rounded-[2rem]", "p-2.5");
+    // El marco doble sumaba tres líneas paralelas: ya no hay bisel ni relleno alrededor del panel.
+    expect(frame.className).not.toMatch(/glass-bezel|(^|\s)p-2\.5(\s|$)/);
     const panel = frame.querySelector('[data-slot="dialog-panel"]');
-    // El panel opaco lleva el texto; en oscuro es más oscuro que el marco (ref 5).
-    expect(panel).toHaveClass("bg-popover", "dark:bg-background", "rounded-[1.375rem]");
-    expect(panel?.className).not.toMatch(/glass-surface/);
-    // La X vive dentro del panel, no sobre el marco.
-    expect(panel).toContainElement(screen.getByRole("button", { name: "Cerrar" }));
-    expect(screen.getByText("pie")).toHaveClass("rounded-b-[1.375rem]");
+    expect(panel).toHaveClass("bg-popover", "dark:bg-card", "rounded-[1.75rem]", "ring-1", "grid-cols-1");
+    // La X vive dentro del panel y mide 36 px.
+    const close = screen.getByRole("button", { name: "Cerrar" });
+    expect(panel).toContainElement(close);
+    expect(close).toHaveClass("size-9");
+    expect(screen.getByText("pie").className).not.toMatch(/(^|\s)border-t(\s|$)/);
   });
 
-  it("AlertDialog: el mismo marco doble", () => {
+  it("AlertDialog: la misma superficie", () => {
     render(
       <AlertDialog defaultOpen>
         <AlertDialogContent>
@@ -137,8 +138,8 @@ describe("Dialog y AlertDialog (refs 5, 10, 11: marco doble)", () => {
       </AlertDialog>,
     );
     const frame = screen.getByRole("alertdialog");
-    expect(frame).toHaveClass("glass-bezel", "rounded-[2rem]");
-    expect(frame.querySelector('[data-slot="alert-dialog-panel"]')).toHaveClass("bg-popover");
+    expect(frame.className).not.toMatch(/glass-bezel/);
+    expect(frame.querySelector('[data-slot="alert-dialog-panel"]')).toHaveClass("bg-popover", "rounded-[1.75rem]", "ring-1");
   });
 });
 

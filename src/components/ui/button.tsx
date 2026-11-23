@@ -7,11 +7,12 @@ const buttonVariantsBase = cva(
   {
     variants: {
       variant: {
-        default: "glass-prominent hover:brightness-110 active:brightness-95",
+        // La píldora con degradado y brillo superior (ref. del dueño). Los tokens viven en globals.css.
+        default: "glass-prominent bg-(image:--button-primary) shadow-(--button-primary-edge) hover:brightness-110 active:brightness-95",
         outline:
           "border-border glass-control text-foreground hover:bg-glass-control-hover aria-expanded:bg-glass-control-hover",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary bg-(image:--button-secondary) text-secondary-foreground shadow-(--button-secondary-edge) hover:brightness-110 active:brightness-95 aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-glass-control-hover hover:text-foreground aria-expanded:bg-glass-control-hover aria-expanded:text-foreground",
         destructive:
@@ -24,6 +25,8 @@ const buttonVariantsBase = cva(
         xs: "h-6 gap-1 rounded-full px-2 text-xs in-data-[slot=button-group]:rounded-full has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-full px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-full has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-10 gap-1.5 px-5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        // La de las llamadas grandes (planes, cierres): 48 px y texto de 15, como el botón de la referencia.
+        xl: "h-12 gap-2 px-6 text-[15px] font-semibold has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-full in-data-[slot=button-group]:rounded-full [&_svg:not([class*='size-'])]:size-3",

@@ -17,6 +17,7 @@ import { ModelId } from "@/components/model-id";
 import { MODEL_TAG_ICONS, ModelTagBadge } from "@/components/model-tag";
 import { Price, PriceComparison } from "@/components/price";
 import { QuickstartSnippet } from "@/components/quickstart-snippet";
+import { SensitiveValue } from "@/components/sensitive-value";
 import { Stat } from "@/components/stat";
 import { UsageMeter } from "@/components/usage-meter";
 import { AccountAvatar } from "@/components/account-avatar";
@@ -576,7 +577,7 @@ function DashboardChromePattern() {
   return (
     <Section
       title="Navegación del dashboard"
-      description="DashboardNav reusa la sidebar del catálogo. AccountMenu es el menú de cuenta de la cabecera, con cerrar sesión. AccountAvatar es la imagen por defecto de cada cuenta: un degradado que sale de su id (el mismo algoritmo que Deska)."
+      description="DashboardNav reusa la sidebar del catálogo. AccountMenu es el menú de cuenta de la cabecera, con cerrar sesión. AccountAvatar es la imagen por defecto de cada cuenta: un degradado que sale de su id (el mismo algoritmo que Deska). SensitiveValue oculta un dato de la cuenta (correo, ID) hasta que se toca el ojo."
     >
       <div className="flex flex-wrap items-start gap-10">
         <div className="w-60"><DashboardNav locale={LOCALE} labels={dict.dashboard.nav} /></div>
@@ -589,6 +590,10 @@ function DashboardChromePattern() {
         />
         <div className="flex items-center gap-3">
           {["user_2abcDEF", "user_ana", "user_luis", "user_mar"].map((seed) => <AccountAvatar key={seed} seed={seed} size="xl" />)}
+        </div>
+        <div className="flex flex-col gap-2 text-sm">
+          <SensitiveValue value="ana@ejemplo.com" showLabel="Mostrar el correo" hideLabel="Ocultar el correo" hiddenLabel="Oculto" />
+          <SensitiveValue value="user_2abcDEF" showLabel="Mostrar el ID" hideLabel="Ocultar el ID" hiddenLabel="Oculto" className="font-mono text-xs" />
         </div>
       </div>
     </Section>

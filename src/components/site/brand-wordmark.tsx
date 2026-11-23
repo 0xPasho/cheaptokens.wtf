@@ -8,11 +8,18 @@ export function BrandWordmark({ base, tld, className }: { base: string; tld: str
   return (
     <span className={cn("nr-wordmark", className)}>
       {base}
-      <span className="nr-brand-accent">
-        {Array.from(tld).map((letter, index) => (
-          <span key={`${index}-${letter}`}>{letter}</span>
-        ))}
-      </span>
+      <WtfLetters text={tld} />
+    </span>
+  );
+}
+
+/** Un texto con el efecto del «wtf»: cada letra en arcoíris y meneándose. Lo usan el logo y el plan Max en /pricing. */
+export function WtfLetters({ text, className }: { text: string; className?: string }) {
+  return (
+    <span className={cn("nr-brand-accent", className)}>
+      {Array.from(text).map((letter, index) => (
+        <span key={`${index}-${letter}`}>{letter}</span>
+      ))}
     </span>
   );
 }

@@ -65,6 +65,15 @@
   /* Bandas de la landing: una sección sí y otra no, de borde a borde. Sobre la banda las tarjetas pasan a blanco. */
   --surface-band: oklch(0.968 0 0);
   --surface-band-card: oklch(1 0 0);
+  /* Botones (ref. del dueño): la píldora con un degradado suave de arriba abajo y un brillo de 1 px en el borde
+     superior. La principal va en tinta (negra en claro, blanca en oscuro); la secundaria, en el gris de controles. */
+  --button-primary: linear-gradient(180deg, oklch(0.34 0 0), oklch(0.17 0 0));
+  --button-primary-edge: inset 0 1px 0 oklch(1 0 0 / 0.18), 0 1px 2px oklch(0 0 0 / 0.18);
+  --button-secondary: linear-gradient(180deg, oklch(0.985 0 0), oklch(0.94 0 0));
+  --button-secondary-edge: inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 0 0 1px oklch(0 0 0 / 0.06);
+  /* Casilla de icono (filas de los planes): el mismo degradado, más tenue. */
+  --icon-tile: linear-gradient(180deg, oklch(0.97 0 0), oklch(0.91 0 0));
+  --icon-tile-edge: inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 0 0 1px oklch(0 0 0 / 0.06);
   --surface-model-front: #ffffff;
   --surface-model-pill: #ededed;
   --icon-body: #2e3036;
@@ -190,6 +199,12 @@
   color-scheme: dark;
   --surface-band: oklch(0.15 0 0);
   --surface-band-card: oklch(0.205 0 0);
+  --button-primary: linear-gradient(180deg, oklch(1 0 0), oklch(0.86 0 0));
+  --button-primary-edge: inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -1px 0 oklch(0 0 0 / 0.12);
+  --button-secondary: linear-gradient(180deg, oklch(0.3 0 0), oklch(0.235 0 0));
+  --button-secondary-edge: inset 0 1px 0 oklch(1 0 0 / 0.1), inset 0 0 0 1px oklch(1 0 0 / 0.04);
+  --icon-tile: linear-gradient(180deg, oklch(0.34 0 0), oklch(0.25 0 0));
+  --icon-tile-edge: inset 0 1px 0 oklch(1 0 0 / 0.12), inset 0 0 0 1px oklch(1 0 0 / 0.04);
   --surface-model-front: #242424;
   --surface-model-pill: #303030;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);

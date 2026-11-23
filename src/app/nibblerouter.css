@@ -159,6 +159,9 @@
     position: fixed;
     top: 72px; bottom: 0; left: 20px;
     width: 240px; max-height: none;
+    /* Tanto espacio al final como lo que difumina la máscara: sin él, los últimos autores (Xiaomi, Z.ai) quedaban
+       dentro del degradado y no había más scroll para sacarlos. */
+    padding-bottom: 120px;
     overscroll-behavior: auto;
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
     mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
@@ -951,14 +954,17 @@
 .nr-auth { --nr-auth-edge: 0 0 0 1px var(--border); container-type: inline-size; display: flex; flex-direction: column; gap: 32px; width: 100%; max-width: 448px; }
 /* En oscuro las dos capas ya se distinguen por su tono. */
 .dark .nr-auth { --nr-auth-edge: none; }
-.nr-auth-title { margin: 0; font-size: clamp(32px, 10.5cqi, 48px); font-weight: 550; line-height: 1.05; letter-spacing: -0.045em; text-wrap: balance; }
+/* Tamaños fijos con interlineado entero: con el clamp fluido salía 47,04/49,39 px y todo lo de abajo caía en medio píxel. */
+.nr-auth-title { margin: 0; font-size: 40px; font-weight: 550; line-height: 44px; letter-spacing: -0.04em; text-wrap: balance; }
+@container (max-width: 400px) { .nr-auth-title { font-size: 32px; line-height: 36px; } }
 /* El título recibe el foco al terminar para que se anuncie: no es un control, no lleva anillo. */
 .nr-auth-title:focus { outline: none; }
-.nr-auth-desc { max-width: 42ch; margin: 12px 0 0; color: var(--muted-foreground); font-size: 14px; line-height: 1.55; text-wrap: pretty; overflow-wrap: anywhere; }
+/* Del ancho de la tarjeta: con 42ch terminaba 77 px antes que ella. */
+.nr-auth-desc { margin: 8px 0 0; color: var(--muted-foreground); font-size: 14px; line-height: 20px; text-wrap: pretty; overflow-wrap: anywhere; }
 .nr-auth-desc strong { color: var(--foreground); font-weight: 500; }
 .nr-auth-layer { padding: 8px; border-radius: 28px; background: var(--card); }
 .nr-auth-front { padding: 20px; border-radius: 20px; background: var(--surface-model-front); box-shadow: var(--nr-auth-edge); }
-.nr-auth-label[data-slot="label"] { margin-bottom: 8px; font-size: 13px; line-height: 1.4; }
+.nr-auth-label[data-slot="label"] { margin-bottom: 8px; font-size: 13px; line-height: 20px; }
 .nr-site .nr-auth-input[data-slot="input"], .nr-auth-input[data-slot="input"] {
   height: 42px; padding: 0 16px; border: 1px solid var(--input); background: var(--glass-control);
   transition: border-color 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out, opacity 150ms ease-out;
@@ -969,15 +975,18 @@
 .nr-site .nr-auth-input[data-slot="input"]:focus-visible, .nr-auth-input[data-slot="input"]:focus-visible { border-color: var(--focus-ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--focus-ring) 35%, transparent); }
 .nr-site .nr-auth-input[data-slot="input"][aria-invalid="true"], .nr-auth-input[data-slot="input"][aria-invalid="true"] { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 25%, transparent); }
 .nr-auth-input[data-slot="input"][readonly] { opacity: 0.7; }
-.nr-auth-msg { display: flex; gap: 6px; margin: 8px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; text-wrap: pretty; }
+.nr-auth-msg { display: flex; gap: 6px; margin: 8px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 20px; text-wrap: pretty; }
 .nr-auth-msg:empty { display: none; }
 .nr-auth-msg[data-tone="error"] { color: var(--destructive); }
 .nr-auth-msg svg { flex: none; margin-top: 2px; }
-.nr-auth-msg code { font-size: 12px; }
+/* El comando no se parte en dos líneas ni cambia el alto de la suya. Sin la píldora del átomo: su relleno lo
+   corría 5 px cuando empezaba la línea, y el fondo casi no se ve sobre el frente. Lo marca la monoespaciada. */
+.nr-auth-msg code { padding: 0; background: none; color: var(--foreground); font-size: 12px; line-height: inherit; white-space: nowrap; }
 .nr-auth-submit[data-slot="button"] { width: 100%; height: 42px; margin-top: 20px; gap: 8px; font-size: 14px; }
 .nr-auth-msg[data-tone="error"] + .nr-auth-submit[data-slot="button"] { margin-top: 16px; }
 /* La fila de la base: el link que cambia de modo o de correo. */
-.nr-auth-switch { margin: 0; padding: 14px 12px 8px; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; text-align: center; text-wrap: balance; }
+/* 12 px arriba y 4 + los 8 de la base abajo: el texto queda al centro entre el frente y el borde. */
+.nr-auth-switch { margin: 0; padding: 12px 12px 4px; color: var(--muted-foreground); font-size: 13px; line-height: 20px; text-align: center; text-wrap: balance; }
 .nr-auth-link {
   margin: -6px -4px; padding: 6px 4px; border: 0; border-radius: 8px; background: none;
   color: var(--foreground); font: inherit; font-weight: 500;
@@ -1000,8 +1009,8 @@
 .nr-auth-otp:has([aria-invalid="true"]) [data-slot="input-otp-slot"] { border-color: var(--destructive); }
 .nr-auth-otp:has([aria-invalid="true"]) [data-slot="input-otp-slot"][data-active="true"] { box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 25%, transparent); }
 .nr-auth-front[data-busy] [data-slot="input-otp-slot"] { opacity: 0.6; }
-.nr-auth-resend { margin: 14px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; text-align: center; font-variant-numeric: tabular-nums; }
-.nr-auth-done { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 18px 8px; color: var(--muted-foreground); font-size: 14px; }
+.nr-auth-resend { margin: 16px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+.nr-auth-done { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 18px 8px; color: var(--muted-foreground); font-size: 14px; line-height: 20px; }
 /* Entrada del paso (correo → código → listo): poco frecuente, corta y solo si el sistema permite movimiento. */
 @keyframes nr-auth-enter { from { opacity: 0; transform: translateY(4px); } }
 @media (prefers-reduced-motion: no-preference) {
@@ -1019,6 +1028,31 @@
 .nr-status-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 /* Dentro del dashboard la columna ya tiene su margen: el bloque empieza donde empiezan los títulos de sus páginas. */
 .nr-status-inline { padding-block: 8px 48px; }
+
+/* ═════════ Campos sobre una card ═════════
+   `glass-control` pinta con --secondary, casi el tono de la card (0.209 sobre 0.205 en oscuro, 0.97 sobre 0.976
+   en claro): un campo encima de una card desaparecía y quedaba «USD 25» flotando. Ahí usa el velo translúcido de
+   --glass-control, que se ve sobre cualquier superficie. Solo los campos: las pestañas tienen su propio par de
+   tonos (pista y activa) y cambiar solo la pista dejaba la activa más oscura que su fondo. */
+/* Lo mismo en el panel de los diálogos, que también tiene el tono de la card. Los campos que no son de un grupo
+   llevan su fondo en el propio control (`input`, `textarea`, `select`, `native-select`). */
+:is([data-slot="card"], [data-slot="dialog-panel"], [data-slot="alert-dialog-panel"])
+  :is([data-slot="input-group"], [data-slot="input"]:not([data-slot="input-group-control"]), [data-slot="textarea"]:not([data-slot="input-group-control"]), [data-slot="select-trigger"], [data-slot="native-select"]) {
+  background: var(--glass-control);
+}
+/* Sobre ese velo, el gris de la etiqueta del campo («USD») quedaba en 4,48:1 en claro: un punto más oscuro pasa AA. */
+:is([data-slot="card"], [data-slot="dialog-panel"], [data-slot="alert-dialog-panel"]) [data-slot="input-group-addon"] .text-muted-foreground { color: var(--text-description); }
+
+/* ═════════ Tablas dentro de una card ═════════
+   La primera y la última columna empiezan donde el resto del contenido de la card (--card-spacing, 20 px), no a
+   8 px de la esquina redonda. Las cabeceras van en gris: nombran la columna, no compiten con los datos.
+   Sin líneas: las cabeceras se distinguen por el gris y las filas por su alto y el fondo al pasar el ratón. Con
+   `separate` los bordes de fila del átomo no se pintan ni reparten medio píxel entre dos filas, como con `collapse`. */
+[data-slot="card"] > [data-slot="table-container"] > table { border-collapse: separate; border-spacing: 0; }
+[data-slot="card"] > [data-slot="table-container"] :is(th, td):first-child { padding-left: var(--card-spacing); }
+[data-slot="card"] > [data-slot="table-container"] :is(th, td):last-child { padding-right: var(--card-spacing); }
+[data-slot="card"] > [data-slot="table-container"] th { color: var(--muted-foreground); }
+[data-slot="card"] > [data-slot="table-container"] td { padding-block: 10px; }
 
 /* ═════════ Dashboard en pantallas angostas ═════════
    La barra lateral pasa a una fila de pestañas que se desliza: todas las secciones a un toque, sin una caja con
@@ -1059,7 +1093,9 @@
 /* ---------- Pie de página ----------
    Mismo borde que la cabecera (20 px). Arriba, logo y frase a la izquierda y dos columnas de enlaces;
    abajo, separado por una línea, el © y las preferencias (idioma y tema) como selects compactos. */
-.nr-site-footer { margin: 72px 20px 0; padding: 40px 8px 28px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 14px; }
+/* Sin líneas: el pie se separa por el espacio y el gris. Sin relleno a los lados, el contenido empieza en el mismo
+   borde que el resto de la página (antes quedaba 8 px corrido respecto a su propia línea). */
+.nr-site-footer { margin: 96px 20px 0; padding: 0 0 32px; color: var(--muted-foreground); font-size: 14px; }
 .nr-footer-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; }
 .nr-footer-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 34ch; }
 .nr-footer-wordmark { color: var(--foreground); font-size: 22px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.2; border-radius: 8px; }
@@ -1069,13 +1105,13 @@
 .nr-footer-columns ul { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .nr-footer-columns a { color: var(--muted-foreground); transition: color 150ms var(--ease); }
 .nr-footer-columns a:hover { color: var(--foreground); }
-.nr-footer-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; }
+.nr-footer-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 40px; font-size: 13px; }
 .nr-footer-bar p { margin: 0; }
 .nr-footer-prefs { display: flex; flex-wrap: wrap; gap: 8px; }
 .nr-footer-select[data-slot="select-trigger"] { box-shadow: none; color: var(--muted-foreground); }
 .nr-footer-select[data-slot="select-trigger"]:hover { color: var(--foreground); }
 @media (max-width: 860px) {
-  .nr-site-footer { margin: 56px 16px 0; padding-inline: 4px; }
+  .nr-site-footer { margin: 72px 16px 0; }
   .nr-footer-main { grid-template-columns: 1fr; gap: 36px; }
   .nr-footer-bar { flex-direction: column-reverse; align-items: flex-start; }
 }
@@ -1155,6 +1191,60 @@
 .nr-hw-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted-foreground); font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .nr-hw-facts li { display: inline-flex; align-items: center; gap: 8px; }
 .nr-hw-facts li::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: currentColor; }
+
+/* ─── Pulido de la página (sin tocar la landing, que comparte estas piezas) ───
+   Sin antetítulos, títulos a la izquierda, 96 px entre secciones y sin bandas de fondo: el contenido ya separa.
+   Sin líneas entre filas ni entre pasos: los separan su espacio y su número. Las tarjetas que eran tres iguales
+   con un icono arriba pasan a una sola superficie con tres columnas. */
+.nr-mk-how .nr-mk-head > .nr-mk-eyebrow { display: none; }
+.nr-mk-how .nr-mk-section { padding-top: 96px; }
+.nr-mk-how .nr-mk-band { --card: inherit; margin-top: 0; padding-block: 96px 0; border-image-source: none; }
+.nr-mk-how .nr-mk-band + .nr-mk-section { padding-top: 96px; }
+.nr-mk-how .nr-mk-band + .nr-mk-final { margin-top: 96px; }
+.nr-mk-how > .nr-mk-section:not(.nr-mk-split, .nr-mk-faq-layout) > .nr-mk-head { margin-inline: 0; text-align: start; }
+.nr-mk-how > .nr-mk-section:not(.nr-mk-split, .nr-mk-faq-layout) > .nr-mk-head .nr-mk-sub { margin-inline: 0; }
+.nr-mk-how > .nr-mk-section .nr-mk-title { font-size: clamp(30px, 3.2vw, 44px); line-height: 1.05; }
+/* Encabezado a la izquierda, como el resto: el dibujo de abajo es el que ocupa el ancho. */
+.nr-mk-how .nr-hw-head { align-items: flex-start; padding-top: 112px; text-align: start; }
+.nr-mk-how .nr-hw-head h1 { max-width: none; font-size: clamp(40px, 5vw, 68px); line-height: 1; }
+.nr-mk-how .nr-hw-head-sub { max-width: 62ch; margin-top: 20px; font-size: 18px; line-height: 28px; text-wrap: pretty; }
+.nr-mk-how .nr-hw-flow { margin-top: 48px; }
+.nr-mk-how .nr-hw-facts { justify-content: flex-start; gap: 8px 24px; margin-top: 24px; }
+.nr-mk-how .nr-hw-facts li::before { width: 4px; height: 4px; opacity: 0.6; }
+/* Los seis pasos: sin la línea vertical que los unía. */
+.nr-mk-how .nr-hw-step::before { display: none; }
+.nr-mk-how .nr-hw-step { padding-bottom: 32px; }
+/* Recibo y gráfica del tope sin líneas: filas por espacio, el total por su tamaño. */
+.nr-mk-how .nr-hw-row { padding: 12px 0; border-bottom: 0; }
+.nr-mk-how .nr-hw-cap-foot { padding-top: 0; border-top: 0; }
+/* Por qué cuesta menos: los tres hechos sin líneas. */
+.nr-mk-how .nr-mk-facts-list { border-top: 0; }
+.nr-mk-how .nr-mk-facts-list > div { padding: 16px 0; border-bottom: 0; }
+/* Lo que no cambia: una superficie, tres columnas, la prueba de cada promesa debajo sin caja propia. */
+.nr-mk-how .nr-mk-uses { gap: 0; padding: 8px; border-radius: 28px; background: var(--card); }
+.nr-mk-how .nr-mk-use { gap: 10px; padding: 20px 24px 24px; border-radius: 20px; background: none; }
+.nr-mk-how .nr-mk-use-top { display: none; }
+.nr-mk-how .nr-mk-use h3 { margin: 0; font-size: 17px; line-height: 24px; }
+.nr-mk-how .nr-mk-keybox { margin-top: 6px; padding: 0; background: none; }
+/* De dónde cobra: tres pasos numerados como los del request (01, 02, 03), sin tarjetas ni barras de adorno. */
+.nr-mk-how .nr-mk-combo { counter-reset: hw-step; gap: 32px; }
+.nr-mk-how .nr-mk-combo-step { gap: 8px; padding: 0; background: none; counter-increment: hw-step; }
+.nr-mk-how .nr-mk-combo-step::before {
+  content: counter(hw-step, decimal-leading-zero); display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 8px;
+  border-radius: 999px; background: var(--card); color: var(--muted-foreground); font: 500 12.5px var(--font-mono);
+}
+.nr-mk-how .nr-mk-combo-step :is(.nr-mk-icon, .nr-mk-meter) { display: none; }
+.nr-mk-how .nr-mk-combo-step :is(h3, h4) { font-size: 17px; line-height: 24px; }
+.nr-mk-how .nr-mk-combo-step p { font-size: 14px; line-height: 22px; }
+/* Migrar: los tres pasos sin líneas. */
+.nr-mk-how .nr-mk-inline-steps { border-top: 0; }
+.nr-mk-how .nr-mk-inline-steps li { padding: 10px 0; border-bottom: 0; }
+@media (max-width: 860px) {
+  .nr-mk-how .nr-mk-section, .nr-mk-how .nr-mk-band { padding-top: 72px; }
+  .nr-mk-how .nr-mk-band + .nr-mk-section { padding-top: 72px; }
+  .nr-mk-how .nr-hw-head { padding-top: 96px; }
+  .nr-mk-how .nr-mk-combo { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
 
 /* La vida de un request: los pasos a la izquierda (6/11) y el recibo fijo a la derecha (5/11). */
 .nr-hw-life { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; gap: 64px; text-align: start; }
@@ -1237,3 +1327,346 @@
   .nr-hw-receipt-front { padding-inline: 14px; }
   .nr-hw-row[data-total] dd:not(.nr-hw-row-note) { font-size: 22px; }
 }
+
+/* ═════════ Precios: /pricing (rediseño) ═════════
+   Un eje centrado. Planes como tarjetas de invitación (ref. del dueño), cómo se cobra en cuadros con su dibujo en código,
+   y el diálogo de pagar. Sin antetítulos ni líneas; el único color es el de las marcas y el del ahorro (docs/13). */
+.nr-mk-pricing .nr-mk-head > .nr-mk-eyebrow { display: none; }
+.nr-mk-pricing .nr-mk-section { padding-top: 112px; }
+/* Tamaños fijos con interlineado entero (con clamp y 1,05 todo lo de abajo caía en medio píxel). */
+.nr-mk-pricing > .nr-mk-section .nr-mk-title { font-size: 48px; line-height: 52px; }
+.nr-mk-pricing > .nr-mk-section .nr-mk-sub { line-height: 24px; }
+@media (max-width: 1180px) { .nr-mk-pricing > .nr-mk-section .nr-mk-title { font-size: 40px; line-height: 44px; } }
+@media (max-width: 680px) { .nr-mk-pricing > .nr-mk-section .nr-mk-title { font-size: 32px; line-height: 36px; } }
+.nr-pr-head { display: flex; flex-direction: column; align-items: center; padding-top: 120px; text-align: center; }
+.nr-pr-head h1 { margin: 0; font-size: clamp(44px, 6vw, 84px); font-weight: 600; line-height: 1; letter-spacing: -0.055em; text-wrap: balance; }
+.nr-pr-head p { max-width: 56ch; margin: 20px 0 0; color: var(--muted-foreground); font-size: 18px; line-height: 28px; text-wrap: balance; }
+.nr-pr-plans-section { padding-top: 56px; }
+
+/* Las tarjetas de plan. Créditos va aparte, como antes del rediseño: una columna de 12 px más entre los planes y
+   ella, su rótulo «Sin plan» encima y la tarjeta solo con borde, sin relleno. */
+.nr-pr-plans, .nr-pr-plans-label { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 12px minmax(0, 1fr); gap: 12px; }
+.nr-pr-plans > [data-kind="credits"], .nr-pr-plans-label > :last-child { grid-column: 5; }
+.nr-pr-plans-label { margin-bottom: 12px; color: var(--text-description); font-size: 13px; line-height: 20px; }
+.nr-pr-plans-label > :first-child { grid-column: 1 / 4; padding-left: 4px; }
+.nr-pr-plans-label > :last-child { padding-left: 4px; }
+.nr-pr-plan[data-kind="credits"] { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 14%, transparent); }
+.nr-pr-plan[data-kind="credits"] .nr-pr-plan-head { background: color-mix(in oklch, var(--foreground) 3%, transparent); }
+.nr-pr-plan { display: flex; flex-direction: column; overflow: hidden; border-radius: 32px; background: var(--card); }
+.nr-pr-plan-head { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 20px 24px; background: color-mix(in oklch, var(--card), var(--foreground) 4%); text-align: center; }
+.nr-pr-plan-head h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; }
+/* En el gris de --text-description: sobre la cabecera más clara, --muted-foreground quedaba en 4,25:1 en claro. */
+.nr-pr-plan-price { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 0; color: var(--text-description); font-size: 14px; line-height: 20px; }
+.nr-pr-plan-price b { color: var(--foreground); font-size: 44px; font-weight: 600; line-height: 48px; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.nr-pr-plan-desc { min-height: 40px; margin: 0; color: var(--text-description); font-size: 14px; line-height: 20px; text-wrap: balance; }
+.nr-pr-rows { display: flex; flex-direction: column; gap: 18px; margin: 0; padding: 24px 20px 0; list-style: none; }
+.nr-pr-rows li, .nr-fd-rows li { display: flex; align-items: flex-start; gap: 14px; }
+/* Cada fila reserva título + dos renglones (20 + 2 + 36): así las filas de las cuatro tarjetas quedan a la misma altura. */
+.nr-pr-rows li { min-height: 58px; }
+/* La casilla del icono: el degradado del botón, más tenue (tokens en globals.css). */
+.nr-pr-tile {
+  display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 12px;
+  background: var(--icon-tile); box-shadow: var(--icon-tile-edge); color: var(--foreground);
+}
+.nr-pr-tile svg { width: 22px; height: 22px; }
+.nr-pr-row-text, .nr-fd-rows li > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-top: 1px; }
+.nr-pr-row-text b, .nr-fd-rows b { font-size: 15px; font-weight: 600; line-height: 20px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.nr-pr-row-text > span, .nr-fd-rows li > span:last-child > span { color: var(--text-description); font-size: 13px; line-height: 18px; text-wrap: pretty; }
+.nr-pr-plan-foot { display: flex; flex-direction: column; gap: 16px; margin-top: auto; padding: 24px 20px 20px; }
+.nr-pr-plan-foot p { margin: 0; color: var(--muted-foreground); font-size: 13px; line-height: 18px; text-align: center; }
+.nr-pr-estimator { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; margin-top: 24px; color: var(--muted-foreground); font-size: 14px; line-height: 20px; text-align: center; }
+.nr-pr-estimator p { flex-basis: 100%; margin: 0; font-size: 13px; }
+
+/* Los cuadros (bento): 3 columnas; dos de ellos ocupan dos. */
+.nr-bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.nr-bento-card { position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 8px; border-radius: 28px; background: var(--card); }
+.nr-bento-wide { grid-column: span 2; }
+.nr-bento-visual { position: relative; isolation: isolate; height: 196px; overflow: hidden; border-radius: 20px; }
+/* Una trama de puntos que se desvanece hacia los bordes, debajo del dibujo. */
+.nr-bento-visual::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background-image: radial-gradient(color-mix(in oklch, var(--foreground) 12%, transparent) 1px, transparent 1.5px); background-size: 14px 14px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+.nr-bento-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: auto; padding: 16px 16px 12px; }
+.nr-bento-text h3 { margin: 0; font-size: 17px; font-weight: 600; line-height: 24px; letter-spacing: -0.015em; }
+.nr-bento-text p { margin: 0; color: var(--text-description); font-size: 14px; line-height: 20px; text-wrap: pretty; }
+.nr-bento-action {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; margin-top: 10px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: var(--button-secondary); box-shadow: var(--button-secondary-edge); color: var(--foreground); font: 600 13px/20px var(--font-sans); cursor: pointer;
+}
+.nr-bento-action:hover { filter: brightness(1.1); }
+.nr-bv-pill { position: absolute; top: 14px; left: 14px; padding: 4px 10px; border-radius: 999px; background: var(--glass-control); color: var(--text-description); font-size: 12px; line-height: 16px; }
+
+/* Límites: barras de uso con un pulso que las recorre; las de después de «ahora», apagadas. */
+.nr-bv-bars { position: absolute; inset: 44px 20px 20px; display: flex; align-items: flex-end; gap: 4px; }
+.nr-bv-bars i { flex: 1; height: var(--h); border-radius: 999px; background: color-mix(in oklch, var(--foreground) 14%, transparent); transform-origin: bottom; }
+.nr-bv-bars i[data-used] { background: linear-gradient(180deg, var(--foreground), color-mix(in oklch, var(--foreground) 55%, transparent)); }
+.nr-bv-reset { position: absolute; top: -24px; right: 0; bottom: 0; width: 0; border-left: 1.5px dashed color-mix(in oklch, var(--foreground) 40%, transparent); }
+.nr-bv-reset span { position: absolute; top: -2px; right: 6px; color: var(--muted-foreground); font: 11px/16px var(--font-mono); white-space: nowrap; }
+
+/* El reparto: una pista con el plan (tinta) y los créditos (rayado) hasta el tope. */
+.nr-bv-flow { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 0 28px; }
+.nr-bv-flow-track { display: grid; grid-template-columns: 2fr 3fr; gap: 6px; height: 44px; }
+.nr-bv-flow-track > span { position: relative; overflow: hidden; border-radius: 14px; background: color-mix(in oklch, var(--foreground) 8%, transparent); }
+.nr-bv-flow-track i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; }
+.nr-bv-flow-plan i { background: linear-gradient(180deg, var(--foreground), color-mix(in oklch, var(--foreground) 70%, transparent)); }
+.nr-bv-flow-credits i { background: repeating-linear-gradient(-45deg, color-mix(in oklch, var(--foreground) 45%, transparent) 0 6px, color-mix(in oklch, var(--foreground) 25%, transparent) 6px 12px); }
+.nr-bv-flow-credits::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 3px; border-radius: 3px; background: var(--foreground); }
+/* Dónde termina el plan y dónde el tope, sobre la pista. */
+.nr-bv-flow-marks { display: grid; grid-template-columns: 2fr 3fr; gap: 6px; color: var(--muted-foreground); font: 11px/16px var(--font-mono); }
+.nr-bv-flow-marks span { text-align: end; }
+.nr-bv-flow-legend { display: grid; grid-template-columns: 2fr 3fr; gap: 6px; color: var(--muted-foreground); font-size: 13px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.nr-bv-flow-legend span { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.nr-bv-flow-legend b { color: var(--foreground); font-weight: 600; }
+
+/* Modelos: logos en círculos, en dos filas corridas, flotando. */
+/* Cinco por fila (5 × 48 + 4 × 14 = 296 px) y la segunda corrida media casilla, como un panal; el bloque se corre
+   la mitad de eso a la izquierda para quedar al centro. */
+.nr-bv-models ul { position: absolute; top: 50%; left: 50%; display: flex; flex-wrap: wrap; gap: 12px 14px; width: 296px; margin: 0; padding: 0; list-style: none; transform: translate(calc(-50% - 15px), -50%); }
+.nr-bv-models li {
+  display: grid; place-items: center; width: 48px; height: 48px; border-radius: 999px;
+  background: var(--icon-tile); box-shadow: var(--icon-tile-edge);
+}
+.nr-bv-models li:nth-child(n + 6) { --shift: 31px; transform: translateX(var(--shift)); }
+.nr-bv-models img { width: 22px; height: 22px; object-fit: contain; }
+
+/* Si falla: tres pistas con un pulso que llega al aviso del centro. */
+.nr-bv-trace { position: absolute; top: var(--y); right: 0; left: 0; height: 1px; background: color-mix(in oklch, var(--foreground) 10%, transparent); }
+.nr-bv-trace::after {
+  content: ""; position: absolute; top: -1.5px; left: 0; width: 36px; height: 4px; border-radius: 4px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--foreground) 70%, transparent));
+}
+.nr-bv-toast {
+  position: absolute; top: 50%; left: 50%; display: flex; align-items: center; gap: 10px; width: min(320px, calc(100% - 32px));
+  padding: 10px 14px 10px 10px; border-radius: 18px; background: color-mix(in oklch, var(--card), var(--foreground) 8%);
+  box-shadow: var(--button-secondary-edge); transform: translate(-50%, -50%);
+}
+.nr-bv-toast-icon { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 999px; background: var(--icon-tile); box-shadow: var(--icon-tile-edge); font: 600 11px var(--font-mono); }
+.nr-bv-toast-text { display: flex; flex-direction: column; min-width: 0; font-size: 13px; line-height: 18px; }
+.nr-bv-toast-text b { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.nr-bv-toast-text code { color: var(--muted-foreground); font: 12px/16px var(--font-mono); }
+.nr-bv-toast-amount { margin-left: auto; color: var(--success); font: 600 13px var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* El llamado, en tinta: la flecha arriba y el texto abajo. */
+.nr-bento-cta { padding: 16px; background: var(--button-primary); box-shadow: var(--button-primary-edge); color: var(--primary-foreground); transition: filter 200ms var(--ease); }
+.nr-bento-cta:hover { filter: brightness(1.06); }
+.nr-bento-cta .nr-bento-text { padding: 0 4px 4px; }
+.nr-bento-cta .nr-bento-text h3 { font-size: 28px; line-height: 32px; letter-spacing: -0.035em; }
+.nr-bento-cta .nr-bento-text p { color: color-mix(in oklch, var(--primary-foreground) 72%, transparent); }
+.nr-bento-cta-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 999px; background: color-mix(in oklch, var(--primary-foreground) 10%, transparent); }
+.nr-bento-cta-icon svg { width: 22px; height: 22px; }
+
+/* Pagar: dos monedas al centro y una órbita con las redes. */
+.nr-bv-pay { display: flex; align-items: center; justify-content: center; }
+.nr-bv-coin { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 999px; background: var(--icon-tile); box-shadow: var(--icon-tile-edge); }
+.nr-bv-coin + .nr-bv-coin { margin-left: -14px; }
+/* 152 px: con las redes (28 px) arriba y abajo cabe entera en los 196 px del dibujo, sin que el borde la corte. */
+.nr-bv-orbit { position: absolute; top: 50%; left: 50%; width: 152px; height: 152px; margin: -76px 0 0 -76px; border: 1px dashed color-mix(in oklch, var(--foreground) 14%, transparent); border-radius: 999px; }
+.nr-bv-orbit img { position: absolute; width: 28px; height: 28px; padding: 6px; border-radius: 999px; background: var(--card); box-shadow: var(--icon-tile-edge); }
+.nr-bv-orbit img:first-child { top: -14px; left: calc(50% - 14px); }
+.nr-bv-orbit img:last-child { bottom: -14px; left: calc(50% - 14px); }
+
+/* El tope: dos líneas de referencia y el costo de cada momento, que se dibuja por debajo. */
+.nr-bv-cap svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.nr-bv-cap path { fill: none; stroke: var(--foreground); stroke-width: 2px; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.nr-bv-line { position: absolute; right: 24px; left: 24px; height: 0; border-top: 1.5px dashed color-mix(in oklch, var(--foreground) 22%, transparent); }
+.nr-bv-line[data-kind="cap"] { border-top-color: color-mix(in oklch, var(--foreground) 60%, transparent); }
+.nr-bv-line > * { position: absolute; bottom: 4px; left: 0; font: 12px/16px var(--font-mono); font-variant-numeric: tabular-nums; }
+.nr-bv-line s { color: var(--muted-foreground); }
+.nr-bv-line b { color: var(--foreground); font-weight: 500; }
+.nr-bv-cap svg { inset: 0 24px; width: calc(100% - 48px); }
+.nr-bv-dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -30px; /* la punta del trazo: 24 px antes del borde */ border-radius: 999px; background: var(--foreground); box-shadow: 0 0 0 5px color-mix(in oklch, var(--foreground) 16%, transparent); }
+
+/* El diálogo de la referencia: cabecera más clara, filas, nota y botones a todo el ancho. */
+.nr-fd [data-slot="dialog-panel"] { gap: 0; padding: 0; }
+.nr-fd-head { display: flex; flex-direction: column; gap: 8px; padding: 32px 28px 24px; background: color-mix(in oklch, var(--card), var(--foreground) 4%); text-align: center; }
+.nr-fd-title[data-slot="dialog-title"] { font-size: 22px; font-weight: 600; line-height: 28px; letter-spacing: -0.02em; text-wrap: balance; }
+.nr-fd-desc[data-slot="dialog-description"] { color: var(--text-description); font-size: 14px; line-height: 20px; text-wrap: balance; }
+.nr-fd-body { display: flex; flex-direction: column; gap: 24px; padding: 24px 28px 20px; }
+.nr-fd-rows { display: flex; flex-direction: column; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.nr-fd-note { margin: 0; color: var(--muted-foreground); font-size: 13px; line-height: 18px; text-align: center; text-wrap: balance; }
+.nr-fd-actions { display: flex; flex-direction: column; gap: 4px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .nr-bv-bars i { animation: nr-bv-breathe 2.6s var(--ease) var(--d) infinite alternate; }
+  .nr-bv-flow-plan i { animation: nr-bv-plan 6s var(--ease) infinite; }
+  .nr-bv-flow-credits i { animation: nr-bv-credits 6s var(--ease) infinite; }
+  .nr-bv-models li { animation: nr-bv-float 4.2s ease-in-out var(--d) infinite alternate; }
+  .nr-bv-models li:nth-child(n + 6) { animation-name: nr-bv-float-shift; }
+  .nr-bv-trace::after { animation: nr-bv-trace 2.7s linear var(--d) infinite; }
+  .nr-bv-orbit { animation: nr-bv-spin 18s linear infinite; }
+  .nr-bv-orbit img { animation: nr-bv-spin 18s linear infinite reverse; }
+  .nr-bv-cap path { animation: nr-bv-draw 5s var(--ease) infinite; }
+  .nr-bv-dot { animation: nr-bv-dot 5s var(--ease) infinite; }
+}
+@keyframes nr-bv-breathe { from { transform: scaleY(0.82); } to { transform: scaleY(1); } }
+@keyframes nr-bv-plan { 0% { width: 0; } 35%, 100% { width: 100%; } }
+@keyframes nr-bv-credits { 0%, 35% { width: 0; } 75%, 100% { width: 72%; } }
+@keyframes nr-bv-float { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+@keyframes nr-bv-float-shift { from { transform: translate(var(--shift), -3px); } to { transform: translate(var(--shift), 3px); } }
+@keyframes nr-bv-trace { from { left: -36px; } to { left: 100%; } }
+@keyframes nr-bv-spin { to { transform: rotate(360deg); } }
+@keyframes nr-bv-draw { 0% { stroke-dashoffset: 1; } 60%, 100% { stroke-dashoffset: 0; } }
+@keyframes nr-bv-dot { 0%, 55% { opacity: 0; transform: scale(0.4); } 65%, 100% { opacity: 1; transform: none; } }
+
+@media (max-width: 1180px) {
+  /* En dos columnas o una, los rótulos no caerían sobre sus tarjetas: Créditos se distingue por su borde. */
+  .nr-pr-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nr-pr-plans > [data-kind="credits"] { grid-column: auto; }
+  .nr-pr-plans-label { display: none; }
+  .nr-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nr-bento-wide { grid-column: span 2; }
+}
+@media (max-width: 680px) {
+  .nr-pr-head { padding-top: 96px; }
+  .nr-pr-plans, .nr-bento { grid-template-columns: minmax(0, 1fr); }
+  .nr-bento-wide { grid-column: auto; }
+  .nr-mk-pricing .nr-mk-section { padding-top: 80px; }
+  .nr-bv-flow { padding: 0 16px; }
+  /* Logos de 44 px en móvil: el panal (268 + 28 px) deja aire a los dos lados de la tarjeta. */
+  .nr-bv-models ul { width: 268px; gap: 12px; transform: translate(calc(-50% - 14px), -50%); }
+  .nr-bv-models li { width: 44px; height: 44px; }
+  .nr-bv-models li:nth-child(n + 6) { --shift: 28px; }
+}
+/* La tabla de lo que gasta cada modelo, en /pricing: sin líneas, cabeceras en gris y filas con fondo al pasar. */
+.nr-mk-pricing .nr-mk-usage-card { padding: 8px; border-radius: 28px; }
+.nr-mk-pricing .nr-mk-usage { border-collapse: separate; border-spacing: 0; }
+.nr-mk-pricing .nr-mk-usage tr { border: 0; }
+.nr-mk-pricing .nr-mk-usage th { height: 40px; padding-inline: 12px; color: var(--muted-foreground); font-weight: 500; }
+.nr-mk-pricing .nr-mk-usage td { padding: 12px; }
+.nr-mk-pricing .nr-mk-usage tbody tr td:first-child { border-radius: 14px 0 0 14px; }
+.nr-mk-pricing .nr-mk-usage tbody tr td:last-child { border-radius: 0 14px 14px 0; }
+
+/* ═════════ Cómo funciona: los dibujos de los seis pasos (HowBento) ═════════
+   Las mismas piezas que los cuadros de /pricing; los muestra HowScroll. */
+.nr-hv-foot { margin: 0; color: var(--muted-foreground); font-size: 12px; line-height: 16px; }
+.nr-hv-check { display: grid; flex: none; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: var(--foreground); color: var(--background); }
+.nr-hv-check svg { width: 14px; height: 14px; }
+
+/* 1 · La key */
+.nr-hv-key { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.nr-hv-key-pill {
+  position: relative; display: flex; align-items: center; gap: 10px; overflow: hidden; height: 48px; padding: 0 10px 0 14px; border-radius: 999px;
+  background: color-mix(in oklch, var(--card), var(--foreground) 8%); box-shadow: var(--button-secondary-edge);
+}
+.nr-hv-key-pill > svg { width: 22px; height: 22px; }
+.nr-hv-key-pill code { font: 500 14px/20px var(--font-mono); }
+/* Un brillo que pasa de izquierda a derecha: la revisión. */
+.nr-hv-key-pill::after { content: ""; position: absolute; inset: 0 auto 0 -40%; width: 40%; background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--foreground) 14%, transparent), transparent); }
+.nr-hv-key-note { position: static; }
+
+/* 2 · Lo que queda y la reserva */
+.nr-hv-hold { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 0 24px; }
+.nr-hv-hold-track { position: relative; height: 40px; overflow: hidden; border-radius: 14px; background: color-mix(in oklch, var(--foreground) 8%, transparent); }
+.nr-hv-hold-track i { position: absolute; top: 0; bottom: 0; }
+.nr-hv-hold-used { left: 0; width: 34%; border-radius: 14px 0 0 14px; background: linear-gradient(180deg, var(--foreground), color-mix(in oklch, var(--foreground) 70%, transparent)); }
+.nr-hv-hold-chunk { left: 34%; width: 14%; background: repeating-linear-gradient(-45deg, color-mix(in oklch, var(--foreground) 50%, transparent) 0 5px, color-mix(in oklch, var(--foreground) 25%, transparent) 5px 10px); }
+.nr-hv-hold p { display: flex; justify-content: space-between; gap: 12px; margin: 0; font-size: 13px; line-height: 20px; }
+.nr-hv-hold p b { font-weight: 600; }
+.nr-hv-hold p span { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* 3 · Las rutas */
+.nr-hv-routes { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; margin: 0; padding: 0 24px; list-style: none; }
+.nr-hv-routes li { display: grid; grid-template-columns: 56px minmax(0, 1fr) 88px; align-items: center; gap: 10px; color: var(--muted-foreground); font-size: 12px; line-height: 16px; }
+.nr-hv-routes li[data-chosen] { color: var(--foreground); }
+.nr-hv-routes b { font-weight: 600; }
+.nr-hv-route-track { position: relative; height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in oklch, var(--foreground) 8%, transparent); }
+.nr-hv-route-track i { position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 999px; background: color-mix(in oklch, var(--foreground) 30%, transparent); transform-origin: left; }
+.nr-hv-routes li[data-chosen] .nr-hv-route-track i { background: var(--foreground); }
+
+/* 4 · El reintento */
+.nr-hv-retry { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; }
+.nr-hv-attempt { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 14px; border-radius: 999px; background: color-mix(in oklch, var(--card), var(--foreground) 8%); box-shadow: var(--button-secondary-edge); font-size: 13px; line-height: 20px; white-space: nowrap; }
+.nr-hv-attempt code { font: 500 12px/16px var(--font-mono); }
+.nr-hv-attempt[data-failed] { color: var(--muted-foreground); padding-right: 14px; }
+.nr-hv-attempt[data-failed] code { text-decoration: line-through; }
+.nr-hv-retry-arrow { flex: none; width: 32px; height: 20px; color: var(--muted-foreground); }
+
+/* 5 · La respuesta */
+.nr-hv-stream { position: absolute; inset: 0; display: grid; grid-template-columns: 40px minmax(0, 1fr); align-content: center; gap: 8px 12px; padding: 0 24px; }
+.nr-hv-stream-model { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--icon-tile); box-shadow: var(--icon-tile-edge); }
+.nr-hv-stream-model img { width: 20px; height: 20px; }
+.nr-hv-bubble { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 6px 18px 18px 18px; background: color-mix(in oklch, var(--card), var(--foreground) 8%); }
+.nr-hv-bubble i { display: block; width: var(--w); height: 7px; border-radius: 999px; background: color-mix(in oklch, var(--foreground) 30%, transparent); }
+.nr-hv-stream-count { grid-column: 2; color: var(--muted-foreground); font: 12px/16px var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* 6 · El cobro */
+.nr-hv-charge { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 16px; text-align: center; }
+.nr-hv-charge-label { color: var(--muted-foreground); font-size: 13px; line-height: 20px; }
+.nr-hv-charge b { font-size: 44px; font-weight: 600; line-height: 48px; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.nr-hv-charge-note { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 10px; font-size: 13px; line-height: 20px; }
+.nr-hv-charge-note s { color: var(--muted-foreground); }
+.nr-hv-charge-note span { color: var(--success); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .nr-hv-key-pill::after { animation: nr-hv-scan 3.2s var(--ease) infinite; }
+  .nr-hv-key .nr-hv-check, .nr-hv-attempt[data-ok] .nr-hv-check { animation: nr-hv-pop 3.2s var(--ease) infinite; }
+  .nr-hv-hold-chunk { animation: nr-hv-breathe 1.6s ease-in-out infinite alternate; }
+  .nr-hv-route-track i { animation: nr-hv-grow 3.2s var(--ease) var(--d) infinite; }
+  .nr-hv-attempt[data-ok] { animation: nr-hv-in 3.2s var(--ease) infinite; }
+  .nr-hv-bubble i { animation: nr-hv-type 4s var(--ease) var(--d) infinite; }
+  .nr-hv-charge b { animation: nr-hv-count 4s var(--ease) infinite; }
+}
+@keyframes nr-hv-scan { 0% { left: -40%; } 45%, 100% { left: 110%; } }
+@keyframes nr-hv-pop { 0%, 40% { opacity: 0; transform: scale(0.5); } 50%, 100% { opacity: 1; transform: none; } }
+@keyframes nr-hv-breathe { from { opacity: 0.55; } to { opacity: 1; } }
+@keyframes nr-hv-grow { 0% { transform: scaleX(0); } 35%, 100% { transform: scaleX(1); } }
+@keyframes nr-hv-in { 0%, 30% { opacity: 0.25; transform: translateX(-6px); } 45%, 100% { opacity: 1; transform: none; } }
+@keyframes nr-hv-type { 0% { width: 0; } 30%, 100% { width: var(--w); } }
+@keyframes nr-hv-count { 0% { opacity: 0.2; transform: translateY(6px); } 15%, 100% { opacity: 1; transform: none; } }
+
+/* ═════════ Cómo funciona: los pasos con scroll (HowScroll) ═════════
+   La lista a la izquierda y la tarjeta fija a la derecha con el dibujo del paso que cruza la mitad de la pantalla.
+   Los pasos que no están activos se apagan (color, no opacidad: el texto mantiene su contraste). */
+.nr-hs-section { padding-top: 64px; }
+.nr-hs { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; gap: 64px; }
+.nr-hs-steps { margin: 0; padding: 0 0 30vh; list-style: none; }
+/* `align-content: start`: con el alto mínimo, la rejilla repartía el título, el texto y el error por todo el paso. */
+.nr-hs-step { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-content: start; column-gap: 16px; min-height: 40vh; padding-top: 8px; }
+.nr-hs-inline { display: none; }
+.nr-hs-step-head { display: contents; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.nr-hs-number {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--card); color: var(--muted-foreground);
+  font: 500 12px/16px var(--font-mono); transition: background-color 240ms var(--ease), color 240ms var(--ease);
+}
+.nr-hs-title { align-self: center; color: var(--muted-foreground); font-size: 22px; font-weight: 600; line-height: 28px; letter-spacing: -0.02em; transition: color 240ms var(--ease); }
+.nr-hs-step-head:hover .nr-hs-title { color: var(--foreground); }
+.nr-hs-step-head:focus-visible .nr-hs-title { outline: 2px solid var(--focus-ring); outline-offset: 4px; border-radius: 6px; }
+.nr-hs-body, .nr-hs-stop { grid-column: 2; }
+.nr-hs-body { max-width: 52ch; margin: 10px 0 0; color: var(--muted-foreground); font-size: 16px; line-height: 26px; text-wrap: pretty; transition: color 240ms var(--ease); }
+.nr-hs-stop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 14px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 20px; }
+.nr-hs-stop code { padding: 2px 10px; border-radius: 999px; background: var(--glass-control); font: 12px/20px var(--font-mono); }
+.nr-hs-stop b { color: var(--foreground); font: 500 12px/20px var(--font-mono); }
+.nr-hs-step[data-active] .nr-hs-number { background: var(--foreground); color: var(--background); }
+.nr-hs-step[data-active] .nr-hs-title { color: var(--foreground); }
+.nr-hs-step[data-active] .nr-hs-body { color: var(--text-description); }
+
+.nr-hs-stage { position: sticky; top: calc(50vh - 230px); display: flex; flex-direction: column; gap: 12px; }
+.nr-hs-card { display: flex; flex-direction: column; padding: 8px; border-radius: 32px; background: var(--card); }
+.nr-hs-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 0; }
+.nr-hs-count { position: static; font-variant-numeric: tabular-nums; }
+.nr-hs-dots { display: flex; gap: 6px; }
+.nr-hs-dots i { width: 18px; height: 4px; border-radius: 999px; background: color-mix(in oklch, var(--foreground) 14%, transparent); transition: background-color 240ms var(--ease); }
+.nr-hs-dots i[data-on] { background: var(--foreground); }
+.nr-hs-visuals { position: relative; height: 340px; }
+/* Los seis dibujos apilados; el activo entra con un fundido y un pequeño ascenso. */
+.nr-hs-visual { position: absolute; inset: 0; height: auto; opacity: 0; transform: translateY(8px) scale(0.98); transition: opacity 320ms var(--ease), transform 420ms var(--ease); }
+.nr-hs-visual[data-active] { opacity: 1; transform: none; }
+/* Los dibujos están hechos para 196 px de alto: en la tarjeta grande van un 20 % más grandes, sobre un 80 % del ancho
+   (80 × 1,2 = 96 %), para que los que ocupan todo el ancho (rutas, reserva) no se salgan por los lados. */
+.nr-hs-visual > :not(.nr-bv-pill) { right: 10%; left: 10%; transform: scale(1.2); }
+.nr-hs-caption { margin: 0; padding: 4px 16px 14px; color: var(--foreground); font-size: 15px; font-weight: 600; line-height: 20px; }
+
+@media (max-width: 1080px) {
+  .nr-hs { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .nr-hs-stage { display: none; }
+  .nr-hs-steps { display: flex; flex-direction: column; gap: 40px; padding-bottom: 0; }
+  .nr-hs-step { min-height: 0; padding-top: 0; }
+  .nr-hs-inline { display: block; grid-column: 1 / -1; margin-bottom: 16px; background: var(--card); border-radius: 28px; }
+  /* Sin tarjeta fija, todos los pasos se leen completos. */
+  .nr-hs-step .nr-hs-title { color: var(--foreground); }
+  .nr-hs-step .nr-hs-number { background: var(--foreground); color: var(--background); }
+  .nr-hs-step .nr-hs-body { color: var(--text-description); }
+}
+@media (prefers-reduced-motion: reduce) { .nr-hs-visual { transition: none; } }

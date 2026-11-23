@@ -8,6 +8,7 @@ import { BitcoinPanel } from "@/components/dashboard/bitcoin-panel";
 import { BitcoinPendingNotice } from "@/components/dashboard/bitcoin-pending-notice";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DepositPanel, emptyDepositView } from "@/components/dashboard/deposit-panel";
+import { type PaymentMark, PaymentHistory, type PaymentRow } from "@/components/dashboard/payment-history";
 import { PaymentsNotice } from "@/components/dashboard/payments-notice";
 import { PageHeader, SectionHeader } from "@/components/page-header";
 import { Price } from "@/components/price";
@@ -77,6 +78,29 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     if (payment.paymentProvider.startsWith("bitcoin")) return d.bitcoinPaid;
     return payment.paymentProvider.startsWith("usdc-") ? d.deposited : d.kinds.topup;
   };
+  const networks: Record<string, string> = { ...dict.dashboard.deposit.networks, bitcoin: "Bitcoin" };
+  const mark = (payment: (typeof history)[number]): PaymentMark => {
+    if (payment.kind === "subscription") return { kind: "plan" };
+    if (payment.kind === "pack" && payment.item) return { kind: "model", modelId: payment.item };
+    if (payment.paymentProvider.startsWith("bitcoin")) return { kind: "bitcoin" };
+    if (payment.paymentProvider.startsWith("usdc-")) return { kind: "usdc" };
+    return { kind: "balance" };
+  };
+  const rows: PaymentRow[] = history.map((payment) => {
+    // `usdc-base` → Base, `bitcoin` → Bitcoin: la red va junto a la fecha. Los de desarrollo (`usdc-dev`) no tienen.
+    const network = networks[payment.paymentProvider.replace(/^usdc-/, "")];
+    const credit = payment.kind === "topup";
+    return {
+      id: payment.id,
+      title: concept(payment),
+      detail: network ? `${formatDate(payment.createdAt, locale)} · ${network}` : formatDate(payment.createdAt, locale),
+      status: credit ? d.creditedStatus : payment.paymentProvider === "balance" ? d.paidWithBalance : d.paidStatus,
+      credit,
+      amount: `${credit ? "+" : ""}${money(payment.amountMicroUsd)}`,
+      receiptUrl: payment.receiptUrl,
+      mark: mark(payment),
+    };
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -165,42 +189,12 @@ async function Credits({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-4" aria-labelledby="history-title">
+      {/* Sin pagos no se arma una lista vacía: basta una línea bajo el título. */}
+      <section className={history.length === 0 ? "flex flex-col gap-1" : "flex flex-col gap-4"} aria-labelledby="history-title">
         <SectionHeader title={<span id="history-title">{d.historyTitle}</span>} />
-        <Card className="py-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{d.date}</TableHead>
-                <TableHead>{d.concept}</TableHead>
-                <TableHead className="text-right">{d.amount}</TableHead>
-                <TableHead>{d.status}</TableHead>
-                <TableHead>{d.receipt}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {history.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-muted-foreground">{d.noHistory}</TableCell></TableRow>
-              ) : history.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>{formatDate(payment.createdAt, locale)}</TableCell>
-                  <TableCell>{concept(payment)}</TableCell>
-                  <TableCell className="text-right"><Price micros={Number(payment.amountMicroUsd)} locale={locale} /></TableCell>
-                  <TableCell>
-                    <Badge variant={payment.kind === "topup" ? "success" : "outline"}>
-                      {payment.kind === "topup" ? d.creditedStatus : payment.paymentProvider === "balance" ? d.paidWithBalance : d.paidStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {payment.receiptUrl
-                      ? <a href={payment.receiptUrl} className="nr-documentation-link" target="_blank" rel="noreferrer">{d.viewReceipt}</a>
-                      : <span className="text-muted-foreground">—</span>}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        {history.length === 0
+          ? <p className="text-sm text-muted-foreground">{d.noHistory}</p>
+          : <PaymentHistory rows={rows} receiptLabel={d.receipt} label={d.historyTitle} />}
       </section>
     </div>
   );
