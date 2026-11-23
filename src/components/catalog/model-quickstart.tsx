@@ -1,74 +1,98 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
-import { HighlightedCode } from "@/components/code-block";
+import { useId, useState, useSyncExternalStore } from "react";
+import { CodeBlock, HighlightedCode } from "@/components/code-block";
 import { ModelDetailPanel } from "@/components/catalog/model-detail-panel";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getKeyHref } from "@/lib/auth/redirect";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { API_BASE_URL } from "@/lib/site";
-import { buildQuickstartSnippets } from "@/lib/snippets";
+import { buildModelQuickstartExamples, MODEL_QUICKSTART_LANGUAGES } from "@/lib/snippets";
+
+const subscribe = () => () => {};
 
 export function ModelQuickstart({ model, locale, dict }: { model: string; locale: Locale; dict: Dictionary }) {
-  const [system, setSystem] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(copiedTimer.current), []);
-  const snippets = buildQuickstartSnippets({ baseUrl: API_BASE_URL, apiKey: "wtf_...", model });
-  if (system) {
-    snippets.javascript = snippets.javascript.replace('messages: [{ role: "user", content: "Hello!" }]', 'messages: [\n    { role: "system", content: "You are a helpful assistant." },\n    { role: "user", content: "Hello!" },\n  ]');
-    snippets.python = snippets.python.replace('messages=[{"role": "user", "content": "Hello!"}]', 'messages=[\n        {"role": "system", "content": "You are a helpful assistant."},\n        {"role": "user", "content": "Hello!"},\n    ]');
-    snippets.curl = snippets.curl.replace('"messages": [{"role": "user", "content": "Hello!"}]', '"messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Hello!"}]');
-  }
-  const response = JSON.stringify({ id: "chatcmpl-example", object: "chat.completion", model, choices: [{ index: 0, message: { role: "assistant", content: dict.detail.previewText }, finish_reason: "stop" }] }, null, 2);
-  return <ModelDetailPanel aria-label={dict.detail.quickstart}>
-    <div className="nr-panel-heading"><h2>{dict.detail.quickstart}</h2><small>{dict.detail.preview}</small></div>
-    <div className="nr-example-options">
-      <NativeSelect value={system ? "system" : "simple"} aria-label={dict.detail.configuration} onChange={(event) => setSystem(event.target.value === "system")}>
-        <NativeSelectOption value="system">{dict.detail.systemMessage}</NativeSelectOption>
-        <NativeSelectOption value="simple">{dict.detail.simpleMessage}</NativeSelectOption>
-      </NativeSelect>
-    </div>
-    <div className="nr-code-split">
-      <div className="nr-code-column">
-        <Tabs defaultValue="javascript">
-          <TabsList className="nr-detail-tabs" aria-label={dict.detail.codeLanguage}>
-            <TabsTrigger value="javascript">JavaScript</TabsTrigger><TabsTrigger value="python">Python</TabsTrigger><TabsTrigger value="curl">cURL</TabsTrigger>
-          </TabsList>
-          {(["javascript", "python", "curl"] as const).map((language) => <TabsContent key={language} value={language}>
-            <pre className="nr-code-box" tabIndex={0}><HighlightedCode code={snippets[language]} /></pre>
-            <div className="nr-code-actions">
-              {/* Lleva a crear cuenta y, después, a las keys (como la CTA de la cabecera). */}
-              <Link href={getKeyHref(locale)} className={buttonVariants({ className: "nr-detail-button primary" })}>{dict.nav.getKey}</Link>
-              <Button variant="secondary" className="nr-detail-button" onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(snippets[language]);
-                  setCopied(true);
-                  clearTimeout(copiedTimer.current);
-                  copiedTimer.current = setTimeout(() => setCopied(false), 1800);
-                }
-                catch { setCopied(false); }
-              }}>{copied ? dict.copy.copied : dict.detail.copyCode}</Button>
-            </div>
-          </TabsContent>)}
-        </Tabs>
-        <p className="nr-code-note">{dict.detail.authNote}</p>
+  const libraryId = useId();
+  const ready = useSyncExternalStore(subscribe, () => true, () => false);
+  const [openai, setOpenai] = useState({ javascript: false, python: false });
+  const d = dict.detail;
+  const examples = buildModelQuickstartExamples({ baseUrl: API_BASE_URL, model });
+  const copy = { copyLabel: d.copyCode, copiedLabel: dict.copy.copied };
+
+  return (
+    <ModelDetailPanel className="nr-quickstart" aria-label={d.quickstart}>
+      <div className="nr-quickstart-heading">
+        <h2>{d.quickstart}</h2>
+        <p>{d.quickstartIntro}</p>
       </div>
-      <div className="nr-code-column">
-        <Tabs defaultValue="output">
-          <TabsList className="nr-detail-tabs" aria-label={dict.detail.responseFormat}>
-            <TabsTrigger value="output">{dict.detail.outputPreview}</TabsTrigger><TabsTrigger value="raw">{dict.detail.rawResponse}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="output"><pre className="nr-code-box nr-response-prose" tabIndex={0}>{dict.detail.previewText}</pre></TabsContent>
-          <TabsContent value="raw"><pre className="nr-code-box" tabIndex={0}><HighlightedCode code={response} /></pre></TabsContent>
-        </Tabs>
-        <p className="nr-output-note">{dict.detail.exampleResponse}</p>
+      <Tabs defaultValue="javascript">
+        <TabsList className="nr-detail-tabs nr-quickstart-tabs" aria-label={d.codeLanguage}>
+          {MODEL_QUICKSTART_LANGUAGES.map((language) => (
+            <TabsTrigger key={language} value={language}>
+              <span>{examples[language].label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {MODEL_QUICKSTART_LANGUAGES.map((language) => {
+          const exampleKey = language !== "curl" && openai[language] ? `${language}-openai` as const : language;
+          const example = examples[exampleKey];
+          return (
+            <TabsContent key={language} value={language}>
+              {language !== "curl" ? (
+                <div className="nr-quickstart-library">
+                  <label htmlFor={`${libraryId}-${language}`}>{d.library}</label>
+                  <NativeSelect
+                    disabled={!ready}
+                    id={`${libraryId}-${language}`}
+                    value={openai[language] ? "openai" : "default"}
+                    onChange={(event) => {
+                      const useOpenai = event.target.value === "openai";
+                      setOpenai((previous) => ({ ...previous, [language]: useOpenai }));
+                    }}
+                  >
+                    <NativeSelectOption value="default">{examples[language].library}</NativeSelectOption>
+                    <NativeSelectOption value="openai">OpenAI SDK</NativeSelectOption>
+                  </NativeSelect>
+                </div>
+              ) : null}
+              <ol className="nr-quickstart-steps">
+                <li>
+                  <div className="nr-quickstart-step-heading">
+                    <h3>{d.configureKey}</h3>
+                    <Link href={getKeyHref(locale)} className={buttonVariants({ variant: "secondary", size: "sm", className: "nr-detail-button" })}>
+                      {dict.nav.getKey}
+                    </Link>
+                  </div>
+                  <p>{d.keyInstructions}</p>
+                  <CodeBlock code={'export CHEAPLLM_API_KEY="wtf_..."'} {...copy} />
+                </li>
+                {example.install ? (
+                  <li>
+                    <h3>{d.installPackage}</h3>
+                    <CodeBlock key={exampleKey} code={example.install} {...copy} />
+                  </li>
+                ) : null}
+                <li>
+                  <h3>{d.sendRequest}</h3>
+                  {example.filename ? <p>{d.saveAs} <code>{example.filename}</code></p> : null}
+                  <CodeBlock key={exampleKey} code={example.code} label={example.filename ?? "cURL"} {...copy} />
+                  {example.run ? <p className="nr-quickstart-run">{d.runCommand} <code>{example.run}</code></p> : null}
+                </li>
+              </ol>
+              <p className="nr-quickstart-note">{d.serverOnly}</p>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+      <div className="nr-quickstart-footer">
+        <p>{d.quickstartResult}</p>
+        <Link href={`/${locale}/docs#quickstart`}>{d.integrationDocs}</Link>
       </div>
-    </div>
-  </ModelDetailPanel>;
+    </ModelDetailPanel>
+  );
 }
 
 export function ModelApiDetails({ model, dict, id }: { model: string; dict: Dictionary; id?: string }) {

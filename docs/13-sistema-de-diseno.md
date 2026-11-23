@@ -33,10 +33,10 @@ El nombre es `cheapllm.wtf`. La marca gráfica y los logos se trasladan de la re
 | Pills | 12 px; padding 5/12 px; fondo neutral |
 | Detalle | Conserva sidebar; título de 36–52 px, peso 550 y tracking −0,045 em |
 | Paneles de detalle | Principal y lateral 2:1, gap 28 px; base de radio 28 px con margen interior de 8 px; tarjeta clara de radio 22 px delante; títulos de 17 px y peso 500. La cabecera muestra autor y tarea en la base inferior |
-| Código y respuesta | Dos columnas; código de 14 px / 22 px; sobre la superficie clara del panel; scroll local |
+| Inicio rápido del modelo | Una columna con pasos para key, instalación y request; pestañas JavaScript, Python y cURL; JavaScript permite AI SDK u OpenAI SDK y Python permite LangChain u OpenAI SDK; código completo con líneas que se adaptan, sin scroll interno ni respuesta simulada ([ADR-0073](./adr/0073-inicio-rapido-con-ai-sdk-y-langchain.md)) |
 | Ventana de acceso | Una columna de 448 px que empieza a 144 px; título de 32–48 px, peso 550 y tracking −0,045 em; base de radio 28 px con margen interior de 8 px y frente de radio 20 px; campo y botón de 42 px; seis casillas de 48–56 px con radio 14 px, en dos grupos de tres; el foco siempre se ve ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)) |
 
-[ADR-0038](./adr/0038-sidebar-izquierda-con-iconos.md) actualiza la composición lateral para seguir la captura proporcionada: margen izquierdo de 20 px y opciones con iconos. A 860 px el catálogo pasa a una columna y la navegación de escritorio se oculta; el detalle ofrece un botón para desplegar filtros. A 950 px la lateral del detalle pasa debajo. A 600 px código y respuesta se apilan. Las reglas de container query de la referencia adaptan el detalle al espacio que deja la sidebar.
+[ADR-0038](./adr/0038-sidebar-izquierda-con-iconos.md) actualiza la composición lateral para seguir la captura proporcionada: margen izquierdo de 20 px y opciones con iconos. A 860 px el catálogo pasa a una columna y la navegación de escritorio se oculta; el detalle ofrece un botón para desplegar filtros. A 950 px la lateral del detalle pasa debajo. A 600 px los bloques de inicio rápido aprovechan el ancho completo. Las reglas de container query de la referencia adaptan el detalle al espacio que deja la sidebar.
 
 No se agrega un hero, título grande sobre el catálogo, buscador debajo del título, tabla con otro estilo ni fila de precios dentro de las tarjetas.
 

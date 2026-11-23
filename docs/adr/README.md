@@ -84,6 +84,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0070](./0070-hero-mas-tokens-por-menos.md) | El hero dice «Paga menos por más tokens de IA» y «Todos tus modelos de IA en un solo endpoint»; el ahorro va bajo el precio oficial, sin leyenda ni base URL; el selector muestra DeepSeek V4.1 Flash, Opus 5.5, GPT 6.2 Sol y el último Gemini | Aceptada | Usuario + Default |
 | [0071](./0071-pagina-como-funciona.md) | «Cómo funciona» tiene página propia (`/[lang]/how-it-works`): un dibujo, la vida de un request con su recibo y la gráfica del tope; la landing no pierde secciones y lleva a ella con links de más información | Aceptada | Usuario + Default |
 | [0072](./0072-una-url-para-todos-los-modelos.md) | El sitio explica una URL y una API key para todos los modelos; el SDK de OpenAI se explica en la documentación técnica | Aceptada | Usuario + Default |
+| [0073](./0073-inicio-rapido-con-ai-sdk-y-langchain.md) | Inicio rápido del modelo en pasos, con AI SDK y LangChain, sin respuesta simulada ni scroll interno | Aceptada | Usuario + Default |
 | [0074](./0074-prioridad-del-hero-por-descuento.md) | Opus y GPT 6.2 compiten por el primer lugar del hero con al menos 80 % de descuento; si ninguno llega, empieza DeepSeek | Aceptada | Usuario + Default |
 
 ## Plantilla

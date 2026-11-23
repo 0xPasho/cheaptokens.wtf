@@ -61,13 +61,62 @@ test("catalog filters survive model navigation and browser back", async ({ page 
   await expect(page.locator("article")).toHaveCount(1);
 });
 
-test("request and output previews work without making an API call", async ({ page }) => {
-  await page.goto("/en/models/anthropic/claude-sonnet-4.6");
-  const request = page.getByRole("region", { name: "Quick Start", exact: true });
-  await request.getByRole("tab", { name: "Python", exact: true }).click();
-  await expect(request.locator("pre").first()).toContainText('model="anthropic/claude-sonnet-4.6"');
-  await request.getByRole("tab", { name: "Raw response", exact: true }).click();
-  await expect(request.getByRole("tabpanel").filter({ hasText: '"object": "chat.completion"' })).toBeVisible();
+test("model integration examples copy the selected language without making an API call", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const apiCalls: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/chat/completions")) apiCalls.push(request.url());
+  });
+  await page.goto("/en/models/deepseek/deepseek-v4.1-flash");
+  const quickstart = page.getByRole("region", { name: "Quick Start", exact: true });
+  const javascriptPanel = quickstart.getByRole("tabpanel", { name: "JavaScript", exact: true });
+  const pythonPanel = quickstart.getByRole("tabpanel", { name: "Python", exact: true });
+  const curlPanel = quickstart.getByRole("tabpanel", { name: "cURL", exact: true });
+  await expect(javascriptPanel).toContainText("generateText");
+  await javascriptPanel.getByRole("combobox", { name: "Library" }).selectOption("openai");
+  await expect(javascriptPanel).toContainText("npm install openai");
+  await expect(javascriptPanel).toContainText("client.chat.completions.create");
+  const javascript = quickstart.getByRole("tab", { name: "JavaScript", exact: true });
+  await javascript.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(quickstart.getByRole("tab", { name: "Python", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(pythonPanel).toContainText("model.invoke");
+  await pythonPanel.getByRole("button", { name: "Copy code", exact: true }).last().click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('model="deepseek/deepseek-v4.1-flash"');
+  expect(copied).toContain('os.environ["CHEAPLLM_API_KEY"]');
+  expect(copied).not.toContain("<span");
+  await pythonPanel.getByRole("combobox", { name: "Library" }).selectOption("openai");
+  await expect(pythonPanel).toContainText("from openai import OpenAI");
+  await expect(pythonPanel).toContainText("python3 -m pip install openai");
+  await pythonPanel.getByRole("button", { name: "Copy code", exact: true }).last().click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("response.choices[0].message.content");
+  await quickstart.getByRole("tab", { name: "cURL", exact: true }).click();
+  await expect(curlPanel).toContainText("$CHEAPLLM_API_KEY");
+  await expect(curlPanel.getByRole("listitem")).toHaveCount(2);
   await page.getByRole("region", { name: "API Details", exact: true }).getByRole("tab", { name: "API Schema", exact: true }).click();
   await expect(page.locator(".nr-schema-json")).toContainText('"max_tokens": 1024');
+  expect(apiCalls).toEqual([]);
 });
+
+for (const width of [320, 880, 1440]) {
+  test(`model quickstart at ${width}px: all code is readable without nested scrolling`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/es/models/deepseek/deepseek-v4.1-flash");
+    const quickstart = page.getByRole("region", { name: "Inicio rápido", exact: true });
+    for (const [language, library] of [["JavaScript", "default"], ["JavaScript", "openai"], ["Python", "default"], ["Python", "openai"], ["cURL", null]] as const) {
+      await quickstart.getByRole("tab", { name: language, exact: true }).click();
+      const panel = quickstart.getByRole("tabpanel", { name: language, exact: true });
+      if (library) {
+        const select = panel.getByRole("combobox", { name: "Librería" });
+        await select.selectOption(library);
+        await expect(select).toHaveValue(library);
+        await expect(panel).toContainText(library === "openai" ? "client.chat.completions.create" : language === "JavaScript" ? "generateText" : "model.invoke");
+      }
+      const clipped = await panel.locator("pre").evaluateAll((blocks) => blocks.filter((el) => el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1).length);
+      expect(clipped).toBe(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    }
+  });
+}

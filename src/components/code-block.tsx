@@ -32,14 +32,18 @@ function Tokens({ code }: { code: string }) {
 
 type CodeBlockProps = React.ComponentProps<"div"> & {
   code: string;
+  /** Nombre del archivo o entorno, con la acción de copiar en su propia fila. */
+  label?: string;
   copyLabel?: string;
   copiedLabel?: string;
   /** Resalta las líneas que contienen alguno de estos textos, como las dos que cambian en el snippet. */
   highlight?: readonly string[];
 };
-export function CodeBlock({ code, copyLabel, copiedLabel, highlight, className, ...props }: CodeBlockProps) {
-  return <div className={cn("nr-code-block", className)} {...props}>
+export function CodeBlock({ code, label, copyLabel, copiedLabel, highlight, className, ...props }: CodeBlockProps) {
+  const copy = <CopyButton value={code} copyLabel={copyLabel} copiedLabel={copiedLabel} />;
+  return <div className={cn("nr-code-block", label && "nr-code-block-labeled", className)} {...props}>
+    {label ? <div className="nr-code-block-heading"><span>{label}</span>{copy}</div> : null}
     <pre tabIndex={0} className="nr-code-box font-mono overflow-x-auto"><HighlightedCode code={code} highlight={highlight} /></pre>
-    <CopyButton value={code} copyLabel={copyLabel} copiedLabel={copiedLabel} />
+    {label ? null : copy}
   </div>;
 }

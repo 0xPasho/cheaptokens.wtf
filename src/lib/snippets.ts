@@ -112,3 +112,124 @@ for await (const chunk of stream) {
   -d '{"model": "${model}", "messages": [{"role": "user", "content": "Hello!"}], "stream": true, "stream_options": {"include_usage": true}}'`,
   };
 }
+
+
+/** Ejemplos de inicio desde cero para el detalle; los snippets de migración siguen arriba. */
+export const MODEL_QUICKSTART_LANGUAGES = ["javascript", "python", "curl"] as const;
+
+export type ModelQuickstartVariant = SnippetLanguage | "javascript-openai" | "python-openai";
+
+type ModelQuickstartExample = {
+  label: string;
+  library: string;
+  install: string | null;
+  filename: string | null;
+  run: string | null;
+  code: string;
+};
+
+export function buildModelQuickstartExamples({ baseUrl, model }: Omit<QuickstartOptions, "apiKey">): Record<ModelQuickstartVariant, ModelQuickstartExample> {
+  // Serializar los valores conserva IDs y URLs incluso si contienen comillas.
+  const url = JSON.stringify(baseUrl);
+  const modelId = JSON.stringify(model);
+  return {
+    javascript: {
+      label: "JavaScript",
+      library: "AI SDK",
+      install: "npm install ai @ai-sdk/openai-compatible",
+      filename: "example.mjs",
+      run: "node example.mjs",
+      code: `import { generateText } from "ai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+
+const cheapllm = createOpenAICompatible({
+  name: "cheapllm",
+  baseURL: ${url},
+  apiKey: process.env.CHEAPLLM_API_KEY,
+});
+
+const { text } = await generateText({
+  model: cheapllm(${modelId}),
+  prompt: "Hello!",
+});
+
+console.log(text);`,
+    },
+    "javascript-openai": {
+      label: "JavaScript",
+      library: "OpenAI SDK",
+      install: "npm install openai",
+      filename: "example.mjs",
+      run: "node example.mjs",
+      code: `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: ${url},
+  apiKey: process.env.CHEAPLLM_API_KEY,
+});
+
+const response = await client.chat.completions.create({
+  model: ${modelId},
+  messages: [{ role: "user", content: "Hello!" }],
+});
+
+console.log(response.choices[0].message.content);`,
+    },
+    python: {
+      label: "Python",
+      library: "LangChain",
+      install: "python3 -m pip install langchain-openai",
+      filename: "example.py",
+      run: "python3 example.py",
+      code: `import os
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    model=${modelId},
+    base_url=${url},
+    api_key=os.environ["CHEAPLLM_API_KEY"],
+    use_responses_api=False,
+)
+
+response = model.invoke("Hello!")
+print(response.content)`,
+    },
+    "python-openai": {
+      label: "Python",
+      library: "OpenAI SDK",
+      install: "python3 -m pip install openai",
+      filename: "example.py",
+      run: "python3 example.py",
+      code: `import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url=${url},
+    api_key=os.environ["CHEAPLLM_API_KEY"],
+)
+
+response = client.chat.completions.create(
+    model=${modelId},
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+
+print(response.choices[0].message.content)`,
+    },
+    curl: {
+      label: "cURL",
+      library: "HTTP",
+      install: null,
+      filename: null,
+      run: null,
+      code: `curl ${baseUrl}/chat/completions \\
+  -H "Authorization: Bearer $CHEAPLLM_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": ${modelId},
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'`,
+    },
+  };
+}

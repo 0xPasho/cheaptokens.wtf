@@ -671,3 +671,48 @@ html.retro-party ::selection { background: #ff9ecb; color: #4a0d33; }
   from { background-position: 0% 50%, 0 0; }
   to { background-position: 400% 50%, 0 0; }
 }
+
+/* Inicio rápido del modelo: una lectura continua, sin scroll dentro del código (ADR-0073). */
+.nr-quickstart { min-width: 0; }
+.nr-quickstart-heading { padding: 24px 24px 20px; }
+.nr-quickstart-heading h2 { margin: 0; font-size: 20px; font-weight: 550; letter-spacing: -.025em; }
+.nr-quickstart-heading p { margin: 8px 0 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+.nr-quickstart [data-slot="tabs"] { gap: 0; min-width: 0; }
+.nr-quickstart .nr-quickstart-tabs { justify-content: flex-start; gap: 28px; height: auto; min-height: 52px; padding-inline: 24px; }
+.nr-quickstart-tabs [data-slot="tabs-trigger"] { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; height: auto; min-height: 52px; padding-block: 10px; }
+.nr-quickstart-steps { display: grid; gap: 24px; margin: 0; padding: 24px; list-style: none; counter-reset: quickstart; }
+.nr-quickstart-steps > li { min-width: 0; position: relative; counter-increment: quickstart; padding-inline-start: 32px; }
+.nr-quickstart-steps > li::before { content: counter(quickstart); position: absolute; inset-inline-start: 0; top: 0; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 50%; color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.nr-quickstart h3 { margin: 0; font-size: 14px; font-weight: 550; line-height: 22px; }
+.nr-quickstart-step-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.nr-quickstart-step-heading .nr-detail-button { min-height: 32px; padding-block: 6px; font-size: 12px; }
+.nr-quickstart-steps p { margin: 8px 0 12px; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
+.nr-quickstart-steps code { font-family: var(--font-mono); overflow-wrap: anywhere; }
+.nr-quickstart .nr-code-block { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; }
+.nr-quickstart .nr-code-block pre { height: auto; max-height: none; padding: 16px 48px 16px 16px; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 21px; }
+.nr-quickstart .nr-code-block > button { top: 8px; right: 8px; }
+.nr-quickstart-steps .nr-quickstart-run { margin-bottom: 0; }
+.nr-quickstart-run code { color: var(--foreground); }
+.nr-quickstart-note { margin: 0; padding: 0 24px 24px 56px; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+.nr-quickstart-footer { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding: 16px 24px; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.6; }
+.nr-quickstart-footer p { margin: 0; flex: 1 1 24ch; color: var(--text-secondary); }
+.nr-quickstart-footer a { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .nr-quickstart-heading { padding: 20px 16px 16px; }
+  .nr-quickstart .nr-quickstart-tabs { padding-inline: 16px; gap: 24px; }
+  .nr-quickstart-steps { padding: 20px 16px; }
+  .nr-quickstart-steps > li { padding-inline-start: 28px; }
+  .nr-quickstart .nr-code-block { margin-inline-start: -28px; }
+  .nr-quickstart-note { padding: 0 16px 20px; }
+  .nr-quickstart-footer { padding: 16px; }
+}
+
+.nr-code-block-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px 8px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font: 12px/1.5 var(--font-mono); }
+.nr-code-block-labeled pre { padding-inline-end: 24px; }
+.nr-quickstart .nr-code-block-labeled pre { padding: 16px; }
+
+.nr-quickstart-library { display: flex; align-items: center; gap: 12px; padding: 20px 24px 0; font-size: 13px; color: var(--text-secondary); }
+.nr-quickstart-library select { color: var(--foreground); }
+@media (max-width: 600px) {
+  .nr-quickstart-library { padding-inline: 16px; }
+}

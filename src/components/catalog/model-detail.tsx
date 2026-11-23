@@ -90,7 +90,13 @@ export function ModelDetail({ model, models, locale, dict }: { model: CatalogMod
         </div>
         {similar.length ? <ModelDetailPanel className="nr-upstream-section" aria-label={dict.detail.similar}>
           <div className="nr-panel-heading"><h2>{dict.detail.similar}</h2></div>
-          {similar.map((item) => <div className="nr-route-rates" key={item.id}><Link className="nr-related-model" href={`/${locale}/models/${item.author}/${item.slug}${filters.search}`}><span>{item.name}</span><code>{item.id}</code><span>{formatDiscount(item.discountBps, locale)}</span></Link></div>)}
+          {similar.map((item) => <div className="nr-route-rates" key={item.id}>
+            <Link className="nr-related-model" href={`/${locale}/models/${item.author}/${item.slug}${filters.search}`}>
+              <span className="inline-flex items-center gap-2.5 [&_img]:shrink-0"><ModelLogo modelId={item.id} />{item.name}</span>
+              <code>{item.id}</code>
+              <span>{formatDiscount(item.discountBps, locale)}</span>
+            </Link>
+          </div>)}
         </ModelDetailPanel> : null}
       </div>
     </div>

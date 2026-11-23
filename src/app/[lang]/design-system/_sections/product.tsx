@@ -647,10 +647,10 @@ export function ProductPatterns() {
       <Section title="Catalog explorer" description="NibbleRouter composition: capability and author filters, cards and table.">
         <div className="nr-site"><ModelCatalog models={getCatalog()} locale="es" dict={getDictionary("es")} /></div>
       </Section>
-      <Section title="Model detail" description="Layered cards: an opaque base and a lighter front surface across the model overview, code preview, pricing and API parameters. The overview keeps the author and task on its lower base.">
+      <Section title="Model detail" description="Layered cards: an opaque base and a lighter front surface across the model overview, integration guide, pricing and API parameters. The overview keeps the author and task on its lower base.">
         <div className="nr-site"><ModelDetail model={getCatalog()[0]} models={getCatalog()} locale="es" dict={getDictionary("es")} /></div>
       </Section>
-      <Section title="API preview" description="Request and example output in parallel, with local syntax highlighting.">
+      <Section title="Model quickstart" description="A linear guide: API key, library and first request. JavaScript with AI SDK or OpenAI SDK, Python with LangChain or OpenAI SDK, or cURL. Code grows with its content and wraps on small screens.">
         <ModelQuickstart model={getCatalog()[0].id} locale="es" dict={getDictionary("es")} />
         <ModelApiDetails model={getCatalog()[0].id} dict={getDictionary("es")} />
       </Section>
