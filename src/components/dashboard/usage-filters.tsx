@@ -5,7 +5,7 @@ import { useOptimistic, useTransition } from "react";
 
 import { ModelLogo, providerName } from "@/components/catalog/provider-logo";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Option = { value: string; label: string };
@@ -73,14 +73,15 @@ export function UsageFilters({ ranges, keys, models, sources, labels }: {
             )}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="max-h-[min(24rem,var(--available-height))]">
+        {/* Se abre debajo del botón: con muchos modelos, alinear el elegido con el botón lo subía por encima. */}
+        <SelectContent alignItemWithTrigger={false} align="start" className="max-h-[min(24rem,var(--available-height))]">
           <SelectItem value={allModels.value}>{allModels.label}</SelectItem>
           {[...groups].toSorted(([a], [b]) => providerName(a).localeCompare(providerName(b))).map(([author, options]) => (
             <SelectGroup key={author}>
-              <SelectSeparator />
+              {/* Sin línea entre proveedores: el nombre del grupo y su espacio arriba ya los separan. */}
               <SelectLabel>{providerName(author)}</SelectLabel>
               {options.map((option) => (
-                <SelectItem key={option.value} value={option.value}><ModelLogo modelId={option.value} />{option.label}</SelectItem>
+                <SelectItem key={option.value} value={option.value}><ModelLogo modelId={option.value} /><span className="truncate">{option.label}</span></SelectItem>
               ))}
             </SelectGroup>
           ))}

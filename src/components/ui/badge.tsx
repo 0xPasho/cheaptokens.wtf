@@ -9,8 +9,10 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        // Neutro con la misma receta que success y warning (/10, /20 en oscuro). `bg-secondary` es casi el tono
+        // de la card (0.209 sobre 0.205 en oscuro) y la insignia se leía como texto suelto y corrido.
         secondary:
-          "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+          "bg-muted-foreground/10 text-foreground dark:bg-muted-foreground/20 [a]:hover:bg-muted-foreground/20",
         destructive:
           "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
         success:

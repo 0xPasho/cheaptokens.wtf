@@ -6,9 +6,8 @@ import { BillingFlow } from "@/components/site/marketing/billing-flow";
 import { CapChart } from "@/components/site/marketing/cap-chart";
 import { FaqList, faqValues } from "@/components/site/marketing/faq-list";
 import { FinalCta } from "@/components/site/marketing/final-cta";
-import { HowFlow } from "@/components/site/marketing/how-flow";
 import { Promises } from "@/components/site/marketing/promises";
-import { RequestLife } from "@/components/site/marketing/request-life";
+import { HowBento } from "@/components/site/marketing/how-bento";
 import { ArrowLabel, MarketingSection } from "@/components/site/marketing/section";
 import { SwitchDiff } from "@/components/site/marketing/switch-diff";
 import { HOW_ICONS, WhyCheaper } from "@/components/site/marketing/why-cheaper";
@@ -55,11 +54,9 @@ export default async function HowItWorksPage() {
   return (
     <Container className="nr-mk nr-mk-how">
       <header className="nr-hw-head">
-        <p className="nr-mk-eyebrow">{d.eyebrow}</p>
         {/* Una frase por renglón: no se corta en medio de «Mismo modelo». */}
         <h1><span>{d.titleLead}</span> <span>{d.titleTail}</span></h1>
         <p className="nr-hw-head-sub">{d.description}</p>
-        <HowFlow models={models} model={model} locale={locale} dict={dict} />
         <ul className="nr-hw-facts">
           <li>{t(d.facts.catalog, { models: formatCount(models.length, locale), authors: formatCount(new Set(models.map((item) => item.author)).size, locale) })}</li>
           <li>{d.facts.refresh}</li>
@@ -67,35 +64,36 @@ export default async function HowItWorksPage() {
         </ul>
       </header>
 
-      <MarketingSection id="life" eyebrow={d.life.eyebrow} title={d.life.title} description={d.life.description}>
-        <RequestLife
+      <section className="nr-hs-section" aria-label={d.life.title}>
+        {/* Los seis pasos de un request: la lista y, fija al lado, la tarjeta con el dibujo del paso en pantalla. */}
+        <HowBento
+          label={r.label}
           steps={d.life.steps}
           stops={STOPS}
           stopLabel={d.life.stopLabel}
           stopAmount={formatUsd(0, locale)}
-          receipt={{
-            label: r.label,
-            modelId: model.id,
-            rows: [
-              { label: r.key, value: EXAMPLE_KEY_HINT, note: t(r.keySource, { source: dict.dashboard.sources.plan_then_prepaid }) },
-              { label: r.reserved, value: t(r.reservedValue, { amount: price(reserved) }), note: r.reservedNote },
-              { label: r.route, value: r.routeValue, note: <code>{model.id}</code> },
-              { label: r.attempts, value: t(r.attemptsValue, { max: formatCount(MAX_ATTEMPTS, locale) }) },
-              {
-                label: r.tokens,
-                value: t(r.tokensValue, { input: formatCount(TYPICAL_REQUEST.promptTokens, locale), output: formatCount(TYPICAL_REQUEST.completionTokens, locale) }),
-              },
-            ],
-            total: {
-              label: r.charged,
-              value: price(listed),
-              note: <s>{t(r.official, { amount: price(official) })}</s>,
-              savings: t(r.savings, { amount: price(official - listed), discount: formatDiscount(savedBps, locale) }),
+          rows={[
+            { label: r.key, value: EXAMPLE_KEY_HINT, note: t(r.keySource, { source: dict.dashboard.sources.plan_then_prepaid }) },
+            { label: r.reserved, value: t(r.reservedValue, { amount: price(reserved) }), note: r.reservedNote },
+            { label: r.route, value: r.routeValue },
+            { label: r.attempts, value: t(r.attemptsValue, { max: formatCount(MAX_ATTEMPTS, locale) }) },
+            {
+              label: r.tokens,
+              value: t(r.tokensValue, { input: formatCount(TYPICAL_REQUEST.promptTokens, locale), output: formatCount(TYPICAL_REQUEST.completionTokens, locale) }),
             },
-            foot: r.foot,
+          ]}
+          total={{
+            label: r.charged,
+            value: price(listed),
+            official: t(r.official, { amount: price(official) }),
+            savings: t(r.savings, { amount: price(official - listed), discount: formatDiscount(savedBps, locale) }),
           }}
+          modelId={model.id}
+          completionTokens={TYPICAL_REQUEST.completionTokens}
+          locale={locale}
+          text={d.sim}
         />
-      </MarketingSection>
+      </section>
 
       <WhyCheaper dict={dict} items={d.why.items} icons={HOW_ICONS} aside={<CapChart model={model} locale={locale} dict={dict} />} />
 
@@ -104,7 +102,6 @@ export default async function HowItWorksPage() {
       <MarketingSection
         id="split"
         className="nr-mk-band"
-        eyebrow={d.split.eyebrow}
         title={dict.pricing.flow.title}
         description={dict.pricing.flow.description}
         action={<Link className="nr-mk-text-link" href={`/${locale}/pricing`}><ArrowLabel>{d.split.link}</ArrowLabel></Link>}
@@ -117,7 +114,6 @@ export default async function HowItWorksPage() {
       <MarketingSection
         id="faq"
         className="nr-mk-faq-layout nr-mk-band"
-        eyebrow={dict.home.faq.eyebrow}
         title={d.faqTitle}
         description={dict.home.faq.description}
         action={<Link className="nr-mk-text-link" href={`/${locale}/faq`}><ArrowLabel>{dict.home.faq.allLink}</ArrowLabel></Link>}

@@ -4,7 +4,7 @@ import ChevronDownIcon from "kubai-icons-react/icons/chevron-down";
 import PlusIcon from "kubai-icons-react/icons/circle-plus";
 import RotateIcon from "kubai-icons-react/icons/rotate-cw";
 import SearchIcon from "kubai-icons-react/icons/search";
-import { startTransition, useActionState, useRef, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import {
   type ActionError, createKeyAction, type KeyResult, revokeKeyAction, rotateKeyAction,
@@ -72,6 +72,13 @@ export function CreateKeyDialog({ labels, models, errors, snippet, disabled, loc
 }) {
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
+  // El atajo «Crear key» del inicio llega con #crear: abre el diálogo y limpia el ancla para que volver no lo reabra.
+  useEffect(() => {
+    if (disabled || window.location.hash !== "#crear") return;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- se lee la URL del navegador, que no existe en el servidor.
+    setOpen(true);
+  }, [disabled]);
   return (
     <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (!next) setFormKey((value) => value + 1); }}>
       <DialogTrigger render={<Button disabled={disabled} />}>

@@ -5,7 +5,15 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
-import XIcon from "kubai-icons-react/icons/circle-x";
+
+/** La X de cerrar: dos trazos del color del texto. El icono de bola gris se perdía en 16 px. */
+function CloseGlyph() {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="size-4">
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  )
+}
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -56,26 +64,29 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          // Marco doble (refs 5, 10, 11): bisel de vidrio por fuera, panel opaco por dentro.
-          "fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] glass-bezel p-2.5 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Una sola superficie con un solo borde: el marco doble sumaba tres líneas paralelas en cada lado. El panel
+          // es `grid-cols-1` (minmax(0, 1fr)): con columnas automáticas un texto sin cortes lo ensanchaba fuera de la pantalla.
+          "fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
-        <div data-slot="dialog-panel" className="relative grid gap-4 rounded-[1.375rem] bg-popover p-5 dark:bg-background text-sm text-popover-foreground ring-1 ring-foreground/10">
+        <div data-slot="dialog-panel" className="relative grid grid-cols-1 gap-4 overflow-hidden rounded-[1.75rem] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 dark:bg-card">
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
               render={
+                // 36 px, como los controles redondos del sitio, con su fondo: a 24 px casi no se encontraba. A 14 px del
+                // borde su centro (32 px) cae en el del título, que empieza a 24 px y mide 16.
                 <Button
                   variant="ghost"
-                  className="absolute top-3 right-3"
-                  size="icon-sm"
+                  className="absolute top-3.5 right-3.5 size-9 bg-glass-control hover:bg-glass-control-hover"
+                  size="icon"
                 />
               }
             >
-              <XIcon aria-hidden />
+              <CloseGlyph />
               <span className="sr-only">{closeLabel}</span>
             </DialogPrimitive.Close>
           )}
@@ -89,7 +100,8 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      // Espacio a la derecha para la X: el texto largo no pasa por debajo de ella.
+      className={cn("flex flex-col gap-2 pr-11", className)}
       {...props}
     />
   )
@@ -110,7 +122,8 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-5 -mb-5 flex flex-col-reverse gap-2 rounded-b-[1.375rem] border-t bg-muted/50 px-5 py-4 sm:flex-row sm:justify-end",
+        // Sin borde arriba: el tono de la banda ya la separa del contenido.
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 bg-muted/50 px-6 py-4 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

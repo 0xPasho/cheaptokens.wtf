@@ -53,13 +53,14 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          // Marco doble como Dialog (refs 5, 10, 11).
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 rounded-[2rem] glass-bezel p-2.5 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Una sola superficie, como Dialog: el marco doble sumaba líneas paralelas.
+          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
-        <div data-slot="alert-dialog-panel" className="relative grid gap-4 rounded-[1.375rem] bg-popover p-5 dark:bg-background text-sm text-popover-foreground ring-1 ring-foreground/10">
+        {/* Una sola superficie con un solo borde, como `DialogContent`. */}
+        <div data-slot="alert-dialog-panel" className="relative grid grid-cols-1 gap-4 overflow-hidden rounded-[1.75rem] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 dark:bg-card">
           {children}
         </div>
       </AlertDialogPrimitive.Popup>
@@ -91,7 +92,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "-mx-5 -mb-5 flex flex-col-reverse gap-2 rounded-b-[1.375rem] border-t bg-muted/50 px-5 py-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 bg-muted/50 px-6 py-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

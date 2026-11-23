@@ -86,6 +86,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0072](./0072-una-url-para-todos-los-modelos.md) | El sitio explica una URL y una API key para todos los modelos; el SDK de OpenAI se explica en la documentación técnica | Aceptada | Usuario + Default |
 | [0073](./0073-inicio-rapido-con-ai-sdk-y-langchain.md) | Inicio rápido del modelo en pasos, con AI SDK y LangChain, sin respuesta simulada ni scroll interno | Aceptada | Usuario + Default |
 | [0074](./0074-prioridad-del-hero-por-descuento.md) | Opus y GPT 6.2 compiten por el primer lugar del hero con al menos 80 % de descuento; si ninguno llega, empieza DeepSeek | Aceptada | Usuario + Default |
+| [0075](./0075-rediseno-de-precios-como-funciona-y-dashboard.md) | Precios, Cómo funciona (con scroll) y el dashboard sin líneas ni cards anidadas; botón con degradado, diálogo de una superficie y datos de cuenta ocultos tras un ojo | Aceptada | Usuario + Default |
 
 ## Plantilla
 
