@@ -18,12 +18,15 @@ export const PRICE_STRIP_MODELS = [
   "deepseek/deepseek-v4.1-flash",
 ] as const;
 
-/** Los modelos que se pueden elegir en el código del hero: uno por autor, el primero se ve al cargar. Caben cuatro. */
+/**
+ * Los modelos que se pueden elegir en el precio del hero, en este orden (ADR-0070): uno por autor y caben
+ * cuatro. El primero se ve al cargar y es el más barato. Gemini va con el último que salió.
+ */
 export const HERO_MODELS = [
-  "anthropic/claude-sonnet-5.5",
-  "openai/gpt-6.1-sol",
-  "google/gemini-4-carbon",
   "deepseek/deepseek-v4.1-flash",
+  "anthropic/claude-opus-5.5",
+  "openai/gpt-6.2-sol",
+  "google/gemini-4-neon",
 ] as const;
 
 /** Modelos con los que se calculan las requests típicas de cada plan. El primero es el de referencia del dashboard. */
@@ -194,5 +197,7 @@ export const FAQ_TOPICS: readonly { id: FaqTopicId; items: readonly FaqId[] }[] 
 /** Las siete de la landing. */
 /** «Por qué cuesta menos» ya es una sección de la landing: aquí van las otras dudas de antes de empezar. */
 export const HOME_FAQ: readonly FaqId[] = ["compatible", "howPay", "limitReached", "pricesChange", "failedRequest"];
+/** Las de cómo funciona, en /how-it-works (ADR-0071). */
+export const HOW_FAQ: readonly FaqId[] = ["whoPicks", "pricesChange", "failedRequest", "prompts", "endpoints"];
 /** Las de cobro, en /pricing. */
 export const PRICING_FAQ: readonly FaqId[] = ["howCharged", "limitsInDollars", "autoRenew", "howPay", "failedRequest"];

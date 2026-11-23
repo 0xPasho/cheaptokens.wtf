@@ -81,6 +81,8 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0067](./0067-salida-maxima-por-modelo.md) | Sin `max_tokens` del cliente, el tope es la salida máxima de cada modelo según el proveedor, no 32 768 para todos | Aceptada | Usuario |
 | [0068](./0068-docs-un-solo-endpoint.md) | `/docs` gira alrededor de un solo endpoint con el formato de OpenAI y se ordena en empezar, usar y referencia; las cifras salen del código | Aceptada | Usuario + Default |
 | [0069](./0069-curaduria-del-catalogo-en-el-repo.md) | Los tags curados y el orden «Recomendados» viven en `catalog/curation.ts` y se aplican al leer; el sitio se revalida al instante y solo si cambia algo público; la búsqueda es una paleta (⌘K) | Aceptada | Usuario + Default |
+| [0070](./0070-hero-mas-tokens-por-menos.md) | El hero dice «Paga menos por más tokens de IA» y «Todos tus modelos de IA en un solo endpoint»; el ahorro va bajo el precio oficial, sin leyenda ni base URL; el selector muestra DeepSeek V4.1 Flash, Opus 5.5, GPT 6.2 Sol y el último Gemini | Aceptada | Usuario + Default |
+| [0071](./0071-pagina-como-funciona.md) | «Cómo funciona» tiene página propia (`/[lang]/how-it-works`): un dibujo, la vida de un request con su recibo y la gráfica del tope; la landing no pierde secciones y lleva a ella con links de más información | Aceptada | Usuario + Default |
 
 ## Plantilla
 

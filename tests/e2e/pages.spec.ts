@@ -1,4 +1,4 @@
-import { PLANS } from "../../src/lib/billing/plans";
+import { PLANS, TYPICAL_REQUEST } from "../../src/lib/billing/plans";
 import { typicalRequestsIn } from "../../src/lib/billing/typical";
 import { getCatalog, requestCost } from "../../src/lib/catalog/queries";
 import { formatCount, formatUsd } from "../../src/lib/format";
@@ -6,7 +6,7 @@ import { expect, type Page, test } from "@playwright/test";
 
 import { axeScan, type Theme, THEMES } from "./helpers";
 
-/** Landing (ADR-0060), catálogo, detalle de modelo (plan en docs/14), precios, preguntas (ADR-0061), docs (docs/02 › Docs) y acceso (ADR-0063). */
+/** Landing (ADR-0060), catálogo, detalle de modelo (plan en docs/14), precios, preguntas (ADR-0061), cómo funciona (ADR-0071), docs (docs/02 › Docs) y acceso (ADR-0063). */
 
 const LOCALES = ["en", "es"] as const;
 const PAGES = [
@@ -16,6 +16,7 @@ const PAGES = [
   { name: "docs", path: "/docs" },
   { name: "precios", path: "/pricing" },
   { name: "preguntas", path: "/faq" },
+  { name: "como-funciona", path: "/how-it-works" },
   // La ventana de acceso, en el modo de desarrollo con el que corre el servidor de pruebas (ADR-0063).
   { name: "entrar", path: "/sign-in" },
   { name: "crear-cuenta", path: "/sign-up" },
@@ -100,20 +101,22 @@ test.describe("landing en anchos difíciles", () => {
 });
 
 test.describe("landing", () => {
-  test("el vistazo cambia de grupo y lleva al catálogo con el filtro puesto", async ({ page }) => {
+  test("la tabla cambia de grupo y lleva al catálogo con el filtro puesto", async ({ page }) => {
     await open(page, "/es");
-    const peek = page.locator("#models");
-    const coding = getCatalog().filter((model) => model.allTags.includes("coding")).length;
-    await peek.getByRole("button", { name: /^Código/ }).click();
-    await expect(peek.getByRole("link", { name: `Ver los ${coding} de Código` })).toHaveAttribute("href", "/es/models?tags=coding");
-    await expect(peek.locator("article")).toHaveCount(Math.min(4, coding));
-
-    await peek.getByRole("button", { name: "Por autor" }).click();
-    await peek.getByRole("button", { name: /^Anthropic/ }).click();
-    const anthropic = getCatalog().filter((model) => model.author === "anthropic").length;
-    await peek.getByRole("link", { name: `Ver los ${anthropic} de Anthropic` }).click();
-    await expect(page).toHaveURL(/\/es\/models\?author=anthropic$/);
-    await expect(page.getByRole("region", { name: "Modelos" }).locator("article")).toHaveCount(anthropic);
+    const prices = page.locator("#prices");
+    const coding = getCatalog().filter((model) => model.allTags.includes("coding"));
+    await prices.getByRole("tab", { name: /^Código/ }).click();
+    const panel = prices.getByRole("tabpanel");
+    const allCoding = panel.getByRole("link", { name: `Ver los ${coding.length} de Código` });
+    await expect(allCoding).toHaveAttribute("href", "/es/models?tags=coding");
+    await expect(panel.locator("tbody tr")).toHaveCount(Math.min(8, coding.length));
+    const members = coding.map((model) => `/es/models/${model.id}`);
+    for (const href of await panel.locator("tbody th a").evaluateAll((links) => links.map((link) => link.getAttribute("href")))) {
+      expect(members).toContain(href);
+    }
+    await allCoding.click();
+    await expect(page).toHaveURL(/\/es\/models\?tags=coding$/);
+    await expect(page.getByRole("region", { name: "Modelos" }).locator("article")).toHaveCount(coding.length);
   });
 
   test("el selector de modelo recalcula las requests típicas de los planes", async ({ page }) => {
@@ -121,7 +124,7 @@ test.describe("landing", () => {
     const plus = page.locator("#pricing").getByRole("article").filter({ has: page.getByRole("heading", { name: "Plus" }) });
     const fits = (id: string) => formatCount(typicalRequestsIn(PLANS.plus.fiveHourLimitMicroUsd, getCatalog().find((model) => model.id === id)!), "es");
     await expect(plus).toContainText(`≈ ${fits("anthropic/claude-sonnet-5.5")} requests`);
-    await page.getByRole("combobox", { name: "Calcula las requests con" }).click();
+    await page.getByRole("combobox", { name: "Calcula los requests con" }).click();
     await page.getByRole("option", { name: "Claude Opus 5.5" }).click();
     await expect(plus).toContainText(`≈ ${fits("anthropic/claude-opus-5.5")} requests`);
     await expect(plus).toContainText("con Claude Opus 5.5");
@@ -136,6 +139,18 @@ test.describe("landing", () => {
     await expect(page).toHaveURL(/\/es\/faq$/);
     await page.getByRole("button", { name: "¿Qué incluye un plan?" }).click();
     await expect(page.getByText(`Plus cuesta ${formatUsd(Number(PLANS.plus.priceMicroUsd), "es", "whole")}`)).toBeVisible();
+  });
+
+  test("Cómo funciona tiene página propia: la cabecera y «Ver cómo funciona» llevan a ella (ADR-0071)", async ({ page }) => {
+    await open(page, "/es");
+    await page.locator("#why").getByRole("link", { name: "Ver cómo funciona" }).click();
+    await expect(page).toHaveURL(/\/es\/how-it-works$/);
+    await expect(page).toHaveTitle("Cómo funciona · cheapllm.wtf");
+    await expect(page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Cómo funciona" })).toHaveAttribute("aria-current", "page");
+    // El recibo de ejemplo sale del catálogo: la request típica con el precio de Claude Sonnet 5.5.
+    const sonnet = getCatalog().find((model) => model.id === "anthropic/claude-sonnet-5.5")!;
+    const charged = formatUsd(requestCost(sonnet.discountedInput, sonnet.discountedOutput, 20_000, 2_000), "es", "price");
+    await expect(page.getByRole("complementary", { name: "Request de ejemplo" })).toContainText(charged);
   });
 });
 
@@ -247,8 +262,9 @@ test.describe("detalle", () => {
   test("muestra el ahorro del request de ejemplo y el snippet con el ID del modelo", async ({ page }) => {
     await open(page, "/es/models/anthropic/claude-sonnet-4.6");
     const model = getCatalog().find((entry) => entry.id === "anthropic/claude-sonnet-4.6")!;
-    const discounted = requestCost(model.discountedInput, model.discountedOutput, 2000, 500);
-    const official = requestCost(model.officialInput, model.officialOutput, 2000, 500);
+    const { promptTokens, completionTokens } = TYPICAL_REQUEST;
+    const discounted = requestCost(model.discountedInput, model.discountedOutput, promptTokens, completionTokens);
+    const official = requestCost(model.officialInput, model.officialOutput, promptTokens, completionTokens);
     await expect(page.locator(".nr-cost").getByText(formatUsd(discounted, "es", "cost"), { exact: true })).toBeVisible();
     await expect(page.locator(".nr-cost").getByText(formatUsd(official - discounted, "es", "cost"), { exact: true })).toBeVisible();
     await page.getByRole("tab", { name: "Python", exact: true }).click();

@@ -37,6 +37,7 @@ export function SiteHeader({ locale, dict, account, menuAccount, models }: {
   const isDocs = pathname.includes("/docs");
   const isModels = pathname.includes("/models");
   const isPricing = pathname.endsWith("/pricing");
+  const isHow = pathname.endsWith("/how-it-works");
   const apple = useSyncExternalStore(noSubscription, isApplePlatform, () => false);
   return (
     <header className="nr-topbar">
@@ -47,7 +48,7 @@ export function SiteHeader({ locale, dict, account, menuAccount, models }: {
         <nav className="nr-desktop-nav" aria-label={dict.nav.label}>
           <Link href={`/${locale}/models`} className={isModels ? "nr-active" : undefined} aria-current={isModels ? "page" : undefined}>{dict.nav.models}</Link>
           <Link href={`/${locale}/pricing`} className={isPricing ? "nr-active" : undefined} aria-current={isPricing ? "page" : undefined}>{dict.nav.pricing}</Link>
-          <Link href={`/${locale}#why`} className="nr-nav-anchor">{dict.nav.howItWorks}</Link>
+          <Link href={`/${locale}/how-it-works`} className={isHow ? "nr-nav-anchor nr-active" : "nr-nav-anchor"} aria-current={isHow ? "page" : undefined}>{dict.nav.howItWorks}</Link>
           <Link href={`/${locale}/docs`} className={isDocs ? "nr-active" : undefined} aria-current={isDocs ? "page" : undefined}>{dict.nav.docs}</Link>
         </nav>
       </div>
@@ -84,7 +85,7 @@ function MobileMenu({ locale, dict, account, onSearch }: { locale: Locale; dict:
           <DropdownMenuItem onClick={onSearch}><SearchIcon aria-hidden />{dict.search.trigger}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/models`} />}><GridIcon aria-hidden />{dict.nav.models}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/pricing`} />}><TagIcon aria-hidden />{dict.nav.pricing}</DropdownMenuItem>
-          <DropdownMenuItem render={<Link href={`/${locale}#why`} />}><WorkflowIcon aria-hidden />{dict.nav.howItWorks}</DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={`/${locale}/how-it-works`} />}><WorkflowIcon aria-hidden />{dict.nav.howItWorks}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/docs`} />}><BookOpenIcon aria-hidden />{dict.nav.docs}</DropdownMenuItem>
           <DropdownMenuItem render={<Link href={`/${locale}/faq`} />}><CircleHelpIcon aria-hidden />{dict.nav.faq}</DropdownMenuItem>
         </DropdownMenuGroup>

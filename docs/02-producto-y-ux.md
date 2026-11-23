@@ -12,6 +12,7 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 | `/[lang]/models` | Pública | Ver modelos, precios y descuentos |
 | `/[lang]/pricing` | Pública | Elegir entre plan y créditos con números: lo que gasta cada modelo y cómo pagar ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
 | `/[lang]/faq` | Pública | Resolver las dudas de producto, cobro, planes, pagos, API y privacidad ([ADR-0061](./adr/0061-paginas-de-precios-y-preguntas.md)) |
+| `/[lang]/how-it-works` | Pública | Entender qué pasa con cada request: la key, la ruta más barata al modelo pedido, los reintentos y el cobro ([ADR-0071](./adr/0071-pagina-como-funciona.md)) |
 | `/[lang]/docs` | Pública | Conectar en 1 minuto y resolver dudas de la API ([ADR-0068](./adr/0068-docs-un-solo-endpoint.md)) |
 | `/[lang]/sign-in`, `/[lang]/sign-up` | Pública | Entrar o crear cuenta en la misma ventana, con un código por correo ([ADR-0063](./adr/0063-una-sola-ventana-de-acceso.md)). En desarrollo, sin Clerk, se entra con un nombre ([ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) |
 | `/[lang]/terms`, `/[lang]/privacy` | Pública | Términos (rol de intermediario y uso aceptable) y aviso de privacidad ([ADR-0020](./adr/0020-intermediario-entidad-mexico.md)) |
@@ -28,7 +29,7 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 
 Explica el producto en ocho secciones, de la que más importa a la que menos ([ADR-0060](./adr/0060-landing-explica-el-producto.md)). Los números salen del catálogo en vivo y de los planes; lo que se promete está acotado por [ADR-0062](./adr/0062-lo-que-el-sitio-promete.md).
 
-1. **Qué es:** "Un endpoint. Todos los modelos. Hasta 90 % menos." (el porcentaje es el mayor descuento del catálogo), una línea de qué es, **Obtén tu API key** y **Ver los N modelos**, y el snippet con las dos líneas que cambian resaltadas.
+1. **Qué es:** "Paga menos por más tokens de IA." y "Todos tus modelos de IA en un solo endpoint.", el precio oficial tachado con el ahorro debajo y el nuestro en grande, un selector con DeepSeek V4.1 Flash, Claude Opus 5.5, GPT 6.2 Sol y el último Gemini, y **Obtén tu API key** y **Ver los N modelos** ([ADR-0070](./adr/0070-hero-mas-tokens-por-menos.md)).
 2. **Precio a la vista:** seis modelos conocidos con el precio oficial tachado, el precio cheapllm.wtf y el descuento. Dice que el precio publicado es el máximo.
 3. **Cómo funciona:** tu código → `api.cheapllm.wtf` → el modelo, los tres pasos al primer request y tres garantías.
 4. **Vistazo al catálogo:** los grupos de la sidebar de Modelos, por capacidad o por autor, con cuatro tarjetas cada uno y un link a `/models` con el filtro puesto.
@@ -37,7 +38,13 @@ Explica el producto en ocho secciones, de la que más importa a la que menos ([A
 7. **Preguntas:** siete de `/faq` y un link a todas.
 8. **Cierre:** el último llamado al registro.
 
-La cabecera lleva Modelos, Precios, Cómo funciona (`/[lang]#how-it-works`) y Docs. El footer suma Precios y Preguntas frecuentes.
+Cada sección con más detalle en otra página lleva un link de texto con flecha: el vistazo a Modelos, «¿Cómo puede costar tan poco?» a Cómo funciona, Migrar al inicio rápido de Docs, Precios a `/pricing`, Una key para cada uso a las keys de Docs y Preguntas a `/faq` ([ADR-0071](./adr/0071-pagina-como-funciona.md)).
+
+La cabecera lleva Modelos, Precios, Cómo funciona (`/[lang]/how-it-works`) y Docs. El footer suma Precios y Preguntas frecuentes.
+
+## Cómo funciona (`/[lang]/how-it-works`)
+
+Qué pasa con cada request, con el ritmo de la landing ([ADR-0071](./adr/0071-pagina-como-funciona.md)): un dibujo de tu código → `api.cheapllm.wtf` → el modelo; los seis pasos de un request con el recibo de una request típica con Claude Sonnet 5.5 al lado; por qué cuesta menos con la gráfica del tope; tres garantías (el modelo pedido, sin cobro si falla, sin guardar prompts); el reparto entre plan y créditos; el diff para migrar; cinco preguntas y el cierre.
 
 ## Precios (`/[lang]/pricing`)
 

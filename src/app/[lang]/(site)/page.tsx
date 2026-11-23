@@ -18,7 +18,8 @@ import { HOME_FAQ } from "@/lib/marketing";
 /**
  * La landing explica qué es cheapllm.wtf, cuánto cuesta y por qué, y cómo cambiarse. El catálogo completo
  * vive en /models y cada grupo de la tabla lleva a él con el filtro puesto (ADR-0060). El orden va de la
- * pregunta que llega primero (¿cuánto?) a la última (¿cómo empiezo?).
+ * pregunta que llega primero (¿cuánto?) a la última (¿cómo empiezo?). Cada sección que tiene más detalle en otra
+ * página lleva su link: /how-it-works, /pricing, /docs o /faq (ADR-0071).
  */
 export default async function HomePage() {
   const [locale, dict] = await getLocaleAndDictionary();
@@ -28,8 +29,11 @@ export default async function HomePage() {
     <Container className="nr-mk nr-mk-home">
       <HomeHero models={models} locale={locale} dict={dict} />
       <PriceTable models={models} locale={locale} dict={dict} />
-      <WhyCheaper dict={dict} />
-      <SwitchDiff dict={dict} />
+      <WhyCheaper
+        dict={dict}
+        action={<Link className="nr-mk-text-link" href={`/${locale}/how-it-works`}><ArrowLabel>{dict.home.why.moreLink}</ArrowLabel></Link>}
+      />
+      <SwitchDiff locale={locale} dict={dict} />
       <MarketingSection
         id="pricing"
         className="nr-mk-band"

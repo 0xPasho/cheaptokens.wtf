@@ -4,6 +4,7 @@ import BookOpenIcon from "kubai-icons-react/icons/book-open";
 import CircleHelpIcon from "kubai-icons-react/icons/circle-help";
 import GridIcon from "kubai-icons-react/icons/grid";
 import TagIcon from "kubai-icons-react/icons/tag";
+import WorkflowIcon from "kubai-icons-react/icons/workflow";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ModelLogo, providerName } from "@/components/catalog/provider-logo";
@@ -36,6 +37,7 @@ export function SiteSearch({ locale, dict, models, open, onOpenChange }: {
   const pages = [
     { href: `/${locale}/models`, label: dict.nav.models, Icon: GridIcon },
     { href: `/${locale}/pricing`, label: dict.nav.pricing, Icon: TagIcon },
+    { href: `/${locale}/how-it-works`, label: dict.nav.howItWorks, Icon: WorkflowIcon },
     { href: `/${locale}/docs`, label: dict.nav.docs, Icon: BookOpenIcon },
     { href: `/${locale}/faq`, label: dict.nav.faq, Icon: CircleHelpIcon },
   ];

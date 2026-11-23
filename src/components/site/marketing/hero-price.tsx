@@ -17,12 +17,14 @@ export type HeroModel = {
 };
 
 /**
- * El hero es el precio: el oficial tachado y el nuestro, en grande, del modelo que elijas. Los dos montos van
+ * El hero es el precio: el oficial tachado y el nuestro, en grande, del modelo que elijas (ADR-0070). El ahorro va
+ * debajo del oficial, a la izquierda, sobre la misma línea base que el precio grande: no ocupa una línea propia.
+ * El nombre del modelo ya está en el selector y la unidad (1M tokens) en el detalle del modelo. Los dos montos van
  * con sus etiquetas para lectores de pantalla, porque el tachado no se anuncia.
  */
 export function HeroPrice({ models, labels }: {
   models: HeroModel[];
-  labels: { model: string; perMillion: string; official: string; ours: string };
+  labels: { model: string; official: string; ours: string };
 }) {
   const [selected, setSelected] = useState(models[0]?.id ?? "");
   const model = models.find((candidate) => candidate.id === selected) ?? models[0];
@@ -31,12 +33,11 @@ export function HeroPrice({ models, labels }: {
   return (
     <div className="nr-mk-hero-price">
       <p className="nr-mk-hero-figures" aria-live="polite">
-        <s className="nr-mk-hero-official"><span className="sr-only">{labels.official}: </span>{model.official}</s>
+        <span className="nr-mk-hero-aside">
+          <s className="nr-mk-hero-official"><span className="sr-only">{labels.official}: </span>{model.official}</s>
+          <span className="nr-mk-hero-savings">{model.savings}</span>
+        </span>
         <span className="nr-mk-hero-ours"><span className="sr-only">{labels.ours}: </span>{model.ours}</span>
-      </p>
-      <p className="nr-mk-hero-caption">
-        <span>{labels.perMillion} · {model.name}</span>
-        <span className="nr-mk-hero-savings">{model.savings}</span>
       </p>
       <ToggleGroup
         className="nr-mk-model-picker"

@@ -19,7 +19,7 @@ export function SiteFooter({ locale, dict }: { locale: Locale; dict: Dictionary 
       links: [
         { href: `/${locale}/models`, label: dict.nav.models },
         { href: `/${locale}/pricing`, label: dict.nav.pricing },
-        { href: `/${locale}#why`, label: dict.nav.howItWorks },
+        { href: `/${locale}/how-it-works`, label: dict.nav.howItWorks },
       ],
     },
     {

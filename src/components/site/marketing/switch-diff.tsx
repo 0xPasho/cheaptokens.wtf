@@ -2,11 +2,13 @@
 import CodeIcon from "kubai-icons-react/icons/code";
 import KeyRoundIcon from "kubai-icons-react/icons/key-round";
 import WalletIcon from "kubai-icons-react/icons/wallet";
+import Link from "next/link";
 
+import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { API_BASE_URL } from "@/lib/site";
 
-import { MarketingSection } from "./section";
+import { ArrowLabel, MarketingSection } from "./section";
 
 type DiffLine = { kind: "same" | "removed" | "added"; text: string };
 
@@ -35,12 +37,19 @@ function ToolLogo({ file }: { file: string }) {
 /**
  * 04 · Cambiarse, en vez del diagrama de flechas: el diff exacto, los tres pasos en una línea y con qué funciona.
  * El diff usa tonos neutros, no rojo y verde: en este sistema el verde es solo dinero (docs/13 › Color).
+ * «Leer los docs» es la información de más: el inicio rápido completo (ADR-0071).
  */
-export function SwitchDiff({ dict }: { dict: Dictionary }) {
+export function SwitchDiff({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const d = dict.home.switchTo;
   const tools = dict.home.uses.tools;
   return (
-    <MarketingSection id="switch" eyebrow={d.eyebrow} title={d.title} description={d.description}>
+    <MarketingSection
+      id="switch"
+      eyebrow={d.eyebrow}
+      title={d.title}
+      description={d.description}
+      action={<Link className="nr-mk-text-link" href={`/${locale}/docs#quickstart`}><ArrowLabel>{d.docsLink}</ArrowLabel></Link>}
+    >
       <div className="nr-mk-switch-grid">
         <figure className="nr-mk-diff">
           <figcaption>{d.diffLabel}</figcaption>

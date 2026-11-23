@@ -56,7 +56,7 @@ function CommandDialog({
       {/* El título va dentro del popup: Base UI solo enlaza aria-labelledby desde ahí. El panel no lleva relleno: lo pone la lista. */}
       <DialogContent
         className={cn(
-          "top-1/3 translate-y-0 overflow-hidden *:data-[slot=dialog-panel]:gap-0 *:data-[slot=dialog-panel]:p-0",
+          "top-[12dvh] translate-y-0 overflow-hidden *:data-[slot=dialog-panel]:gap-0 *:data-[slot=dialog-panel]:p-0",
           className
         )}
         showCloseButton={showCloseButton}

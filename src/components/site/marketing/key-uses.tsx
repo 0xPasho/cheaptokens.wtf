@@ -1,12 +1,13 @@
 import MonitorIcon from "kubai-icons-react/icons/monitor";
 import ScrollIcon from "kubai-icons-react/icons/scroll";
 import ServerIcon from "kubai-icons-react/icons/server";
+import Link from "next/link";
 
 import { formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-import { MarketingSection } from "./section";
+import { ArrowLabel, MarketingSection } from "./section";
 
 type Source = keyof Dictionary["dashboard"]["sources"];
 
@@ -17,11 +18,17 @@ const USES: { source: Source; limitMicroUsd: number | null; model: string | null
   { source: "plan_only", limitMicroUsd: 5_000_000, model: "deepseek/deepseek-v4.1-flash", Icon: ScrollIcon },
 ];
 
-/** 06 · Una key para cada uso: las formas de funcionar según cómo cobra cada API key. ADR-0060. */
+/** 06 · Una key para cada uso: las formas de funcionar según cómo cobra cada API key. ADR-0060. El link lleva a los docs de keys (ADR-0071). */
 export function KeyUses({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const d = dict.home.uses;
   return (
-    <MarketingSection id="ways" eyebrow={d.eyebrow} title={d.title} description={d.description}>
+    <MarketingSection
+      id="ways"
+      eyebrow={d.eyebrow}
+      title={d.title}
+      description={d.description}
+      action={<Link className="nr-mk-text-link" href={`/${locale}/docs#keys`}><ArrowLabel>{d.moreLink}</ArrowLabel></Link>}
+    >
       <div className="nr-mk-uses">
         {d.items.map((item, index) => {
           const use = USES[index];

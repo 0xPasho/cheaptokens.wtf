@@ -166,8 +166,11 @@
   /* Al salir el sidebar del flujo, la columna principal se ancla a la pista 2 a mano. */
   .nr-main .nr-layout > section { grid-column: 2; }
   /* El sidebar fijo llega al borde inferior: el footer empieza en la columna principal (20 + 240 + 40 px)
-     para no pintarse encima de él al final de la página. Aplica al catálogo y al dashboard. */
-  body:has(.nr-main .nr-catalog > .nr-sidebar) .nr-site-footer { margin-left: 300px; }
+     para no pintarse encima de él al final de la página. Aplica al catálogo y al dashboard.
+     Con cacheComponents, Next no desmonta la página que se deja: la oculta con <Activity>, que le pone
+     `display: none` en línea y la deja en el DOM. El :not() descarta ese sidebar oculto; sin él, el footer
+     de la página siguiente (la home, por ejemplo) quedaba corrido 300 px. */
+  body:has(.nr-main .nr-catalog > .nr-sidebar:not([style*="display: none"] *)) .nr-site-footer { margin-left: 300px; }
 }
 .nr-sidebar::-webkit-scrollbar { width: 0; display: none; }
 .nr-sidebar-group + .nr-sidebar-group { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -336,7 +339,7 @@
   .nr-board-row { grid-template-columns: 36px minmax(0, 1.4fr) minmax(0, 1.6fr) 90px 110px; gap: 12px; }
 }
 /* Con la búsqueda centrada, cada lado necesita la mitad del ancho: cuatro links en español piden unos 1180 px.
-   Por debajo sale primero el link que solo baja a una sección de la landing; los demás aguantan hasta 860 px. */
+   Por debajo sale primero «Cómo funciona», que también está en el pie y en la landing; los demás aguantan hasta 860 px. */
 @media (max-width: 1180px) {
   .nr-desktop-nav .nr-nav-anchor { display: none; }
 }
@@ -611,7 +614,8 @@
 }
 /* Por debajo de 1200 px el título ocupa el margen: los logos ya no tienen dónde estar. */
 @media (max-width: 1199px) { .nr-mk-orbit { display: none; } }
-.nr-mk-hero-title { max-width: 11.5em; margin: 0; font-size: clamp(44px, 6vw, 88px); font-weight: 600; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
+/* 9em parte el título en dos líneas parejas y lo mantiene lejos de los logos de la órbita (ADR-0070). */
+.nr-mk-hero-title { max-width: 9em; margin: 0; font-size: clamp(44px, 6vw, 88px); font-weight: 600; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
 /* Más cerca del texto principal que el gris de descripción: alto contraste, sin verse apagado. */
 .nr-mk-hero-sub { max-width: 52ch; margin: 24px 0 0; color: color-mix(in oklch, var(--foreground) 72%, transparent); font-size: 19px; line-height: 1.55; text-wrap: balance; }
 .nr-mk-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 32px; }
@@ -811,6 +815,9 @@
 @media (max-width: 560px) {
   .nr-grid.nr-mk-peek-grid, .nr-mk-plans { grid-template-columns: minmax(0, 1fr); }
   .nr-mk-hero-title { font-size: clamp(38px, 11vw, 46px); letter-spacing: -0.045em; }
+  /* En angosto el precio no cabe junto al oficial: tachado, ahorro y precio, uno debajo del otro. */
+  .nr-mk-hero-figures { flex-direction: column; align-items: center; gap: 10px; }
+  .nr-mk-hero-aside { align-items: center; gap: 6px; text-align: center; }
 }
 
 /* ═════════ Landing: hero, tabla de precios, por qué cuesta menos y migrar ═════════
@@ -820,14 +827,16 @@
 /* Hero */
 /* Ocupa el ancho de la columna: así el selector, si no cabe, se desliza en vez de ensanchar la página. */
 .nr-mk-hero-price { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; margin-top: 56px; }
-.nr-mk-hero-figures { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 28px; margin: 0; font-variant-numeric: tabular-nums; }
-.nr-mk-hero-official { color: var(--muted-foreground); font-size: clamp(28px, 3.4vw, 48px); font-weight: 450; letter-spacing: -0.03em; text-decoration-thickness: 3px; }
+/* El oficial tachado y el ahorro, apilados a la izquierda; el nuestro, grande, a la derecha (ADR-0070).
+   «last baseline» pone la línea del ahorro sobre la base del precio grande: el ahorro no suma una línea. */
+.nr-mk-hero-figures { display: flex; align-items: flex-end; align-items: last baseline; justify-content: center; gap: 4px 28px; margin: 0; font-variant-numeric: tabular-nums; }
+.nr-mk-hero-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; text-align: right; }
+.nr-mk-hero-official { color: var(--muted-foreground); font-size: clamp(28px, 3.4vw, 48px); font-weight: 450; line-height: 1; letter-spacing: -0.03em; text-decoration-thickness: 3px; }
 .nr-mk-hero-ours { color: var(--foreground); font-size: clamp(64px, 9.5vw, 136px); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; }
-.nr-mk-hero-caption { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin: 20px 0 0; color: var(--muted-foreground); font-size: 15px; }
 /* Lo que el usuario ahorra es dinero a su favor: el único color del hero (docs/13 › Color). */
-.nr-mk-hero-savings { color: var(--success); font-weight: 550; font-variant-numeric: tabular-nums; }
+.nr-mk-hero-savings { color: var(--success); font-size: 15px; font-weight: 550; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nr-mk-model-picker[data-slot="toggle-group"] {
-  display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 100%; margin-top: 28px;
+  display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 100%; margin-top: 40px;
   padding: 4px; border-radius: 999px; background: var(--card);
 }
 .nr-mk-model-picker [data-slot="toggle-group-item"] {
@@ -840,13 +849,6 @@
 .dark .nr-mk-model-picker [data-slot="toggle-group-item"][aria-pressed="true"] img.nr-brand-monochrome { filter: none; }
 @media (hover: hover) { .nr-mk-model-picker [data-slot="toggle-group-item"]:not([aria-pressed="true"]):hover { color: var(--foreground); } }
 .nr-mk-hero .nr-mk-ctas { justify-content: center; margin-top: 44px; }
-.nr-mk-base-url {
-  display: inline-flex; align-items: center; gap: 10px; max-width: 100%; height: 40px; margin-top: 16px;
-  padding: 0 4px 0 16px; border-radius: 999px; background: var(--surface-action); font-size: 13px;
-}
-.nr-mk-base-url > span { flex: none; color: var(--muted-foreground); }
-.nr-mk-base-url code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--foreground); font: 13px var(--font-mono); }
-.nr-mk-base-url [data-slot="button"] { flex: none; width: 32px; height: 32px; border-radius: 999px; }
 
 /* Tabla de precios */
 .nr-mk-prices[data-slot="tabs"] { gap: 0; }
@@ -861,7 +863,6 @@
 .nr-mk-price-tabs [data-slot="tabs-trigger"]::after { display: none; }
 .nr-mk-price-tabs [data-slot="tabs-trigger"][data-active] { background: var(--foreground); color: var(--text-inverse); }
 @media (hover: hover) { .nr-mk-price-tabs [data-slot="tabs-trigger"]:not([data-active]):hover { background: var(--surface-hover); color: var(--foreground); } }
-.nr-mk-price-tabs [data-slot="tabs-trigger"] .nr-mk-chip-count { opacity: 0.7; }
 .nr-mk-price-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .nr-mk-price-table :is(th, td) { padding: 14px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .nr-mk-price-table :is(th, td):first-child { padding-left: 0; }
@@ -916,7 +917,8 @@
 .nr-mk-diff pre { margin: 0; padding: 16px 0; overflow-x: auto; border-radius: 20px; background: var(--surface-code); color: var(--text-code); font: 14px/24px var(--font-mono); }
 .nr-mk-diff-line { display: block; padding-right: 20px; white-space: pre; }
 .nr-mk-diff-sign { display: inline-block; width: 40px; padding-left: 16px; color: var(--muted-foreground); user-select: none; }
-.nr-mk-diff-line[data-kind="removed"] { background: color-mix(in oklch, var(--foreground) 4%, transparent); color: var(--muted-foreground); }
+/* --text-description y no --muted-foreground: sobre el fondo del código en claro, el gris apagado no llega a 4.5:1. */
+.nr-mk-diff-line[data-kind="removed"] { background: color-mix(in oklch, var(--foreground) 4%, transparent); color: var(--text-description); }
 .nr-mk-diff-line[data-kind="added"] { background: color-mix(in oklch, var(--foreground) 9%, transparent); color: var(--foreground); box-shadow: inset 3px 0 0 var(--foreground); }
 .nr-mk-switch-side { display: grid; gap: 12px; padding-top: 4px; }
 .nr-mk-switch-side .nr-mk-eyebrow { margin: 0; }
@@ -1111,4 +1113,127 @@
   .nr-mk-band { margin-top: 80px; padding-block: 72px; }
   .nr-mk-band + .nr-mk-section { padding-top: 80px; }
   .nr-mk-band + .nr-mk-final { margin-top: 80px; }
+}
+
+/* ═════════ Cómo funciona: /how-it-works (ADR-0071) ═════════
+   El ritmo y las piezas de la landing. Lo nuevo: el dibujo del encabezado (sobre .nr-mk-flow), la vida de un request
+   con su recibo en dos capas (28/8/20) y la gráfica del tope. Barras y rieles neutros: el verde es solo el ahorro. */
+.nr-mk-how > .nr-mk-section:not(.nr-mk-split) .nr-mk-title { font-size: clamp(30px, 3.4vw, 48px); letter-spacing: -0.045em; }
+
+/* Encabezado */
+.nr-hw-head { display: flex; flex-direction: column; align-items: center; padding-top: 148px; text-align: center; }
+.nr-hw-head h1 { max-width: 16em; margin: 0; font-size: clamp(44px, 5.6vw, 80px); font-weight: 600; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
+/* Una frase por renglón: si no cabe, se parte dentro de la frase y no entre «Mismo» y «modelo». */
+.nr-hw-head h1 span { display: inline-block; }
+.nr-hw-head-sub { max-width: 60ch; margin: 24px 0 0; color: color-mix(in oklch, var(--foreground) 72%, transparent); font-size: 19px; line-height: 1.55; text-wrap: balance; }
+/* El código pide más ancho que las otras dos tarjetas: su línea más larga es el ID del modelo. */
+.nr-hw-flow { grid-template-columns: minmax(0, 1.15fr) 64px minmax(0, 1fr) 64px minmax(0, 1fr); width: 100%; margin-top: 64px; text-align: start; }
+.nr-hw-flow .nr-mk-flow-node { min-width: 0; }
+.nr-hw-flow .nr-mk-flow-node h2 { margin: 0; font-size: 20px; font-weight: 550; line-height: 1.2; letter-spacing: -0.03em; }
+.nr-hw-flow .nr-mk-flow-label code { font: 12.5px var(--font-mono); }
+.nr-hw-code { margin: auto 0 0; padding: 14px 16px; overflow-x: auto; border-radius: 18px; background: var(--surface-code); color: var(--text-code); font: 12.5px/20px var(--font-mono); }
+.nr-hw-code b { color: var(--foreground); font-weight: 500; }
+.nr-hw-flow .nr-mk-flow-core ol { gap: 10px; margin-top: 6px; }
+.nr-hw-flow .nr-mk-flow-core li { align-items: flex-start; font-size: 14.5px; }
+.nr-hw-flow .nr-mk-flow-core li small { display: block; margin-top: 2px; color: color-mix(in oklch, var(--text-inverse) 62%, transparent); font-size: 12.5px; }
+.nr-hw-flow .nr-mk-flow-node .nr-hw-model { display: flex; align-items: center; gap: 10px; color: var(--foreground); font-size: 15px; font-weight: 500; }
+.nr-hw-model img { width: 20px; height: 20px; }
+.nr-mk-logo-row > li.nr-hw-more { width: auto; padding: 0 10px; color: var(--text-description); font-size: 12px; font-variant-numeric: tabular-nums; }
+/* Ida arriba, vuelta abajo. Sin movimiento, quedan las flechas punteadas. */
+.nr-hw-link { display: flex; flex-direction: column; justify-content: center; gap: 18px; padding-inline: 10px; color: var(--muted-foreground); }
+.nr-hw-rail { position: relative; display: block; height: 1px; background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px); }
+.nr-hw-rail::after { content: ""; position: absolute; top: -4px; width: 8px; height: 8px; border: solid currentColor; border-width: 1px 1px 0 0; }
+.nr-hw-rail[data-dir="out"]::after { right: 0; transform: rotate(45deg); }
+.nr-hw-rail[data-dir="back"]::after { left: 0; transform: rotate(-135deg); }
+.nr-hw-rail i { position: absolute; top: -3px; left: 0; width: 7px; height: 7px; border-radius: 999px; background: var(--foreground); opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .nr-hw-rail[data-dir="out"] i { animation: nr-hw-out 2.8s var(--ease) infinite; }
+  .nr-hw-rail[data-dir="back"] i { animation: nr-hw-back 2.8s var(--ease) 1.4s infinite; }
+}
+@keyframes nr-hw-out { 0% { left: 0; opacity: 0; } 15%, 70% { opacity: 1; } 70% { left: calc(100% - 7px); } 85%, 100% { left: calc(100% - 7px); opacity: 0; } }
+@keyframes nr-hw-back { 0% { left: calc(100% - 7px); opacity: 0; } 15%, 70% { opacity: 1; } 70% { left: 0; } 85%, 100% { left: 0; opacity: 0; } }
+.nr-hw-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted-foreground); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.nr-hw-facts li { display: inline-flex; align-items: center; gap: 8px; }
+.nr-hw-facts li::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: currentColor; }
+
+/* La vida de un request: los pasos a la izquierda (6/11) y el recibo fijo a la derecha (5/11). */
+.nr-hw-life { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; gap: 64px; text-align: start; }
+.nr-hw-steps { margin: 0; padding: 0; list-style: none; }
+.nr-hw-step { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 20px; padding-bottom: 40px; outline-offset: 6px; }
+.nr-hw-step:last-child { padding-bottom: 0; }
+.nr-hw-step:not(:last-child)::before { content: ""; position: absolute; top: 44px; bottom: 4px; left: 19.5px; width: 1px; background: var(--border); }
+.nr-hw-step-number { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--card); color: var(--muted-foreground); font: 500 12.5px var(--font-mono); transition: background-color 220ms var(--ease), color 220ms var(--ease); }
+.nr-hw-step[data-state="active"] .nr-hw-step-number { background: var(--foreground); color: var(--text-inverse); }
+.nr-hw-step h3 { margin: 8px 0 0; font-size: 19px; font-weight: 550; line-height: 1.25; letter-spacing: -0.025em; }
+.nr-hw-step p { max-width: 54ch; margin: 8px 0 0; color: var(--text-description); font-size: 15px; line-height: 1.6; text-wrap: pretty; }
+/* Los cuatro primeros pasos pueden detener el request: el error que llega y que cuesta $0. */
+.nr-hw-step .nr-hw-stop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; color: var(--muted-foreground); font-size: 12.5px; }
+.nr-hw-stop code { padding: 3px 10px; border-radius: 999px; background: var(--surface-action); color: var(--text-description); font: 12px var(--font-mono); }
+.nr-hw-stop b { color: var(--foreground); font: 500 12px var(--font-mono); }
+.nr-hw-receipt { position: sticky; top: 112px; padding: 8px; border-radius: 28px; background: var(--card); }
+.nr-hw-receipt-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 14px; }
+.nr-hw-receipt-top p { margin: 0; color: var(--text-label); font-size: 12.5px; font-weight: 500; }
+.nr-hw-receipt-model { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 8px; border-radius: 999px; background: var(--surface-pill); color: var(--text-pill); font: 12px var(--font-mono); white-space: nowrap; }
+.nr-hw-receipt-model img { width: 14px; height: 14px; }
+.nr-hw-receipt-front { margin: 0; padding: 4px 20px; border-radius: 20px; background: var(--surface-model-front); }
+.nr-hw-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.nr-hw-row:last-child { border-bottom: 0; }
+.nr-hw-row dt { display: flex; align-items: baseline; color: var(--text-description); font-size: 13.5px; transition: color 220ms var(--ease); }
+.nr-hw-row-number { flex: none; width: 34px; color: var(--muted-foreground); font: 12px var(--font-mono); }
+.nr-hw-row dd { margin: 0; color: var(--foreground); font: 13px var(--font-mono); text-align: end; font-variant-numeric: tabular-nums; text-wrap: balance; transition: color 220ms var(--ease); }
+.nr-hw-row dd.nr-hw-row-note { grid-column: 1 / -1; padding-inline-start: 34px; color: var(--muted-foreground); font: 12px/1.5 var(--font-sans); text-align: start; }
+.nr-hw-row-note code { font: 11.5px var(--font-mono); }
+.nr-hw-row[data-total] { padding-block: 18px; }
+.nr-hw-row[data-total] dt { color: var(--foreground); font-size: 15px; font-weight: 550; }
+.nr-hw-row[data-total] dd:not(.nr-hw-row-note) { font: 550 26px/1 var(--font-sans); letter-spacing: -0.03em; }
+.nr-hw-row[data-total] dd.nr-hw-row-note + dd.nr-hw-row-note { margin-top: -2px; }
+.nr-hw-savings, .nr-hw-row dd.nr-hw-savings { color: var(--success); font-weight: 550; font-variant-numeric: tabular-nums; }
+/* Lo que todavía no pasa va en gris apagado, no con opacidad: el texto mantiene su contraste (axe). */
+@media (min-width: 1081px) {
+  .nr-hw-life[data-live] .nr-hw-row[data-state="next"] :is(dt, dd:not(.nr-hw-savings)) { color: var(--muted-foreground); }
+  .nr-hw-life[data-live] .nr-hw-step[data-state="next"] h3 { color: var(--text-description); }
+}
+.nr-hw-receipt-foot { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 14px 12px 8px; color: var(--muted-foreground); font-size: 12.5px; line-height: 1.5; }
+.nr-hw-receipt-foot .nr-mk-icon svg { width: 20px; height: 20px; }
+
+/* La gráfica del tope, debajo de «¿Cómo puede costar tan poco?» */
+.nr-hw-cap { margin: 48px 0 0; padding: 22px 24px 20px; border-radius: 24px; background: var(--card); }
+.nr-hw-cap figcaption { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; color: var(--text-label); font-size: 12.5px; }
+.nr-hw-cap figcaption img { width: 16px; height: 16px; }
+.nr-hw-bars ul { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.nr-hw-bar { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; color: var(--text-description); font-size: 13px; }
+.nr-hw-bar :is(b, s) { color: var(--foreground); font: 400 13px var(--font-mono); text-align: end; font-variant-numeric: tabular-nums; }
+.nr-hw-bar s { color: var(--text-description); }
+.nr-hw-bar-track { grid-column: 1 / -1; position: relative; height: 10px; border-radius: 999px; background: var(--surface-pressed); }
+.nr-hw-bar-track i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--foreground); }
+.nr-hw-bar[data-kind="official"] .nr-hw-bar-track i { background: color-mix(in oklch, var(--foreground) 26%, transparent); }
+.nr-hw-bar[data-kind="paid"] .nr-hw-bar-track i { background: color-mix(in oklch, var(--foreground) 50%, transparent); }
+/* Sube por el hueco entre filas (14 px) hasta cubrir la barra del precio publicado (10 px). */
+.nr-hw-cap-line { position: absolute; top: -28px; bottom: -4px; width: 0; border-left: 1px dashed var(--foreground); }
+.nr-hw-cap-line span { position: absolute; bottom: -18px; left: 0; transform: translateX(-50%); color: var(--foreground); font: 11px var(--font-mono); white-space: nowrap; }
+.nr-hw-cap-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin: 30px 0 0; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 1080px) {
+  .nr-hw-flow { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin-inline: auto; }
+  .nr-hw-link { flex-direction: row; justify-content: center; gap: 28px; height: 56px; padding: 0; }
+  .nr-hw-rail { width: 1px; height: 100%; background: repeating-linear-gradient(180deg, currentColor 0 4px, transparent 4px 8px); }
+  .nr-hw-rail[data-dir="out"]::after { top: auto; right: auto; bottom: 0; left: -4px; transform: rotate(135deg); }
+  .nr-hw-rail[data-dir="back"]::after { top: 0; left: -4px; transform: rotate(-45deg); }
+  .nr-hw-rail i { display: none; }
+  .nr-hw-life { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .nr-hw-receipt { position: static; }
+  .nr-hw-cap { max-width: 560px; }
+}
+@media (max-width: 860px) {
+  .nr-hw-head { padding-top: 120px; }
+}
+@media (max-width: 560px) {
+  .nr-hw-head h1 { font-size: clamp(38px, 11vw, 46px); letter-spacing: -0.045em; }
+  .nr-hw-head-sub { font-size: 17px; }
+  .nr-hw-step { grid-template-columns: 32px minmax(0, 1fr); gap: 14px; }
+  .nr-hw-step-number { width: 32px; height: 32px; font-size: 11.5px; }
+  .nr-hw-step:not(:last-child)::before { top: 36px; left: 15.5px; }
+  .nr-hw-step h3 { margin-top: 4px; }
+  .nr-hw-receipt-front { padding-inline: 14px; }
+  .nr-hw-row[data-total] dd:not(.nr-hw-row-note) { font-size: 22px; }
 }
