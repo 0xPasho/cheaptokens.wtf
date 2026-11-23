@@ -177,7 +177,7 @@ Son valores iniciales configurables. Se revisan con datos reales.
 - Server Components para leer y Server Functions para mutar (crear o revocar key, iniciar checkout).
 - **`proxy.ts` no es la autorización.** La documentación de Next 16 lo dice explícitamente: el proxy sirve para redirecciones optimistas. Cada página privada y cada Server Function vuelve a verificar la sesión (con `auth()` de Clerk, o la cookie del modo de desarrollo, [ADR-0050](./adr/0050-login-clerk-y-modo-desarrollo.md)) y resuelve el workspace del usuario antes de tocar datos.
 - El workspace se crea **de forma perezosa**: la primera vez que un usuario autenticado entra al dashboard se hace un upsert por `clerk_user_id` ([ADR-0016](./adr/0016-workspace-dueno.md)).
-- `cacheComponents` está activo en `next.config.ts`. El dashboard lee datos por usuario en tiempo de request. El catálogo público y `GET /v1/models` se cachean con `use cache` y `cacheTag('catalog')`. Al terminar, `pnpm catalog:sync` llama a `/api/internal/revalidate-catalog` (protegido con un secreto), que ejecuta `revalidateTag('catalog', 'max')`.
+- `cacheComponents` está activo en `next.config.ts`. El dashboard lee datos por usuario en tiempo de request. El catálogo público y `GET /v1/models` se cachean con `use cache` y `cacheTag('catalog')`. Al terminar, `pnpm catalog:sync` llama a `/api/internal/revalidate-catalog` (protegido con un secreto), que ejecuta `revalidateTag('catalog', { expire: 0 })`; el cron hace lo mismo cuando cambia algo público del catálogo (ADR-0069).
 
 ## Webhooks
 

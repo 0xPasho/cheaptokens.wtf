@@ -41,7 +41,7 @@ for (const theme of THEMES) {
     expect(sidebar.x).toBe(20);
     expect(await page.locator("body").evaluate((el) => getComputedStyle(el).fontFamily)).toContain("inter");
     await page.keyboard.press("Control+k");
-    await expect(page.getByRole("searchbox")).toBeFocused();
+    await expect(page.getByRole("dialog").getByRole("combobox")).toBeFocused();
   });
 }
 

@@ -2,7 +2,7 @@ import { modelUpstreams, models, upstreams } from "@/lib/db/schema";
 import type { Db } from "@/lib/db/types";
 
 import { applyDiscount } from "./pricing";
-import { toModel } from "./queries";
+import { storedTags } from "./queries";
 import { validateCatalog, type CatalogValidationInput } from "./validate";
 
 export async function syncCatalog(db: Db, input: CatalogValidationInput): Promise<{ warnings: string[] }> {
@@ -33,7 +33,7 @@ export async function syncCatalog(db: Db, input: CatalogValidationInput): Promis
         discountBps: entry.discountBps,
         inputPriceMicroUsd: BigInt(applyDiscount(entry.officialInput, entry.discountBps)),
         outputPriceMicroUsd: BigInt(applyDiscount(entry.officialOutput, entry.discountBps)),
-        tags: toModel(entry).allTags,
+        tags: storedTags(entry),
         status: entry.status,
         retiresAt: entry.retiresOn ?? null,
       };

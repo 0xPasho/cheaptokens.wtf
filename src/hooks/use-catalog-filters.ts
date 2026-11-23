@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import type { SortKey } from "@/lib/catalog/queries";
+import { SORT_KEYS, type SortKey } from "@/lib/catalog/search";
 import { MODEL_TAGS, type ModelTag } from "@/lib/catalog/tags";
 
 function subscribe(callback: () => void) {
@@ -22,7 +22,8 @@ export function useCatalogFilters() {
   const author = params.get("author") ?? "";
   const tags = (params.get("tags") ?? "").split(",").filter((tag): tag is ModelTag => MODEL_TAGS.includes(tag as ModelTag));
   const rawSort = params.get("sort");
-  const sort: SortKey = rawSort === "output" || rawSort === "name" ? rawSort : "discount";
+  // Sin `sort` en la URL, «Recomendados». Un valor desconocido también cae ahí.
+  const sort: SortKey = SORT_KEYS.find((key) => key === rawSort) ?? "featured";
   const view = params.get("view") === "list" ? "list" : "grid";
 
   function update(values: Record<string, string>) {

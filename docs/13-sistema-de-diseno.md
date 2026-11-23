@@ -56,7 +56,7 @@ Se usa el catálogo del repositorio, no la instantánea de datos de NibbleRouter
 
 Los textos públicos vienen de los diccionarios `en` y `es`. Dinero, porcentajes, fechas, tokens y conteos usan `@/lib/format`. El dinero viaja en µUSD. Nunca se usa `toFixed()` ni se concatenan signos monetarios.
 
-Los filtros por capacidad se combinan con Y. Autor, búsqueda, orden y vista viven en la URL. Entrar a un modelo y volver conserva la selección. La búsqueda admite Ctrl/Cmd+K y `/`. Los ejemplos de respuesta están identificados y no disparan solicitudes.
+Los filtros por capacidad se combinan con Y. Autor, búsqueda, orden y vista viven en la URL. Entrar a un modelo y volver conserva la selección. El catálogo tiene su propio campo de búsqueda. Ctrl/Cmd+K y `/` abren la paleta de la cabecera desde cualquier página: lleva a un modelo o a una página, o al catálogo filtrado (ADR-0069). Los ejemplos de respuesta están identificados y no disparan solicitudes.
 
 ## Iconos
 

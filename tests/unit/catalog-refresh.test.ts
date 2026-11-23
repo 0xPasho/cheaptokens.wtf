@@ -111,7 +111,7 @@ describe("refreshCatalog", () => {
     let discount = 7_400;
     const alpha = provider("alpha", () => [offer("acme/one", share, discount)]);
     const first = await refreshCatalog(db, { providers: [alpha], environment: "production" });
-    expect(first).toMatchObject({ changed: true, models: 1, routes: 1, retired: 0, providers: [{ id: "alpha", ok: true, offers: 1 }] });
+    expect(first).toMatchObject({ changed: true, catalogChanged: true, models: 1, routes: 1, retired: 0, providers: [{ id: "alpha", ok: true, offers: 1 }] });
     expect(await db.select().from(models)).toMatchObject([{ id: "acme/one", discountBps: 7_400, outputPriceMicroUsd: BigInt(1_300_000) }]);
     expect(await routes()).toEqual(["alpha:acme/one:1000000:1"]);
     // En producción el mock no se escribe.
@@ -119,12 +119,17 @@ describe("refreshCatalog", () => {
 
     // Sin cambios en el proveedor no se escribe nada: `updated_at` queda igual.
     const [{ updatedAt }] = await db.select().from(upstreams);
-    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false, models: 1 });
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false, catalogChanged: false, models: 1 });
     expect((await db.select().from(upstreams))[0].updatedAt).toEqual(updatedAt);
+
+    // Un costo que se mueve sin cambiar el descuento se escribe, pero no se ve en el sitio: no hay que revalidarlo.
+    share = 1_900;
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: true, catalogChanged: false });
+    expect(await routes()).toEqual(["alpha:acme/one:950000:1"]);
 
     share = 3_000;
     discount = 6_100;
-    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: true });
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: true, catalogChanged: true });
     expect(await db.select().from(models)).toMatchObject([{ discountBps: 6_100, outputPriceMicroUsd: BigInt(1_950_000) }]);
     expect(await routes()).toEqual(["alpha:acme/one:1500000:1"]);
     expect(await loadStoredEntries(db)).toEqual([entry("acme/one", 6_100)]);

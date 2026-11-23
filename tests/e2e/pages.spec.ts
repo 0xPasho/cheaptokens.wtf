@@ -192,16 +192,17 @@ test.describe("catálogo", () => {
     await expect(page.getByRole("status")).toContainText(`${getCatalog().filter((model) => model.author === "google").length} modelos`);
   });
 
-  test("el atajo / enfoca la búsqueda", async ({ page }) => {
-    const search = page.getByRole("searchbox", { name: "Buscar modelos" });
+  test("el atajo / abre la paleta de búsqueda", async ({ page }) => {
+    const palette = page.getByRole("dialog", { name: "Buscar modelos" });
     // El atajo existe después de hidratar: se reintenta hasta que la página está lista.
     await expect(async () => {
       await page.locator("body").focus();
       await page.keyboard.press("/");
-      await expect(search).toBeFocused({ timeout: 250 });
+      await expect(palette).toBeVisible({ timeout: 250 });
     }).toPass({ timeout: 5000 });
     // El "/" no se escribe en el campo.
-    await expect(search).toHaveValue("");
+    await expect(palette.getByRole("combobox")).toBeFocused();
+    await expect(palette.getByRole("combobox")).toHaveValue("");
   });
 
   test("los tags se combinan con Y", async ({ page }) => {
@@ -225,7 +226,7 @@ test.describe("catálogo", () => {
     await page.getByRole("combobox", { name: "Ordenar por" }).click();
     await page.getByRole("option", { name: "Nombre" }).click();
     const names = await rows(page).locator("h2 a").allTextContents();
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    expect(names).toEqual([...names].sort(new Intl.Collator("en", { numeric: true, sensitivity: "base" }).compare));
   });
 
   test("cada modelo tiene su página de detalle", async ({ page }) => {
@@ -327,6 +328,43 @@ test.describe("docs", () => {
   });
 });
 
+
+test.describe("búsqueda de la cabecera (⌘K)", () => {
+  test("está en el centro de la pantalla", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await open(page, "/es");
+    const box = (await page.getByRole("button", { name: /^Buscar/ }).boundingBox())!;
+    // El centro de la cabecera, que ocupa el ancho de la página sin la barra de desplazamiento.
+    const header = (await page.getByRole("banner").boundingBox())!;
+    expect(Math.abs(box.x + box.width / 2 - (header.x + header.width / 2))).toBeLessThanOrEqual(1);
+  });
+
+  test("desde la landing lleva a un modelo con el teclado", async ({ page }) => {
+    await open(page, "/en");
+    const palette = page.getByRole("dialog", { name: "Search models" });
+    await expect(async () => {
+      await page.keyboard.press("ControlOrMeta+k");
+      await expect(palette).toBeVisible({ timeout: 250 });
+    }).toPass({ timeout: 5000 });
+    const target = getCatalog().find((model) => model.id === "anthropic/claude-sonnet-4.6")!;
+    await palette.getByRole("combobox").fill("sonnet 4.6");
+    await expect(palette.getByRole("option").first()).toContainText(target.name);
+    await expect(palette.getByRole("option").first()).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/en\/models\/anthropic\/claude-sonnet-4\.6$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(target.name);
+  });
+
+  test("«Ver los resultados» abre el catálogo filtrado", async ({ page }) => {
+    await open(page, "/es/pricing");
+    await page.getByRole("button", { name: /^Buscar/ }).click();
+    const palette = page.getByRole("dialog", { name: "Buscar modelos" });
+    await palette.getByRole("combobox").fill("claude");
+    await palette.getByRole("option", { name: /resultados? en el catálogo/ }).click();
+    await expect(page).toHaveURL(/\/es\/models\?q=claude$/);
+    await expect(page.getByRole("searchbox", { name: "Buscar modelos" })).toHaveValue("claude");
+  });
+});
 
 test("catalog cards combine author and search filters and keep results when switching views", async ({ page }) => {
   await open(page, "/en/models", "dark");

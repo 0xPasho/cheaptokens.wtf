@@ -49,14 +49,19 @@ async function loadStoredOffers(db: Db, upstreamId: string, entries: Map<string,
   });
 }
 
+/** Lo público de cada modelo (lo que muestran el sitio y `GET /v1/models`), en una forma comparable. */
+function modelRows(entries: CatalogEntry[]) {
+  return entries.map((entry) => [
+    entry.id, entry.name, entry.author, entry.description.en, entry.description.es ?? null, entry.contextLength,
+    entry.maxOutputTokens ?? null, entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
+    entry.discountBps, [...entry.tags].sort(), entry.status, entry.retiresOn ?? null,
+  ]).sort();
+}
+
 /** Lo que la sincronización escribiría, en una forma comparable con lo que ya está en la base. */
 function fingerprint(entries: CatalogEntry[], definitions: Pick<UpstreamDefinition, "id" | "name" | "baseUrl" | "apiKeyEnv" | "sendsPriceCap">[], routes: string[]): string {
   return JSON.stringify({
-    models: entries.map((entry) => [
-      entry.id, entry.name, entry.author, entry.description.en, entry.description.es ?? null, entry.contextLength,
-      entry.maxOutputTokens ?? null, entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
-      entry.discountBps, [...entry.tags].sort(), entry.status, entry.retiresOn ?? null,
-    ]).sort(),
+    models: modelRows(entries),
     upstreams: definitions.map((item) => [item.id, item.name, item.baseUrl, item.apiKeyEnv, item.sendsPriceCap]).sort(),
     routes: [...routes].sort(),
   });
@@ -77,6 +82,11 @@ async function storedFingerprint(db: Db, entries: CatalogEntry[]): Promise<strin
 export type RefreshReport = MergeReport & {
   /** False cuando los proveedores dieron lo mismo que ya estaba: no se escribió nada. */
   changed: boolean;
+  /**
+   * True si cambió algo público de un modelo (precio, descuento, estado…), no solo el costo de una ruta. Es lo
+   * que obliga a revalidar el sitio: un costo que se mueve sin cambiar el descuento no se ve en ninguna página.
+   */
+  catalogChanged: boolean;
   providers: { id: string; ok: boolean; offers: number; error?: string }[];
   warnings: string[];
 };
@@ -126,8 +136,9 @@ export async function refreshCatalog(db: Db, options: {
   // El cron corre cada minuto: casi siempre no hay nada que escribir.
   const written = next.filter((upstream) => upstream.environments.includes(environment));
   const target = fingerprint(merged.models, written, written.flatMap((upstream) => upstream.models.map((route) => routeKey(upstream.id, route))));
-  if (target === await storedFingerprint(db, stored)) return { ...merged.report, changed: false, providers: report, warnings: [] };
+  if (target === await storedFingerprint(db, stored)) return { ...merged.report, changed: false, catalogChanged: false, providers: report, warnings: [] };
 
+  const catalogChanged = JSON.stringify(modelRows(merged.models)) !== JSON.stringify(modelRows(stored));
   const { warnings } = await syncCatalog(db, { models: merged.models, upstreams: next, environment });
-  return { ...merged.report, changed: true, providers: report, warnings };
+  return { ...merged.report, changed: true, catalogChanged, providers: report, warnings };
 }

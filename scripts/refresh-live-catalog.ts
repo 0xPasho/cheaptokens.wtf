@@ -17,6 +17,7 @@ async function main(): Promise<void> {
     }
     if (!report.changed) { console.log(`Catalog for ${appEnv} is already up to date (${report.models} models).`); return; }
     console.log(`Catalog refreshed for ${appEnv}: ${report.models} models, ${report.routes} routes, ${report.droppedRoutes} routes dropped, ${report.retired} retired.`);
+    if (!report.catalogChanged) { console.log("Only route costs changed: the site shows the same catalog."); return; }
 
     const appUrl = readSecret("APP_URL");
     const secret = readSecret("INTERNAL_REVALIDATE_SECRET");

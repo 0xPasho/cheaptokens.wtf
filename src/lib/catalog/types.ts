@@ -39,6 +39,8 @@ export type CatalogModel = CatalogEntry & {
   allTags: ModelTag[];
   /** Segmentos de la URL: /models/{author}/{slug}. */
   slug: string;
+  /** Su lugar en «Recomendados» (`FEATURED_MODELS`), desde 0. Sin valor, no está destacado. */
+  featuredRank?: number;
 };
 
 /** Entornos en los que existe un upstream. `mock` nunca lleva `production` (docs/07 › Tests automáticos). */

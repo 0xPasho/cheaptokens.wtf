@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { generatedDescription } from "./describe";
 import { applyDiscount } from "./pricing";
 import type { CatalogEntry, UpstreamModelMapping } from "./types";
 import { MIN_MARGIN_BPS } from "./validate";
@@ -105,10 +106,7 @@ export function importInferhubCatalog(payload: unknown, previous: CatalogEntry[]
     for (const tag of known?.tags ?? []) if (!tags.includes(tag)) tags.push(tag);
     const entry: CatalogEntry = {
       id, name, author: creator.author,
-      description: {
-        en: `${name}. ${row.modality.split(",").includes("image") ? "Accepts text and image input." : "Accepts text input."}`,
-        es: `${name}. ${row.modality.split(",").includes("image") ? "Admite entradas de texto e imagen." : "Admite entradas de texto."}`,
-      },
+      description: generatedDescription(name, row.modality.split(",").includes("image")),
       contextLength: row.input_token_limit,
       ...(row.max_output_tokens ? { maxOutputTokens: row.max_output_tokens } : {}),
       officialInput, officialOutput,

@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { DiscountBadge } from "@/components/discount-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -490,6 +492,42 @@ function HelpAndShortcuts() {
   );
 }
 
+const PALETTE_MODELS = [
+  { id: "anthropic/claude-sonnet-5.5", name: "Claude Sonnet 5.5", author: "Anthropic", output: usd(2.6), discountBps: 7400 },
+  { id: "openai/gpt-6.1-sol", name: "GPT 6.1 Sol", author: "OpenAI", output: usd(1.3), discountBps: 8700 },
+  { id: "google/gemini-4-carbon", name: "Gemini 4 Carbon", author: "Google", output: usd(2.6), discountBps: 7400 },
+];
+
+/** La paleta de búsqueda (⌘K) de la cabecera, abierta en su lugar: aquí sin diálogo, para verla junto a los demás. */
+function Palette() {
+  return (
+    <Section
+      title="Command"
+      description="La paleta de búsqueda de la cabecera (⌘K, Ctrl K o /). Filtra con la misma búsqueda del catálogo y Enter abre el resultado marcado. En la cabecera vive dentro de un Dialog."
+    >
+      <Usage>búsqueda global: lleva a un modelo o a una página desde cualquier parte del sitio.</Usage>
+      <div className="nr-search-palette max-w-xl rounded-[1.375rem] ring-1 ring-foreground/10">
+        <Command shouldFilter={false} label="Buscar modelos">
+          <CommandInput placeholder="Busca modelos, como sonnet o gpt 6" />
+          <CommandList>
+            <CommandGroup heading="Recomendados">
+              {PALETTE_MODELS.map((model) => (
+                <CommandItem key={model.id} value={model.id} className="nr-search-item">
+                  <ModelLogo modelId={model.id} />
+                  <span className="nr-search-name">{model.name}</span>
+                  <span className="nr-search-author">{model.author}</span>
+                  <span className="nr-search-price">{formatUsd(model.output, LOCALE, "price")} / 1M salida</span>
+                  <DiscountBadge discountBps={model.discountBps} locale={LOCALE} />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </div>
+    </Section>
+  );
+}
+
 function Cards() {
   return (
     <Section
@@ -709,6 +747,7 @@ export function Atoms() {
       <Choices />
       <ProgressAndLoading />
       <HelpAndShortcuts />
+      <Palette />
       <Disclosures />
       <Accordions />
       <Cards />

@@ -21,7 +21,9 @@ async function refresh(request: Request): Promise<Response> {
     const report = await refreshCatalog(getDb(), {
       providers: CATALOG_PROVIDERS, environment: readServerEnv().appEnv, seed: CATALOG,
     });
-    if (report.changed) revalidateTag("catalog", "max");
+    // Expira de inmediato (ADR-0069): cada página se vuelve a armar en su siguiente visita, aunque tenga poco tráfico.
+    // Con `max`, una página poco visitada (/es/models) seguía sirviendo un catálogo viejo mientras otra ya mostraba el nuevo.
+    if (report.catalogChanged) revalidateTag("catalog", { expire: 0 });
     console.log(JSON.stringify({ event: "catalog_refreshed", ...report }));
     return Response.json({ ok: true, ...report });
   } catch (error) {

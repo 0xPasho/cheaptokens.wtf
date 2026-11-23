@@ -5,16 +5,20 @@
 }
 
 /* ---------- Topbar: mark only, nav, compact centered search ---------- */
+/* Tres columnas: los lados se reparten el ancho por igual y la búsqueda queda en el centro de la pantalla.
+   Si un lado no cabe en su mitad (`max-content`), se queda con lo que necesita y la búsqueda se corre un poco. */
 .nr-topbar {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
   min-height: 72px;
-  padding-inline: 20px 24px;
+  --nr-topbar-start: 20px;
+  --nr-topbar-end: 24px;
+  padding-inline: var(--nr-topbar-start) var(--nr-topbar-end);
   /* Una sola altura para todo lo que va en la fila: logo, links, búsqueda, tema, CTA, entrar y cuenta. */
   --nr-topbar-control: 36px;
   background: var(--navigation-surface);
@@ -71,25 +75,41 @@
   transition: color 150ms;
 }
 .nr-desktop-nav a:hover, .nr-desktop-nav a.active { color: var(--foreground); }
+.nr-header-leading { grid-column: 1; }
+/* Un botón con forma de campo: abre la paleta de búsqueda (⌘K). */
 .nr-search-box {
+  grid-column: 2;
   display: flex; align-items: center; gap: 9px;
-  width: 168px; height: var(--nr-topbar-control);
-  padding-inline: 16px;
-  background: var(--secondary);
+  width: 200px; height: var(--nr-topbar-control);
+  border: 0; padding-inline: 16px;
+  background: var(--secondary); color: var(--muted-foreground);
   border-radius: 999px;
-  transition: width 0.2s, background 0.2s;
+  font-size: 14px; text-align: start; cursor: pointer;
+  transition: background 180ms var(--ease), color 150ms;
+  /* Los rellenos de la cabecera no son iguales a cada lado: se compensa la diferencia para quedar en el centro exacto. */
+  translate: calc((var(--nr-topbar-end) - var(--nr-topbar-start)) / 2) 0;
 }
-.nr-search-box:focus-within { width: 330px; background: var(--surface-search); }
-.nr-search-box svg { color: var(--muted-foreground); flex: none; }
-.nr-search-box input {
-  /* El campo ocupa todo el alto de la píldora: se puede pulsar en cualquier punto, no solo sobre el texto. */
-  align-self: stretch; min-width: 0;
-  width: 100%; border: 0; background: none; color: var(--foreground);
-  font-size: 14px; outline: none; padding: 0;
-}
-.nr-search-box input::placeholder { color: var(--muted-foreground); }
+.nr-search-box:hover { background: var(--surface-pressed); color: var(--foreground); }
+.nr-search-box svg { flex: none; }
+.nr-search-box span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nr-search-box kbd { border: 0; font-family: var(--font-sans); font-size: 12px; color: var(--muted-foreground); opacity: 0.75; white-space: nowrap; }
-.nr-header-actions { display: flex; align-items: center; gap: 10px; }
+.nr-header-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 10px; }
+
+/* ---------- Search palette (⌘K) ---------- */
+.nr-search-palette [data-slot="command"] { border-radius: 1.375rem !important; padding: 6px; }
+.nr-search-palette [data-slot="command-input-wrapper"] { padding: 4px 4px 6px; }
+.nr-search-palette [data-slot="input-group"] { height: 40px !important; }
+.nr-search-palette [data-slot="command-input"] { font-size: 15px; }
+.nr-search-item { gap: 10px; min-height: 40px; }
+.nr-search-item img { flex: none; width: 18px; height: 18px; object-fit: contain; }
+.nr-search-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.nr-search-author { flex: none; color: var(--muted-foreground); font-size: 12px; white-space: nowrap; }
+.nr-search-price { flex: none; margin-left: auto; color: var(--muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* cmdk deja un check invisible al final de cada fila (es para listas con selección): aquí solo ocuparía espacio. */
+.nr-search-palette [data-slot="command-item"] > svg:last-child { display: none; }
+@media (max-width: 560px) {
+  .nr-search-author, .nr-search-price { display: none; }
+}
 .nr-icon-button {
   display: grid; place-items: center;
   border: 0; width: 36px; height: 36px; border-radius: 9px;
@@ -310,20 +330,24 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
-  .nr-topbar { padding-inline: 24px 16px; }
+  .nr-topbar { --nr-topbar-start: 24px; --nr-topbar-end: 16px; }
   .nr-main { padding-inline: 20px; }
   .nr-desktop-nav { gap: 18px; }
   .nr-board-row { grid-template-columns: 36px minmax(0, 1.4fr) minmax(0, 1.6fr) 90px 110px; gap: 12px; }
 }
-/* Cuatro links, la búsqueda y las acciones necesitan unos 1000 px en español. Por debajo sale primero el link
-   que solo baja a una sección de la landing; los demás aguantan hasta 860 px. */
-@media (max-width: 1000px) {
+/* Con la búsqueda centrada, cada lado necesita la mitad del ancho: cuatro links en español piden unos 1180 px.
+   Por debajo sale primero el link que solo baja a una sección de la landing; los demás aguantan hasta 860 px. */
+@media (max-width: 1180px) {
   .nr-desktop-nav .nr-nav-anchor { display: none; }
 }
+@media (max-width: 1000px) {
+  .nr-search-box { width: 168px; }
+}
 @media (max-width: 860px) {
-  .nr-topbar { min-height: 64px; padding-inline: 12px; gap: 10px; }
+  /* Sin búsqueda en la fila, vuelve a ser una fila flexible: el logo puede encogerse si las acciones no caben. */
+  .nr-topbar { display: flex; justify-content: space-between; min-height: 64px; padding-inline: 12px; gap: 10px; }
   .nr-desktop-nav, .nr-search-box, .nr-account-link { display: none; }
-  /* El tema pasa al menú móvil: así caben la CTA, la cuenta y el menú a 375 px. */
+  /* El tema y la búsqueda pasan al menú móvil: así caben la CTA, la cuenta y el menú a 375 px. */
   .nr-topbar .nr-mobile-menu { display: inline-flex; }
   .nr-main { padding-inline: 14px; }
   .nr-discovery-panel { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 88px 0 56px; }

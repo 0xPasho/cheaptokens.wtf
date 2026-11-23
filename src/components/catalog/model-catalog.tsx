@@ -1,17 +1,19 @@
 "use client";
 import LayoutGridIcon from "kubai-icons-react/icons/grid";
 import ListIcon from "kubai-icons-react/icons/list";
-import SearchXIcon from "kubai-icons-react/icons/search";
+import SearchIcon from "kubai-icons-react/icons/search";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { CatalogSidebar } from "@/components/catalog/catalog-sidebar";
 import { ModelLogo, ProviderLogo, providerName } from "@/components/catalog/provider-logo";
 import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
-import { filterModels } from "@/lib/catalog/queries";
+import { filterModels, SORT_KEYS } from "@/lib/catalog/search";
+import { MODEL_TAGS } from "@/lib/catalog/tags";
 import type { CatalogModel } from "@/lib/catalog/types";
 import { formatCount, formatTokens, formatDiscount } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
@@ -30,7 +32,13 @@ export function ModelCatalog({ models, locale, dict }: {
   const results = filterModels(models.filter((model) => !filters.author || model.author === filters.author), {
     query: filters.query, tags: filters.tags, sort: filters.sort,
   });
-  const sortItems = (["discount", "output", "name"] as const).map((value) => ({ value, label: catalog.sort[value] }));
+  const sortItems = SORT_KEYS.map((value) => ({ value, label: catalog.sort[value] }));
+  // La tarjeta muestra los tres tags que más distinguen al modelo: los que tienen menos modelos del catálogo.
+  // Uno que tienen casi todos (herramientas, contexto largo) no ayuda a elegir.
+  const tagCount = new Map(MODEL_TAGS.map((tag) => [tag, models.filter((model) => model.allTags.includes(tag)).length]));
+  const cardTags = (model: CatalogModel) => model.allTags.filter((tag) => tag !== "long-context")
+    .toSorted((a, b) => tagCount.get(a)! - tagCount.get(b)!).slice(0, 3)
+    .toSorted((a, b) => MODEL_TAGS.indexOf(a) - MODEL_TAGS.indexOf(b));
   const count = t(plural(locale, results.length, catalog.resultsOne, catalog.resultsOther), { count: formatCount(results.length, locale) });
   return (
     <div className="nr-layout nr-catalog nr-model-catalog">
@@ -45,6 +53,12 @@ export function ModelCatalog({ models, locale, dict }: {
           {/* El espacio separa las dos palabras para los lectores de pantalla («Modelos 94», no «Modelos94»). */}
           <h1 className="nr-list-label">{catalog.tableLabel}{" "}<span>{formatCount(results.length, locale)}</span></h1>
           <div className="nr-section-controls">
+            {/* La búsqueda del catálogo filtra aquí mismo. La de la cabecera (⌘K) lleva a un modelo desde cualquier página. */}
+            <InputGroup className="nr-catalog-search">
+              <InputGroupInput type="search" value={filters.query} placeholder={catalog.searchPlaceholder} aria-label={catalog.searchLabel}
+                onChange={(event) => filters.update({ q: event.target.value })} />
+              <InputGroupAddon><SearchIcon aria-hidden /></InputGroupAddon>
+            </InputGroup>
             <div className="nr-sort">
               <Select items={sortItems} value={filters.sort} onValueChange={(value) => value && filters.update({ sort: value })}>
                 <SelectTrigger aria-label={catalog.sortLabel}><SelectValue /></SelectTrigger>
@@ -70,7 +84,7 @@ export function ModelCatalog({ models, locale, dict }: {
                   <p className="nr-desc">{model.description[locale] ?? model.description.en}</p>
                   <div className="nr-pills">
                     <span className="nr-pill-context">{formatTokens(model.contextLength, locale)} {catalog.columns.context.toLowerCase()}</span>
-                    {model.allTags.filter((tag) => tag !== "long-context").slice(0, 3).map((tag) => <span key={tag}>{dict.tags[tag]}</span>)}
+                    {cardTags(model).map((tag) => <span key={tag}>{dict.tags[tag]}</span>)}
                     <span className="nr-pill-discount">{formatDiscount(model.discountBps, locale)}</span>
                     {model.status === "deprecated" ? <span>{catalog.deprecated}</span> : null}
                   </div>
@@ -83,7 +97,7 @@ export function ModelCatalog({ models, locale, dict }: {
           </div>
         ) : (
           <Empty className="nr-detail-panel">
-            <EmptyHeader><EmptyMedia variant="icon"><SearchXIcon aria-hidden /></EmptyMedia><EmptyTitle>{catalog.emptyTitle}</EmptyTitle><EmptyDescription>{catalog.emptyBody}</EmptyDescription></EmptyHeader>
+            <EmptyHeader><EmptyMedia variant="icon"><SearchIcon aria-hidden /></EmptyMedia><EmptyTitle>{catalog.emptyTitle}</EmptyTitle><EmptyDescription>{catalog.emptyBody}</EmptyDescription></EmptyHeader>
             <EmptyContent><Button variant="secondary" onClick={() => filters.update({ q: "", author: "", tags: "" })}>{catalog.clear}</Button></EmptyContent>
           </Empty>
         )}

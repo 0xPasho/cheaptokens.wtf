@@ -115,7 +115,17 @@ La lista de tags es **fija y vive en el código** ([ADR-0011](./adr/0011-tags-cu
 
 - Un modelo puede tener varios tags.
 - Los tags calculados no se escriben a mano: el script de sincronización los agrega o los quita, así nunca quedan desactualizados.
-- En el catálogo, los tags son chips filtrables. Varios chips seleccionados se combinan con Y.
+- **Los curados viven en `catalog/curation.ts` (`CURATED_TAGS`)**, con la fuente de cada uno, y se aplican al leer el catálogo, encima de lo que traiga la base ([ADR-0069](./adr/0069-curaduria-del-catalogo-en-el-repo.md)). La lista del proveedor solo da `vision` y `reasoning`, y a veces se equivoca: la curaduría puede sumar y quitar. Un modelo nuevo entra sin curaduría hasta que se revise.
+- En el catálogo, los tags son filtros con su número de modelos. Un filtro sin modelos no se muestra. Varios filtros seleccionados se combinan con Y.
+
+## Orden y búsqueda
+
+([ADR-0069](./adr/0069-curaduria-del-catalogo-en-el-repo.md))
+
+- **Recomendados** (por defecto): el orden de `FEATURED_MODELS` en `catalog/curation.ts` y, después, el resto por descuento.
+- **Más baratos:** por precio cheapllm.wtf de output. **Mayor descuento** y **Nombre** (con números naturales: 5.9 antes que 5.10).
+- Todo empate se resuelve por ID: el orden es el mismo en cada idioma.
+- La búsqueda ignora mayúsculas, acentos y signos, y pide cada palabra en el nombre o el ID (`gpt 6.1`, `GPT-6.1` y `gpt61` dan lo mismo). La usan el campo del catálogo y la paleta de la cabecera (⌘K).
 
 ## Estados de un modelo
 
@@ -135,7 +145,8 @@ La lista de tags es **fija y vive en el código** ([ADR-0011](./adr/0011-tags-cu
 - **Un proveedor que falla conserva sus rutas.** Si fallan todos, no se escribe nada.
 - **El sitio y `GET /v1/models` leen de la base,** con caché de un minuto. Un cambio de costo llega al precio publicado en cerca de un minuto.
 - **El catálogo del repo es la semilla y el respaldo:** `catalog/models.ts` y `catalog/upstreams.ts`, tipados y validados con zod. Se usa sin base de datos (build, pruebas), con la base vacía o si no responde.
-- **`pnpm catalog:sync`** escribe el catálogo del repo en la base (para sembrar una base nueva): valida todo (esquema, margen mínimo, tags, que no se borre ningún ID) y hace upsert a Postgres. Al terminar, llama a un endpoint interno protegido que ejecuta `revalidateTag('catalog', 'max')` para refrescar `/models` y `GET /v1/models`.
+- **`pnpm catalog:sync`** escribe el catálogo del repo en la base (para sembrar una base nueva): valida todo (esquema, margen mínimo, tags, que no se borre ningún ID) y hace upsert a Postgres. Al terminar, llama a un endpoint interno protegido que ejecuta `revalidateTag('catalog', { expire: 0 })` para refrescar `/models` y `GET /v1/models`.
+- **El cron revalida solo si cambió algo público** (precio, descuento, estado o tag), con `{ expire: 0 }`: cada página se rehace en su siguiente visita y ninguna sigue mostrando el catálogo anterior ([ADR-0069](./adr/0069-curaduria-del-catalogo-en-el-repo.md)).
 - **Nunca borra filas.** Si un modelo desaparece del archivo, la sincronización falla: hay que pasarlo a `retired`.
 - **Interruptor de emergencia:** la columna `ops_disabled_at` de `model_upstreams` se puede poner a mano en la base (SQL en la consola de Neon) para apagar un upstream al instante. **La sincronización nunca toca esa columna**, así que un deploy no revierte una medida de emergencia.
 - El gateway cachea el catálogo en memoria por 15 s, así que un cambio, incluido el interruptor de emergencia, tarda como máximo 15 s en aplicarse.

@@ -12,9 +12,12 @@ import {
   LONG_CONTEXT_MIN,
   requestCost,
   similarModels,
+  storedTags,
   toModel,
 } from "@/lib/catalog/queries";
+import { generatedDescription } from "@/lib/catalog/describe";
 import { MODEL_TAGS } from "@/lib/catalog/tags";
+import { CURATED_TAGS } from "@catalog/curation";
 import type {
   CatalogEntry,
   UpstreamDefinition,
@@ -422,6 +425,33 @@ describe("tags calculados", () => {
     expect(computedTags(entry({ officialOutput: 2_000_002, discountBps: 5000 }))).not.toContain("cheap");
   });
 
+  it("la curaduría del repo suma y quita tags curados, pero nunca los calculados (ADR-0069)", () => {
+    const base = entry({ id: "acme/open", tags: ["vision", "tools"], contextLength: 300_000 });
+    const curated = toModel(base, { "acme/open": { add: ["open-weights"], remove: ["tools", "long-context"], sources: ["https://example.com"] } });
+    expect(curated.allTags).toEqual(["vision", "open-weights", "long-context"]);
+    // Lo que escribe la sincronización no lleva la curaduría: quitar la entrada la deshace.
+    expect(storedTags(base)).toEqual(["vision", "tools", "long-context"]);
+  });
+
+  it("la descripción generada sigue al tag vision curado; una escrita a mano no se toca", () => {
+    const generated = entry({ id: "acme/text", name: "Text 1", tags: ["vision"], description: generatedDescription("Text 1", true) });
+    const fixed = toModel(generated, { "acme/text": { remove: ["vision"], sources: ["https://example.com"] } });
+    expect(fixed.description).toEqual({ en: "Text 1. Accepts text input.", es: "Text 1. Admite entradas de texto." });
+    const handWritten = entry({ id: "acme/hand", name: "Hand", tags: ["vision"], description: { en: "Our flagship." } });
+    expect(toModel(handWritten, { "acme/hand": { remove: ["vision"], sources: ["https://example.com"] } }).description).toEqual({ en: "Our flagship." });
+  });
+
+  it("cada tag curado del repo lleva fuente y apunta a un modelo con ID válido", () => {
+    for (const [id, curation] of Object.entries(CURATED_TAGS)) {
+      expect(id, id).toMatch(/^[a-z0-9-]+\/[a-z0-9.-]+$/);
+      expect(curation.sources.length, id).toBeGreaterThan(0);
+      for (const url of curation.sources) expect(url, id).toMatch(/^https:\/\//);
+      for (const tag of [...(curation.add ?? []), ...(curation.remove ?? [])]) {
+        expect(["long-context", "cheap"], `${id}: ${tag} es calculado`).not.toContain(tag);
+      }
+    }
+  });
+
   it("allTags sigue el orden de MODEL_TAGS y deriva el slug", () => {
     const model = toModel(entry({ id: "acme/model-1.5", tags: ["tools", "fast"], contextLength: 300_000 }));
     expect(model.allTags).toEqual(["fast", "tools", "long-context"]);
@@ -457,6 +487,37 @@ describe("consultas", () => {
     expect(filterModels(models, { query: "", tags: [], sort: "discount" })[0].id).toBe("acme/a");
     expect(filterModels(models, { query: "", tags: [], sort: "output" })[0].id).toBe("acme/b");
     expect(filterModels(models, { query: "", tags: [], sort: "name" }).map((m) => m.name)).toEqual(["Alpha", "Beta"]);
+  });
+
+  it("la búsqueda ignora signos y orden de palabras, y mira nombre e ID", () => {
+    const gpt = getCatalog([entry({ id: "openai/gpt-6.1-sol", name: "GPT 6.1 Sol" }), entry({ id: "acme/other", name: "Other" })]);
+    for (const query of ["gpt 6.1", "GPT-6.1", "gpt61", "sol gpt", "openai", "  sol  "]) {
+      expect(filterModels(gpt, { query, tags: [], sort: "name" }).map((m) => m.id), query).toEqual(["openai/gpt-6.1-sol"]);
+    }
+    expect(filterModels(gpt, { query: "gpt claude", tags: [], sort: "name" })).toEqual([]);
+  });
+
+  it("«Recomendados» sigue FEATURED_MODELS y deja el resto después, por descuento", () => {
+    const featured = ["acme/b", "acme/a"];
+    const ranked = [
+      entry({ id: "acme/a", discountBps: 5000 }), entry({ id: "acme/b", discountBps: 4000 }),
+      entry({ id: "acme/x", discountBps: 9000 }), entry({ id: "acme/y", discountBps: 9000 }),
+    ].map((item) => toModel(item, {}, featured));
+    expect(filterModels(ranked, { query: "", tags: [], sort: "featured" }).map((m) => m.id)).toEqual(["acme/b", "acme/a", "acme/x", "acme/y"]);
+  });
+
+  it("los empates se resuelven por ID, igual en cualquier orden de entrada (y en cualquier idioma)", () => {
+    const tied = getCatalog([entry({ id: "acme/c", discountBps: 7000 }), entry({ id: "acme/a", discountBps: 7000 }), entry({ id: "acme/b", discountBps: 7000 })]);
+    const expected = ["acme/a", "acme/b", "acme/c"];
+    for (const sort of ["featured", "discount", "output"] as const) {
+      expect(filterModels(tied, { query: "", tags: [], sort }).map((m) => m.id), sort).toEqual(expected);
+      expect(filterModels(tied.toReversed(), { query: "", tags: [], sort }).map((m) => m.id), sort).toEqual(expected);
+    }
+  });
+
+  it("el nombre ordena con números naturales", () => {
+    const named = getCatalog([entry({ id: "acme/v10", name: "Model 5.10" }), entry({ id: "acme/v9", name: "Model 5.9" })]);
+    expect(filterModels(named, { query: "", tags: [], sort: "name" }).map((m) => m.name)).toEqual(["Model 5.9", "Model 5.10"]);
   });
 
   it("los modelos parecidos comparten tags y no incluyen al modelo", () => {

@@ -55,9 +55,12 @@ export function CatalogSidebar({ models, locale, dict, detail = false, open = fa
         <div className="nr-big-list" role="group" aria-label={catalog.filterLabel}>
           {MODEL_TAGS.map((tag: ModelTag) => {
             const Icon = MODEL_TAG_ICONS[tag];
+            const count = models.filter((model) => model.allTags.includes(tag)).length;
+            // Un filtro sin modelos solo lleva a una lista vacía: no se ofrece, salvo que ya esté puesto y haya que poder quitarlo.
+            if (!count && !filters.tags.includes(tag)) return null;
             return choice(dict.tags[tag], {
               tags: (filters.tags.includes(tag) ? filters.tags.filter((value) => value !== tag) : [...filters.tags, tag]).join(","),
-            }, filters.tags.includes(tag), <Icon size={24} trigger="parent" aria-hidden />);
+            }, filters.tags.includes(tag), <Icon size={24} trigger="parent" aria-hidden />, count);
           })}
         </div>
       </div>
@@ -67,7 +70,7 @@ export function CatalogSidebar({ models, locale, dict, detail = false, open = fa
           {choice(catalog.allAuthors, { author: "" }, !filters.author, <UsersIcon size={24} trigger="parent" aria-hidden />)}
           {[...new Set(models.map((model) => model.author))].sort().map((author) => choice(providerName(author), {
             author: filters.author === author ? "" : author,
-          }, filters.author === author, <ProviderLogo author={author} />))}
+          }, filters.author === author, <ProviderLogo author={author} />, models.filter((model) => model.author === author).length))}
         </div>
       </div>
     </aside>

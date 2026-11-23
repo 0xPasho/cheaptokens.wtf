@@ -273,11 +273,11 @@ describe("POST /api/internal/revalidate-catalog", () => {
     });
   }
 
-  it("returns 204 and revalidates the catalog with the max profile for a valid secret", async () => {
+  it("returns 204 and expires the catalog immediately for a valid secret (ADR-0069)", async () => {
     const response = await POST(request("Bearer catalog-secret-for-tests"));
     expect(response.status).toBe(204);
     expect(await response.text()).toBe("");
-    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith("catalog", "max");
+    expect(revalidateTag).toHaveBeenCalledExactlyOnceWith("catalog", { expire: 0 });
   });
 
   it.each([undefined, "", "Bearer wrong", "Bearer catalog-secret-for-testX", "Basic catalog-secret-for-tests", "Bearer é"])(
