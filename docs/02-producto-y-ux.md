@@ -29,7 +29,7 @@ Todas las páginas web viven en `cheapllm.wtf` y llevan el idioma en la ruta ([1
 
 Explica el producto en ocho secciones, de la que más importa a la que menos ([ADR-0060](./adr/0060-landing-explica-el-producto.md)). Los números salen del catálogo en vivo y de los planes; lo que se promete está acotado por [ADR-0062](./adr/0062-lo-que-el-sitio-promete.md).
 
-1. **Qué es:** "Paga menos por más tokens de IA." y "Todos tus modelos de IA en un solo endpoint.", el precio oficial tachado con el ahorro debajo y el nuestro en grande, un selector con DeepSeek V4.1 Flash, Claude Opus 5.5, GPT 6.2 Sol y el último Gemini, y **Obtén tu API key** y **Ver los N modelos** ([ADR-0070](./adr/0070-hero-mas-tokens-por-menos.md)).
+1. **Qué es:** "Paga menos por más tokens de IA." y "Todos tus modelos de IA desde una sola URL.", el precio oficial tachado con el ahorro debajo y el nuestro en grande, un selector con DeepSeek V4.1 Flash, Claude Opus 5.5, GPT 6.2 Sol y el último Gemini, y **Obtén tu API key** y **Ver los N modelos** ([ADR-0070](./adr/0070-hero-mas-tokens-por-menos.md), texto actualizado por [ADR-0072](./adr/0072-una-url-para-todos-los-modelos.md)).
 2. **Precio a la vista:** seis modelos conocidos con el precio oficial tachado, el precio cheapllm.wtf y el descuento. Dice que el precio publicado es el máximo.
 3. **Cómo funciona:** tu código → `api.cheapllm.wtf` → el modelo, los tres pasos al primer request y tres garantías.
 4. **Vistazo al catálogo:** los grupos de la sidebar de Modelos, por capacidad o por autor, con cuatro tarjetas cada uno y un link a `/models` con el filtro puesto.
@@ -41,6 +41,8 @@ Explica el producto en ocho secciones, de la que más importa a la que menos ([A
 Cada sección con más detalle en otra página lleva un link de texto con flecha: el vistazo a Modelos, «¿Cómo puede costar tan poco?» a Cómo funciona, Migrar al inicio rápido de Docs, Precios a `/pricing`, Una key para cada uso a las keys de Docs y Preguntas a `/faq` ([ADR-0071](./adr/0071-pagina-como-funciona.md)).
 
 La cabecera lleva Modelos, Precios, Cómo funciona (`/[lang]/how-it-works`) y Docs. El footer suma Precios y Preguntas frecuentes.
+
+La explicación pública parte de **una URL y una API key para todos los modelos**. No presupone que la persona conoce el SDK de OpenAI ni que ya lo usa. El SDK, el formato de OpenAI y las restricciones de compatibilidad se explican en `/docs`; los ejemplos de código del sitio se identifican como ejemplos ([ADR-0072](./adr/0072-una-url-para-todos-los-modelos.md)).
 
 ## Cómo funciona (`/[lang]/how-it-works`)
 

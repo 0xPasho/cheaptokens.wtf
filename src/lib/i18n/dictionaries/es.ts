@@ -5,9 +5,9 @@ export const es: Dictionary = {
     siteName: "cheapllm.wtf",
     brandBase: "cheapllm.",
     brandTld: "wtf",
-    homeTitle: "cheapllm.wtf · Un endpoint. Todos los modelos. Hasta 90% menos.",
+    homeTitle: "cheapllm.wtf · Una URL. Todos los modelos. Hasta 90% menos.",
     homeDescription:
-      "Usa Claude, GPT, Gemini y modelos abiertos con un solo endpoint compatible con OpenAI, pagando mucho menos que el precio oficial.",
+      "Usa Claude, GPT, Gemini y modelos abiertos con una sola URL y una API key, pagando mucho menos que el precio oficial.",
     modelsTitle: "Modelos y precios",
     modelsDescription: "Cada modelo con su precio oficial, el precio cheapllm.wtf y el descuento.",
     pricingTitle: "Precios",
@@ -53,7 +53,7 @@ export const es: Dictionary = {
   home: {
     hero: {
       title: "Paga menos por más tokens de IA.",
-      subtitle: "Todos tus modelos de IA en un solo endpoint.",
+      subtitle: "Todos tus modelos de IA desde una sola URL.",
       primary: "Obtén tu API key",
       secondary: "Ver los {count} modelos",
       model: "Modelo",
@@ -106,11 +106,11 @@ export const es: Dictionary = {
     },
     switchTo: {
       eyebrow: "Migrar",
-      title: "Tu código ni se va a enterar",
-      description: "Sigues con el SDK de OpenAI que ya usas: cambias la base URL y la API key, nada más.",
-      diffLabel: "Cambios en tu código",
+      title: "Una sola conexión para todos tus modelos",
+      description: "Usa la misma URL y API key para Claude, GPT, Gemini y más. Elige el modelo en cada request.",
+      diffLabel: "Ejemplo de conexión en Python",
       stepsLabel: "Para empezar",
-      steps: ["Agrega saldo con USDC o Bitcoin", "Crea una API key", "Cambia esas dos líneas"],
+      steps: ["Agrega saldo con USDC o Bitcoin", "Crea una API key", "Configura la URL y tu API key"],
       toolsLabel: "Funciona con",
       docsLink: "Leer los docs",
     },
@@ -143,10 +143,10 @@ export const es: Dictionary = {
       ],
       toolsLabel: "Funciona con",
       tools: {
-        openai: "SDK de OpenAI (Python y JS)",
+        code: "Python y JavaScript",
         langchain: "LangChain",
-        vercel: "Vercel AI SDK",
-        editors: "Editores que aceptan una base URL de OpenAI",
+        vercel: "Vercel AI",
+        editors: "Editores de código compatibles",
         claudeCode: "Claude Code: todavía no",
       },
     },
@@ -168,11 +168,11 @@ export const es: Dictionary = {
     titleLead: "Mismo request. Mismo modelo.",
     titleTail: "Pagas menos.",
     description:
-      "cheapllm.wtf está entre tu código y el modelo. Revisa tu key, manda el request por la ruta más barata al modelo exacto que pediste y cobra lo que costó de verdad.",
+      "Conecta tu app, editor o agente con una sola URL y una API key. Elige tu modelo; nosotros buscamos la ruta más barata y cobramos lo que costó de verdad.",
     flow: {
       label: "De tu código al modelo, ida y vuelta",
-      codeLabel: "Tu código",
-      codeTitle: "El SDK de OpenAI que ya usas",
+      codeLabel: "Tu app, editor o agente",
+      codeTitle: "Una URL para todos tus modelos",
       codeCaption: "Llamada de ejemplo",
       coreTitle: "Hace tres cosas",
       core: [
@@ -215,7 +215,7 @@ export const es: Dictionary = {
         },
         {
           title: "Te devuelve la respuesta",
-          body: "En el formato de OpenAI, con streaming, tools y razonamiento. Tu código la lee como siempre.",
+          body: "La respuesta llega a tu app, de una vez o mientras el modelo la genera, con las herramientas y el razonamiento que ese modelo soporte.",
         },
         {
           title: "Cobra lo que costó",
@@ -408,7 +408,7 @@ export const es: Dictionary = {
     items: {
       whatIs: {
         q: "¿Qué es cheapllm.wtf?",
-        a: "Un gateway de LLMs: una URL compatible con la API de OpenAI, una API key y un saldo para usar modelos de {authors} autores, como Anthropic, OpenAI, Google y DeepSeek, por debajo de su precio oficial.",
+        a: "Una sola URL y una API key para usar Claude, GPT, Gemini y modelos de {authors} autores, por debajo de su precio oficial.",
       },
       whyCheaper: {
         q: "¿Por qué cuesta menos que el precio oficial?",
@@ -491,8 +491,8 @@ export const es: Dictionary = {
         a: "Los créditos son saldo de cheapllm.wtf: no se transfieren ni se retiran, y solo se reembolsan si hubo un error nuestro.",
       },
       compatible: {
-        q: "¿Funciona con mi código?",
-        a: "Si tu código usa la API de OpenAI, sí: cambias la base URL y la API key. Funciona con el SDK de OpenAI, LangChain, Vercel AI SDK y editores que aceptan una base URL. El formato de Anthropic (`/v1/messages`) todavía no.",
+        q: "¿Cómo conecto mi app o editor?",
+        a: "Configura nuestra URL y tu API key en una herramienta compatible. Usas la misma conexión para todos los modelos; eliges cuál llamar en cada request. En los docs están los ejemplos y la lista de compatibilidad. Claude Code todavía no es compatible.",
       },
       endpoints: {
         q: "¿Qué endpoints hay?",
@@ -500,7 +500,7 @@ export const es: Dictionary = {
       },
       rateLimit: {
         q: "¿Hay rate limit?",
-        a: "Sí: {rpm} requests por minuto por cuenta. Con plan vale el del plan: {plusRpm} en Plus, {proRpm} en Pro y {maxRpm} en Max. Si te pasas, recibes un `429` con `retry-after`, y los SDKs de OpenAI reintentan solos.",
+        a: "Sí: {rpm} requests por minuto por cuenta. Con plan vale el del plan: {plusRpm} en Plus, {proRpm} en Pro y {maxRpm} en Max. Si te pasas, la respuesta indica cuántos segundos esperar antes de intentarlo otra vez.",
       },
       keyLimits: {
         q: "¿Puedo limitar una API key?",
@@ -525,7 +525,7 @@ export const es: Dictionary = {
     resources: "Recursos",
     label: "Pie de página",
     preferences: "Preferencias",
-    tagline: "Un endpoint para todos los modelos, por menos.",
+    tagline: "Una URL para todos los modelos, por menos.",
     sample: "Catálogo de ejemplo: los modelos y precios son ilustrativos hasta el lanzamiento.",
   },
   search: {

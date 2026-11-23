@@ -4,9 +4,9 @@ export const en = {
     siteName: "cheapllm.wtf",
     brandBase: "cheapllm.",
     brandTld: "wtf",
-    homeTitle: "cheapllm.wtf · One endpoint. Every model. Up to 90% off.",
+    homeTitle: "cheapllm.wtf · One URL. Every model. Up to 90% off.",
     homeDescription:
-      "Use Claude, GPT, Gemini and open models through one OpenAI-compatible endpoint, for much less than the official price.",
+      "Use Claude, GPT, Gemini and open models through one URL and one API key, for much less than the official price.",
     modelsTitle: "Models and prices",
     modelsDescription: "Every model with its official price, the cheapllm.wtf price and the discount.",
     pricingTitle: "Pricing",
@@ -52,7 +52,7 @@ export const en = {
   home: {
     hero: {
       title: "Pay less for more AI tokens.",
-      subtitle: "All your AI models in one endpoint.",
+      subtitle: "All your AI models through one URL.",
       primary: "Get your API key",
       secondary: "See all {count} models",
       model: "Model",
@@ -105,11 +105,11 @@ export const en = {
     },
     switchTo: {
       eyebrow: "Switch",
-      title: "Your code won't even notice",
-      description: "Keep the OpenAI SDK you already use: change the base URL and the API key, nothing else.",
-      diffLabel: "Changes in your code",
+      title: "One connection for all your models",
+      description: "Use the same URL and API key for Claude, GPT, Gemini and more. Choose the model with each request.",
+      diffLabel: "Connection example in Python",
       stepsLabel: "To get started",
-      steps: ["Add balance with USDC or Bitcoin", "Create an API key", "Change those two lines"],
+      steps: ["Add balance with USDC or Bitcoin", "Create an API key", "Set the URL and your API key"],
       toolsLabel: "Works with",
       docsLink: "Read the docs",
     },
@@ -142,10 +142,10 @@ export const en = {
       ],
       toolsLabel: "Works with",
       tools: {
-        openai: "OpenAI SDK (Python and JS)",
+        code: "Python and JavaScript",
         langchain: "LangChain",
-        vercel: "Vercel AI SDK",
-        editors: "Editors that accept an OpenAI base URL",
+        vercel: "Vercel AI",
+        editors: "Compatible code editors",
         claudeCode: "Claude Code: not yet",
       },
     },
@@ -167,11 +167,11 @@ export const en = {
     titleLead: "Same request. Same model.",
     titleTail: "You pay less.",
     description:
-      "cheapllm.wtf sits between your code and the model. It checks your key, sends the request down the cheapest route to the exact model you asked for, and bills what it actually cost.",
+      "Connect your app, editor or agent with one URL and one API key. Choose your model; we find the cheapest route to it and bill what it actually cost.",
     flow: {
       label: "From your code to the model and back",
-      codeLabel: "Your code",
-      codeTitle: "The OpenAI SDK you already use",
+      codeLabel: "Your app, editor or agent",
+      codeTitle: "One URL for all your models",
       codeCaption: "Example call",
       coreTitle: "Does three things",
       core: [
@@ -214,7 +214,7 @@ export const en = {
         },
         {
           title: "Streams the answer back",
-          body: "In the OpenAI format, with streaming, tools and reasoning. Your code reads it the way it always has.",
+          body: "The answer arrives in your app, all at once or as the model generates it, with the tools and reasoning that model supports.",
         },
         {
           title: "Charges what it cost",
@@ -407,7 +407,7 @@ export const en = {
     items: {
       whatIs: {
         q: "What is cheapllm.wtf?",
-        a: "An LLM gateway: a URL compatible with the OpenAI API, an API key and a balance to use models from {authors} authors, like Anthropic, OpenAI, Google and DeepSeek, below their official price.",
+        a: "One URL and one API key for Claude, GPT, Gemini and models from {authors} labs, below their official price.",
       },
       whyCheaper: {
         q: "Why does it cost less than the official price?",
@@ -490,8 +490,8 @@ export const en = {
         a: "Credits are cheapllm.wtf balance: they can't be transferred or withdrawn, and they're only refunded if we made a mistake.",
       },
       compatible: {
-        q: "Does it work with my code?",
-        a: "If your code uses the OpenAI API, yes: you change the base URL and the API key. It works with the OpenAI SDK, LangChain, Vercel AI SDK and editors that accept a base URL. The Anthropic format (`/v1/messages`) doesn't yet.",
+        q: "How do I connect my app or editor?",
+        a: "Set our URL and your API key in a compatible tool. Use the same connection for every model; choose which one to call with each request. The docs have examples and the compatibility list. Claude Code isn't supported yet.",
       },
       endpoints: {
         q: "Which endpoints are there?",
@@ -499,7 +499,7 @@ export const en = {
       },
       rateLimit: {
         q: "Is there a rate limit?",
-        a: "Yes: {rpm} requests per minute per account. With a plan, the plan's applies: {plusRpm} on Plus, {proRpm} on Pro and {maxRpm} on Max. If you go over, you get a `429` with `retry-after`, and the OpenAI SDKs retry on their own.",
+        a: "Yes: {rpm} requests per minute per account. With a plan, the plan's applies: {plusRpm} on Plus, {proRpm} on Pro and {maxRpm} on Max. If you go over, the response tells you how many seconds to wait before trying again.",
       },
       keyLimits: {
         q: "Can I limit an API key?",
@@ -524,7 +524,7 @@ export const en = {
     resources: "Resources",
     label: "Footer",
     preferences: "Preferences",
-    tagline: "One endpoint for every model, for less.",
+    tagline: "One URL for every model, for less.",
     sample: "Sample catalog: models and prices are illustrative until launch.",
   },
   search: {

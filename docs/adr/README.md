@@ -83,6 +83,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0069](./0069-curaduria-del-catalogo-en-el-repo.md) | Los tags curados y el orden «Recomendados» viven en `catalog/curation.ts` y se aplican al leer; el sitio se revalida al instante y solo si cambia algo público; la búsqueda es una paleta (⌘K) | Aceptada | Usuario + Default |
 | [0070](./0070-hero-mas-tokens-por-menos.md) | El hero dice «Paga menos por más tokens de IA» y «Todos tus modelos de IA en un solo endpoint»; el ahorro va bajo el precio oficial, sin leyenda ni base URL; el selector muestra DeepSeek V4.1 Flash, Opus 5.5, GPT 6.2 Sol y el último Gemini | Aceptada | Usuario + Default |
 | [0071](./0071-pagina-como-funciona.md) | «Cómo funciona» tiene página propia (`/[lang]/how-it-works`): un dibujo, la vida de un request con su recibo y la gráfica del tope; la landing no pierde secciones y lleva a ella con links de más información | Aceptada | Usuario + Default |
+| [0072](./0072-una-url-para-todos-los-modelos.md) | El sitio explica una URL y una API key para todos los modelos; el SDK de OpenAI se explica en la documentación técnica | Aceptada | Usuario + Default |
 
 ## Plantilla
 

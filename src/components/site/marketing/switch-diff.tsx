@@ -74,7 +74,7 @@ export function SwitchDiff({ locale, dict }: { locale: Locale; dict: Dictionary 
           </ol>
           <h3 className="nr-mk-eyebrow">{d.toolsLabel}</h3>
           <ul className="nr-mk-tool-list">
-            <li><ToolLogo file="openai" />{tools.openai}</li>
+            <li><CodeIcon size={14} aria-hidden />{tools.code}</li>
             <li><ToolLogo file="langchain" />{tools.langchain}</li>
             <li><ToolLogo file="vercel" />{tools.vercel}</li>
             <li>{tools.editors}</li>
