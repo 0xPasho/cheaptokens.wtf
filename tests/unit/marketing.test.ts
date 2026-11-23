@@ -12,6 +12,8 @@ import {
   ESTIMATOR_MODELS,
   FAQ_TOPICS,
   groupHref,
+  HERO_MODELS,
+  heroModels,
   HOME_FAQ,
   maxDiscountBps,
   medianDiscountBps,
@@ -96,7 +98,38 @@ describe("vistazo al catálogo", () => {
 describe("modelos destacados", () => {
   it("los modelos que nombran las páginas existen en el catálogo del repo", () => {
     const ids = new Set(getCatalog().map((m) => m.id));
-    for (const id of [...PRICE_STRIP_MODELS, ...ESTIMATOR_MODELS, ...USAGE_TABLE_MODELS]) expect(ids, id).toContain(id);
+    for (const id of [...HERO_MODELS, ...PRICE_STRIP_MODELS, ...ESTIMATOR_MODELS, ...USAGE_TABLE_MODELS]) expect(ids, id).toContain(id);
+  });
+});
+
+describe("hero: Opus y GPT con al menos 80 % de descuento (ADR-0074)", () => {
+  const opus = "anthropic/claude-opus-5.5";
+  const gpt = "openai/gpt-6.2-sol";
+  const deepseek = "deepseek/deepseek-v4.1-flash";
+  const gemini = "google/gemini-4-neon";
+
+  it.each([
+    { opusBps: 8500, gptBps: 8200, expected: [opus, gpt, deepseek, gemini] },
+    { opusBps: 8200, gptBps: 8500, expected: [gpt, opus, deepseek, gemini] },
+    { opusBps: 8000, gptBps: 7999, expected: [opus, gpt, deepseek, gemini] },
+    { opusBps: 7999, gptBps: 8000, expected: [gpt, opus, deepseek, gemini] },
+    { opusBps: 8000, gptBps: 8000, expected: [opus, gpt, deepseek, gemini] },
+    { opusBps: 7500, gptBps: 7999, expected: [deepseek, gpt, opus, gemini] },
+    { opusBps: 7999, gptBps: 7500, expected: [deepseek, opus, gpt, gemini] },
+  ])("Opus $opusBps bps, GPT $gptBps bps", ({ opusBps, gptBps, expected }) => {
+    // Gemini y DeepSeek tienen más descuento: la prioridad no es un orden global por porcentaje.
+    // El orden del catálogo tampoco decide los empates ni se modifica al preparar el hero.
+    const catalog = [model(gemini, 9000), model(gpt, gptBps), model(deepseek, 8900), model(opus, opusBps)];
+    const original = catalog.map((entry) => entry.id);
+    expect(heroModels(catalog).map((entry) => entry.id)).toEqual(expected);
+    expect(catalog.map((entry) => entry.id)).toEqual(original);
+  });
+
+  it("omite los modelos ausentes y mantiene un ejemplo disponible", () => {
+    expect(heroModels([model(gpt, 8000), model(deepseek, 8900)]).map((entry) => entry.id)).toEqual([gpt, deepseek]);
+    expect(heroModels([model(opus, 7900)]).map((entry) => entry.id)).toEqual([opus]);
+    expect(heroModels([model(gemini, 9000)]).map((entry) => entry.id)).toEqual([gemini]);
+    expect(heroModels([])).toEqual([]);
   });
 });
 

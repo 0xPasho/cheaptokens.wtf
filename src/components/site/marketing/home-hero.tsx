@@ -6,7 +6,7 @@ import type { CatalogModel } from "@/lib/catalog/types";
 import { formatCount, formatDiscount, formatUsd } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
-import { HERO_MODELS, pickModels } from "@/lib/marketing";
+import { heroModels } from "@/lib/marketing";
 
 import { HeroOrbit } from "./hero-orbit";
 import { type HeroModel, HeroPrice } from "./hero-price";
@@ -18,7 +18,7 @@ import { ArrowLabel } from "./section";
  */
 export function HomeHero({ models, locale, dict }: { models: CatalogModel[]; locale: Locale; dict: Dictionary }) {
   const d = dict.home.hero;
-  const examples: HeroModel[] = pickModels(models, HERO_MODELS).map((model) => ({
+  const examples: HeroModel[] = heroModels(models).map((model) => ({
     id: model.id,
     name: model.name,
     author: model.author,

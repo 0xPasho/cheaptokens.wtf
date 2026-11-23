@@ -19,15 +19,33 @@ export const PRICE_STRIP_MODELS = [
 ] as const;
 
 /**
- * Los modelos que se pueden elegir en el precio del hero, en este orden (ADR-0070): uno por autor y caben
- * cuatro. El primero se ve al cargar y es el más barato. Gemini va con el último que salió.
+ * Los cuatro candidatos del hero (ADR-0070). `heroModels` decide el orden y el seleccionado inicial
+ * con los descuentos vigentes (ADR-0074). Opus gana los empates con GPT; Gemini queda al final.
  */
 export const HERO_MODELS = [
-  "deepseek/deepseek-v4.1-flash",
   "anthropic/claude-opus-5.5",
   "openai/gpt-6.2-sol",
+  "deepseek/deepseek-v4.1-flash",
   "google/gemini-4-neon",
 ] as const;
+
+/** Descuento mínimo para que Opus o GPT encabecen el hero: 80 %, en puntos base. */
+const HERO_PRIORITY_MIN_DISCOUNT_BPS = 8_000;
+
+/**
+ * Opus y GPT compiten por descuento, aunque DeepSeek tenga más. Si ninguno llega al 80 %, DeepSeek
+ * va primero. El cliente selecciona el primero al cargar; las elecciones manuales siguen disponibles.
+ * Los modelos ausentes se omiten, como en el resto de los ejemplos públicos.
+ */
+export function heroModels(models: readonly CatalogModel[]): CatalogModel[] {
+  const [opus, gpt, deepseek, gemini] = HERO_MODELS;
+  const primary = pickModels(models, [opus, gpt]).toSorted((a, b) => b.discountBps - a.discountBps);
+  const fallback = pickModels(models, [deepseek]);
+  const last = pickModels(models, [gemini]);
+  return (primary[0]?.discountBps ?? 0) >= HERO_PRIORITY_MIN_DISCOUNT_BPS
+    ? [...primary, ...fallback, ...last]
+    : [...fallback, ...primary, ...last];
+}
 
 /** Modelos con los que se calculan las requests típicas de cada plan. El primero es el de referencia del dashboard. */
 export const ESTIMATOR_MODELS = [
