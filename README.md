@@ -86,11 +86,11 @@ sequenceDiagram
     participant GW as api.cheapllm.wtf
     participant M as El modelo
     App->>GW: POST /v1/chat/completions
-    GW->>GW: Revisa la key y reserva lo máximo que puede costar
-    GW->>M: Ruta más barata de ese momento (hasta 3 intentos)
+    GW->>GW: Revisa la key y reserva el máximo
+    GW->>M: La ruta más barata (hasta 3 intentos)
     M-->>GW: Respuesta, de una vez o en streaming
     GW-->>App: Respuesta
-    GW->>GW: Cobra lo que costó y libera la reserva
+    GW->>GW: Cobra lo que costó
 ```
 
 Si algo no cuadra antes de llamar al modelo (key, saldo o ruta), el request se detiene con su error y cuesta cero. El detalle de cada paso está en [docs/04 · API](./docs/04-api.md) y en la página [Cómo funciona](https://cheapllm.wtf/es/how-it-works).
@@ -215,7 +215,7 @@ Los componentes se agregan con `pnpm dlx shadcn@latest add <componente>`. Todos 
 
 ## Documentación
 
-| | |
+| Documento | Qué tiene |
 |---|---|
 | [**Producto y arquitectura**](./docs/README.md) | Qué es cheapllm.wtf, cómo funciona y por qué se decidió cada cosa |
 | [**Decisiones (ADR)**](./docs/adr/README.md) | Las decisiones de arquitectura, una por archivo |
