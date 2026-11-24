@@ -16,6 +16,8 @@ export function buildModelsResponse(entries?: CatalogEntry[]) {
     data: getCatalog(entries).map((model) => ({
       id: model.id, object: "model", created: MODEL_CREATED, owned_by: model.author,
       name: model.name, context_length: model.contextLength, tags: model.allTags,
+      // Los `reasoning_effort` que acepta el modelo; sin el campo, no se sabe (ADR-0076).
+      ...(model.reasoningLevels !== undefined ? { reasoning_levels: model.reasoningLevels } : {}),
       pricing: {
         currency: "USD", unit: "1M_tokens",
         input: priceInUsd(BigInt(model.discountedInput)), output: priceInUsd(BigInt(model.discountedOutput)),

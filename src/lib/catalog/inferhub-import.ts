@@ -15,7 +15,8 @@ const officialModel = z.object({
   // Optional metadata: an unusable value drops the field, never the whole catalog.
   max_output_tokens: z.number().int().positive().max(2_147_483_647).optional().catch(undefined),
   modality: z.string().optional(),
-  reasoning_levels: z.array(z.string()).optional(),
+  // Opcional: un valor inválido descarta el campo, nunca el catálogo (ADR-0076).
+  reasoning_levels: z.array(z.string().min(1)).optional().catch(undefined),
   pricing: z.object({
     official_in: finitePrice.optional(),
     official_out: finitePrice.optional(),
@@ -109,6 +110,8 @@ export function importInferhubCatalog(payload: unknown, previous: CatalogEntry[]
       description: generatedDescription(name, row.modality.split(",").includes("image")),
       contextLength: row.input_token_limit,
       ...(row.max_output_tokens ? { maxOutputTokens: row.max_output_tokens } : {}),
+      // Una ruta sin la lista no declara ningún nivel (ADR-0076).
+      reasoningLevels: [...new Set(row.reasoning_levels ?? [])],
       officialInput, officialOutput,
       officialPriceSourceUrl: creator.pricing,
       // Supplier-reported list prices have not been independently verified with the creator.

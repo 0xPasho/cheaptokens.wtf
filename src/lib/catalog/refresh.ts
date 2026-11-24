@@ -22,6 +22,7 @@ export async function loadStoredEntries(db: Db): Promise<CatalogEntry[]> {
     description: row.description,
     contextLength: row.contextLength,
     ...(row.maxOutputTokens !== null ? { maxOutputTokens: row.maxOutputTokens } : {}),
+    ...(row.reasoningLevels !== null ? { reasoningLevels: row.reasoningLevels } : {}),
     officialInput: Number(row.officialInputPriceMicroUsd),
     officialOutput: Number(row.officialOutputPriceMicroUsd),
     officialPriceSourceUrl: row.officialPriceSourceUrl,
@@ -53,7 +54,7 @@ async function loadStoredOffers(db: Db, upstreamId: string, entries: Map<string,
 function modelRows(entries: CatalogEntry[]) {
   return entries.map((entry) => [
     entry.id, entry.name, entry.author, entry.description.en, entry.description.es ?? null, entry.contextLength,
-    entry.maxOutputTokens ?? null, entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
+    entry.maxOutputTokens ?? null, entry.reasoningLevels ?? null, entry.officialInput, entry.officialOutput, entry.officialPriceSourceUrl, entry.officialPriceVerifiedAt,
     entry.discountBps, [...entry.tags].sort(), entry.status, entry.retiresOn ?? null,
   ]).sort();
 }

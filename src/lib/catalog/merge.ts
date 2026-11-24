@@ -65,6 +65,14 @@ export function mergeCatalog(sources: ProviderOffers[], previous: CatalogEntry[]
     const reported = kept.flatMap((candidate) => candidate.offer.entry.maxOutputTokens ?? []);
     const maxOutputTokens = reported.length > 0 ? Math.min(...reported) : before?.maxOutputTokens;
     if (maxOutputTokens !== undefined) entry.maxOutputTokens = maxOutputTokens;
+    // Solo los niveles que aceptan todas las rutas que sirven, por el mismo fallback. Si alguna no los
+    // reporta, se conserva lo que ya estaba (ADR-0076).
+    delete entry.reasoningLevels;
+    const levels = kept.map((candidate) => candidate.offer.entry.reasoningLevels);
+    const reasoningLevels = levels.length > 0 && levels.every((list) => list !== undefined)
+      ? levels[0]!.filter((level) => levels.every((list) => list!.includes(level)))
+      : before?.reasoningLevels;
+    if (reasoningLevels !== undefined) entry.reasoningLevels = reasoningLevels;
     models.push(entry);
     droppedRoutes += candidates.length - kept.length;
     kept.forEach((candidate, index) => {

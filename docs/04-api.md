@@ -126,6 +126,7 @@ Es pública: no requiere key, porque es la misma información de la página `/mo
       "name": "Claude Haiku 4.5",
       "context_length": 200000,
       "tags": ["fast", "vision", "tools", "long-context"],
+      "reasoning_levels": ["low", "medium", "high"],
       "pricing": {
         "currency": "USD",
         "unit": "1M_tokens",
@@ -142,6 +143,8 @@ Es pública: no requiere key, porque es la misma información de la página `/mo
 ```
 
 Los precios van como strings decimales para no perder precisión. Los valores de este ejemplo son ilustrativos.
+
+`reasoning_levels` son los valores de `reasoning_effort` que aceptan todas las rutas que sirven el modelo (`none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`). `[]`: no acepta ninguno. Sin el campo: no se sabe. Siguen a la ruta, así que pueden cambiar con el catálogo ([ADR-0076](./adr/0076-niveles-de-razonamiento-por-modelo.md)).
 
 ## Errores
 

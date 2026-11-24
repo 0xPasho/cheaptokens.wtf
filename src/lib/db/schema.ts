@@ -92,6 +92,7 @@ export const models = pgTable("models", {
   description: jsonb("description").$type<CatalogEntry["description"]>().notNull(),
   contextLength: integer("context_length").notNull(),
   maxOutputTokens: integer("max_output_tokens"),
+  reasoningLevels: text("reasoning_levels").array(),
   officialInputPriceMicroUsd: bigint("official_input_price_micro_usd", { mode: "bigint" }).notNull(),
   officialOutputPriceMicroUsd: bigint("official_output_price_micro_usd", { mode: "bigint" }).notNull(),
   officialPriceSourceUrl: text("official_price_source_url").notNull(),

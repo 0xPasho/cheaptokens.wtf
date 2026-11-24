@@ -30,6 +30,7 @@ Esquema completo en [09 · Modelo de datos](./09-modelo-de-datos.md#models). Lo 
 | `official_price_verified_at` | `2026-11-08` | Fecha de la última verificación |
 | `discount_bps` | `9000` | 90.00% (en puntos base) |
 | `tags` | `["fast", "vision", "tools", "long-context"]` | Ver [Tags](#tags) |
+| `reasoning_levels` | `["low", "medium", "high"]` | Los `reasoning_effort` que acepta, según el proveedor ([ADR-0076](./adr/0076-niveles-de-razonamiento-por-modelo.md)) |
 | `status` | `active` | Ver [Estados](#estados-de-un-modelo) |
 
 ## Precio cheapllm.wtf

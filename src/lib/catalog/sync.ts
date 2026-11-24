@@ -26,6 +26,8 @@ export async function syncCatalog(db: Db, input: CatalogValidationInput): Promis
         contextLength: entry.contextLength,
         // Sin valor en el catálogo no se toca: conserva el que se haya fijado a mano (ADR-0067).
         ...(entry.maxOutputTokens !== undefined ? { maxOutputTokens: entry.maxOutputTokens } : {}),
+        // Igual con los niveles de razonamiento: la instantánea del repo no los borra (ADR-0076).
+        ...(entry.reasoningLevels !== undefined ? { reasoningLevels: entry.reasoningLevels } : {}),
         officialInputPriceMicroUsd: BigInt(entry.officialInput),
         officialOutputPriceMicroUsd: BigInt(entry.officialOutput),
         officialPriceSourceUrl: entry.officialPriceSourceUrl,

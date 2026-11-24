@@ -87,7 +87,7 @@ describe("Postgres schema and migrations", () => {
       expect(await db.select().from(table)).toEqual([]);
     }
     expect(await db.execute(sql`select count(*)::int as count from drizzle.__drizzle_migrations`))
-      .toMatchObject({ rows: [{ count: 6 }] });
+      .toMatchObject({ rows: [{ count: 7 }] });
   });
 
   it("stores a catalog description without a Spanish translation", async () => {

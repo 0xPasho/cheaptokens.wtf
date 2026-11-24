@@ -81,6 +81,17 @@ describe("mergeCatalog", () => {
     expect(merged.models.find((model) => model.id === "acme/four")).not.toHaveProperty("maxOutputTokens");
   });
 
+  it("offers only the reasoning levels every serving route accepts, and keeps the previous ones when a route does not say (ADR-0076)", () => {
+    const withLevels = (item: ProviderOffer, reasoningLevels: string[]): ProviderOffer => ({ ...item, entry: { ...item.entry, reasoningLevels } });
+    const merged = mergeCatalog([
+      // En acme/two la ruta de alpha no cabe bajo el precio: sus niveles no cuentan.
+      { upstream: upstream("alpha"), offers: [withLevels(offer("acme/one", 2_000, 7_400), ["none", "low", "medium", "high", "xhigh"]), withLevels(offer("acme/two", 4_000, 4_800), [])] },
+      { upstream: upstream("beta"), offers: [withLevels(offer("acme/one", 1_990, 7_400), ["low", "medium", "high"]), withLevels(offer("acme/two", 2_000, 7_400), ["low", "high", "max"]), offer("acme/three", 2_000, 7_400), withLevels(offer("acme/four", 2_000, 7_400), [])] },
+    ], [entry("acme/three", 7_400, { reasoningLevels: ["low"] })]);
+    expect(Object.fromEntries(merged.models.map((model) => [model.id, model.reasoningLevels])))
+      .toEqual({ "acme/one": ["low", "medium", "high"], "acme/two": ["low", "high", "max"], "acme/three": ["low"], "acme/four": [] });
+  });
+
   it("puts the mock behind every real route at half the cheapest cost", () => {
     const merged = mergeCatalog([
       { upstream: upstream("alpha"), offers: [offer("acme/one", 2_000, 7_400)] },
@@ -154,6 +165,29 @@ describe("refreshCatalog", () => {
     expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false });
     expect(await stored()).toBe(64_000);
     expect(await loadStoredEntries(db)).toEqual([entry("acme/one", 7_400, { maxOutputTokens: 64_000 })]);
+  });
+
+  it("stores the reasoning levels, publishes a change and keeps them through a failed provider (ADR-0076)", async () => {
+    let reasoningLevels = ["low", "medium", "high"];
+    let down = false;
+    const alpha = provider("alpha", () => {
+      if (down) throw new Error("down");
+      const item = offer("acme/one", 2_000, 7_400);
+      return [{ ...item, entry: { ...item.entry, reasoningLevels } }];
+    });
+    const stored = async () => (await db.select().from(models))[0].reasoningLevels;
+    await refreshCatalog(db, { providers: [alpha], environment: "production" });
+    expect(await stored()).toEqual(["low", "medium", "high"]);
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: false });
+
+    reasoningLevels = ["none", "low", "medium", "high", "xhigh"];
+    expect(await refreshCatalog(db, { providers: [alpha], environment: "production" })).toMatchObject({ changed: true, catalogChanged: true });
+    expect(await stored()).toEqual(["none", "low", "medium", "high", "xhigh"]);
+
+    // Sin respuesta del proveedor, la ruta guardada sigue y sus niveles también.
+    down = true;
+    await expect(refreshCatalog(db, { providers: [alpha], environment: "production" })).rejects.toThrow();
+    expect(await loadStoredEntries(db)).toEqual([entry("acme/one", 7_400, { reasoningLevels: ["none", "low", "medium", "high", "xhigh"] })]);
   });
 
   it("keeps the stored routes of a provider that fails and writes nothing when every provider fails", async () => {

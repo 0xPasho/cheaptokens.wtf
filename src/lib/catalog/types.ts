@@ -18,6 +18,11 @@ export type CatalogEntry = {
    * cliente no fija uno. Sin valor, el gateway usa 32 768 y la sincronización conserva lo que haya en la base.
    */
   maxOutputTokens?: number;
+  /**
+   * Los `reasoning_effort` que aceptan todas las rutas que sirven el modelo, como los reporta el proveedor
+   * (ADR-0076). Vacío: ninguno en común. Sin valor: no se sabe (la instantánea del repo, una base anterior).
+   */
+  reasoningLevels?: string[];
   /** µUSD por 1M de tokens (ADR-0007). */
   officialInput: number;
   officialOutput: number;

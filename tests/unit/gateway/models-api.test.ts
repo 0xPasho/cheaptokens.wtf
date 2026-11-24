@@ -47,6 +47,17 @@ describe("GET /v1/models", () => {
     expect(buildModelsResponse().data.some((model) => model.id === "qwen/qwen3.8-flash")).toBe(false);
   });
 
+  it("publishes the reasoning levels it knows and omits the field when it does not (ADR-0076)", () => {
+    const entry = CATALOG[0];
+    const result = buildModelsResponse([
+      { ...entry, id: "test/levels", status: "active", reasoningLevels: ["low", "medium", "high"] },
+      { ...entry, id: "test/none", status: "active", reasoningLevels: [] },
+      { ...entry, id: "test/unknown", status: "active", reasoningLevels: undefined },
+    ]);
+    const levels = Object.fromEntries(result.data.map((model) => [model.id, "reasoning_levels" in model ? model.reasoning_levels : "absent"]));
+    expect(levels).toEqual({ "test/levels": ["low", "medium", "high"], "test/none": [], "test/unknown": "absent" });
+  });
+
   it.each([
     ["0", "0.00"], ["1", "0.000001"], ["100000", "0.10"], ["22500", "0.0225"],
     ["1000000", "1.00"], ["1100000", "1.10"], ["9007199254740993123456", "9007199254740993.123456"],

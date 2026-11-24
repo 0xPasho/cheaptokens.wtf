@@ -34,6 +34,19 @@ describe("official catalog import", () => {
     }
   });
 
+  it("keeps the selected route's reasoning levels; a route without them declares none (ADR-0076)", () => {
+    expect(importInferhubCatalog(payload(model({ reasoning_levels: ["none", "low", "medium", "high", "low"] }))).models[0].reasoningLevels)
+      .toEqual(["none", "low", "medium", "high"]);
+    for (const value of [undefined, "high", [1, 2], null]) {
+      const [imported] = importInferhubCatalog(payload(model({ reasoning_levels: value }))).models;
+      expect(imported.id).toBe("anthropic/claude-haiku-4.5");
+      expect(imported.reasoningLevels).toEqual([]);
+    }
+    const cheap = model({ id: "cmc/anthropic/claude-haiku-4-5", reasoning_levels: ["low", "high"] });
+    const expensive = model({ id: "kiro/claude-haiku-4.5", reasoning_levels: ["low", "medium", "high"], pricing: { official_in: 1, official_out: 5, asks_in: [0.5], asks_out: [2.5] } });
+    expect(importInferhubCatalog(payload(expensive, cheap)).models[0].reasoningLevels).toEqual(["low", "high"]);
+  });
+
   it("deduplicates routes and keeps the selected route's context and pricing together", () => {
     const cheap = model({ id: "cmc/anthropic/claude-haiku-4-5", input_token_limit: 100_000 });
     const expensive = model({ id: "kiro/claude-haiku-4.5", upstream_label: "Claude Haiku 4.5 (Kiro)", input_token_limit: 500_000, pricing: { official_in: 1, official_out: 5, asks_in: [0.5], asks_out: [2.5] } });
