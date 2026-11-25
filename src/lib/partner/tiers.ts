@@ -26,6 +26,18 @@ export const PARTNER_PLANS: Readonly<Record<PartnerTier, PartnerPlan>> = {
   "plan-99": { id: "plan-99", priceMicroUsd: cents(9_900), fiveHourLimitMicroUsd: cents(1_386), weekLimitMicroUsd: cents(5_940), rateLimitRpm: 200 },
 };
 
+/**
+ * Modelos que un plan no incluye, por prefijo de id (ADR-0080). Fable no cachea en InferHub: una vuelta de Deska
+ * Harness cuesta unos $0.09 y la ventana de `plan-3` ($0.42) alcanza para 3 o 4.
+ */
+const EXCLUDED_MODEL_PREFIXES: Readonly<Partial<Record<PartnerTier, readonly string[]>>> = {
+  "plan-3": ["anthropic/claude-fable-"],
+};
+
+export function tierIncludesModel(tier: PartnerTier, modelId: string): boolean {
+  return !(EXCLUDED_MODEL_PREFIXES[tier] ?? []).some((prefix) => modelId.startsWith(prefix));
+}
+
 export function isPartnerTier(value: unknown): value is PartnerTier {
   return typeof value === "string" && (PARTNER_TIERS as readonly string[]).includes(value);
 }

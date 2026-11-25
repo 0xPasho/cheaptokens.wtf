@@ -184,6 +184,28 @@ describe("POST /plans", () => {
     expect((await planRow(answer.body.planId)).subscription.planId).toBe("plan-3");
   });
 
+  it("leaves Fable out of plan-3, for the partner and for its keys (ADR-0080)", async () => {
+    await db.insert(models).values({
+      id: "anthropic/claude-fable-5.1", name: "Fable", author: "anthropic", description: { en: "Test" }, contextLength: 100_000,
+      officialInputPriceMicroUsd: BigInt(1_000_000), officialOutputPriceMicroUsd: BigInt(2_000_000),
+      officialPriceSourceUrl: "https://example.com/pricing", discountBps: 5000,
+      inputPriceMicroUsd: BigInt(500_000), outputPriceMicroUsd: BigInt(1_000_000), tags: [], status: "active",
+    });
+    const withFable = ["anthropic/claude-fable-5.1", "test/model-a", "test/model-b", "test/old"];
+    const withoutFable = ["test/model-a", "test/model-b", "test/old"];
+
+    const { body: plan } = await open({ tier: "plan-3" });
+    expect(plan.models).toEqual(withoutFable);
+    expect((await issue(plan.planId)).status).toBe(200);
+    expect((await planRow(plan.planId)).keys[0].allowedModels).toEqual(withoutFable);
+
+    expect((await patch(plan.planId, { tier: "plan-9" })).body.models).toEqual(withFable);
+    expect((await planRow(plan.planId)).keys[0].allowedModels).toEqual(withFable);
+
+    expect((await patch(plan.planId, { tier: "plan-3" })).body.models).toEqual(withoutFable);
+    expect((await planRow(plan.planId)).keys[0].allowedModels).toEqual(withoutFable);
+  });
+
   it("opens a plan on its own workspace with extra usage off", async () => {
     const answer = await open();
     expect(answer.status).toBe(200);

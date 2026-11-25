@@ -20,7 +20,7 @@ import { uuidv7 } from "@/lib/db/uuid";
 import { PartnerDoorError } from "./errors";
 import { toPublicId } from "./ids";
 import { monthDate, monthRange, usageMonth } from "./months";
-import { type PartnerTier, partnerPlan } from "./tiers";
+import { type PartnerTier, partnerPlan, tierIncludesModel } from "./tiers";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /**
@@ -64,13 +64,20 @@ export interface PartnerUsageView {
 }
 
 /**
- * Los modelos de un plan de socio: los que muestra el catálogo público (`active` y `deprecated`), los mismos
- * para los cuatro planes (docs/17 › Decisiones). Los `hidden` funcionan en la API pero todavía no se anuncian.
+ * Los modelos de un plan de socio: los que muestra el catálogo público (`active` y `deprecated`), menos los que
+ * su plan excluye (ADR-0080). Los `hidden` funcionan en la API pero todavía no se anuncian.
  */
-export async function planModels(db: Db): Promise<string[]> {
+export async function planModels(db: Db, tier: PartnerTier): Promise<string[]> {
   const rows = await db.select({ id: models.id }).from(models)
     .where(inArray(models.status, ["active", "deprecated"])).orderBy(asc(models.id));
-  return rows.map((row) => row.id);
+  return rows.map((row) => row.id).filter((id) => tierIncludesModel(tier, id));
+}
+
+/** El plan de socio de un workspace, leído de su suscripción. */
+async function workspaceTier(tx: Db, workspaceId: string): Promise<PartnerTier> {
+  const [row] = await tx.select({ tier: subscriptions.planId }).from(subscriptions).where(eq(subscriptions.workspaceId, workspaceId));
+  if (!row || partnerPlan(row.tier) === null) throw new Error("Partner plan without a partner subscription");
+  return row.tier as PartnerTier;
 }
 
 async function lockPlan(tx: Db, partnerId: string, planId: string) {
@@ -98,7 +105,7 @@ async function planView(tx: Db, planId: string, inferenceBaseUrl: string): Promi
     planId: toPublicId("plan", planId),
     tier: row.tier as PartnerTier,
     status: row.closedAt === null ? "open" : "closed",
-    models: await planModels(tx),
+    models: await planModels(tx, row.tier as PartnerTier),
     inferenceBaseUrl,
   };
 }
@@ -169,8 +176,10 @@ export async function changePlan(db: Db, input: {
     if (input.paidThrough) {
       await tx.update(partnerPlans).set({ paidThrough: input.paidThrough }).where(eq(partnerPlans.id, plan.id));
     }
-    await tx.update(apiKeys).set({ allowedModels: await planModels(tx) }).where(liveKeysOf(plan.workspaceId));
-    return planView(tx, plan.id, input.inferenceBaseUrl);
+    // Las keys vivas reciben la misma lista que el socio, la del plan nuevo.
+    const view = await planView(tx, plan.id, input.inferenceBaseUrl);
+    await tx.update(apiKeys).set({ allowedModels: view.models }).where(liveKeysOf(plan.workspaceId));
+    return view;
   });
 }
 
@@ -209,7 +218,7 @@ export async function issueKey(db: Db, input: {
       name: `${input.partnerId} plan`,
       spendLimitMicroUsd: null,
       billingSource: workspace.overflowMode === "continue" ? "plan_then_prepaid" : "plan_only",
-      allowedModels: await planModels(tx),
+      allowedModels: await planModels(tx, await workspaceTier(tx, plan.workspaceId)),
     });
     await tx.update(apiKeys).set({ expiresAt: input.expiresAt }).where(eq(apiKeys.id, created.id));
     return { keyId: toPublicId("key", created.id), key: created.key, hint: created.hint, expiresAt: input.expiresAt.toISOString() };

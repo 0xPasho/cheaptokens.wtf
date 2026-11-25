@@ -75,7 +75,7 @@ Funcionan como los planes públicos, con la ventana y la semana en valor de uso 
 
 La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 %, también como en ellos ([ADR-0052](./adr/0052-precios-de-los-planes.md)). `plan-3` cubre el plan Pro de Deska a menor precio y conserva su rate limit de 120 requests por minuto. Así un asiento usado al máximo tiene el mismo margen que un plan público, con el mismo riesgo: **hay que calibrarlos** antes de lanzar ([ADR-0049 › Margen](./adr/0049-suscripcion-con-limites.md#margen)).
 
-Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los cuatro planes. Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
+Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los cuatro planes salvo Claude Fable, que `plan-3` no incluye ([ADR-0080](./adr/0080-plan-3-sin-fable.md)). Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
 
 Con el excedente apagado, las keys son `plan_only` y un request reserva como mucho media ventana de 5 horas ([ADR-0079](./adr/0079-reserva-con-tope-por-request.md)). En `plan-3` son $0.21: dos corridas pueden ir a la vez aunque una pida 16 384 tokens de salida.
 
@@ -115,7 +115,7 @@ Con el excedente apagado, las keys son `plan_only` y un request reserva como muc
 | D1 | Cuatro planes de socio (`plan-3`, `plan-9`, `plan-49`, `plan-99`): $3, $9, $49 y $99; semana al 60 % y ventana al 14 % del precio | Default | Los precios de $9, $49 y $99 vienen del contrato; `plan-3` permite a Deska ofrecer Pro a ese precio. Todos conservan el margen de ADR-0049 y `plan-3` usa el rate limit Pro de 120 requests por minuto |
 | D2 | Un workspace por plan, con su suscripción de `payment_provider = partner:<socio>` | Default | Reusa ventanas, admisión, cobro, headers y conciliación sin tocarlos |
 | D3 | La suscripción vale hasta `paidThrough` + 8 días | Default | Son los 7 días de gracia de un pago atrasado y uno más, el mismo margen con el que Deska pide las keys. Si el pago no llega, Deska cierra el plan |
-| D4 | Los modelos son el catálogo público (`active` y `deprecated`); los `hidden` no entran | Default | Es lo que el sitio anuncia. `hidden` es para probar antes de anunciar |
+| D4 | Los modelos son el catálogo público (`active` y `deprecated`); los `hidden` no entran. `plan-3` no incluye Claude Fable ([ADR-0080](./adr/0080-plan-3-sin-fable.md)) | Default + Usuario | Es lo que el sitio anuncia. `hidden` es para probar antes de anunciar. Fable no cachea y la ventana de `plan-3` alcanza para 3 o 4 vueltas |
 | D5 | El excedente es pospago: se admite con el tope que queda y el saldo del asiento puede quedar negativo | Default | El contrato dice que lo paga el socio, no la persona ni un prepago |
 | D6 | Abrir un plan es idempotente por `externalRef`, sin guardar la respuesta; el resto de escrituras guarda la respuesta 2xx 24 horas | Default | Deska reusa `open:<externalRef>`. 24 horas es la ventana habitual de reintentos |
 | D7 | Las respuestas guardadas van cifradas con una clave derivada del secreto del socio | Default | La de `POST /keys` lleva la key. Rotar el secreto vuelve ilegibles las guardadas: un reintento recibe `409` |

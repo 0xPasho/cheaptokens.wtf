@@ -91,6 +91,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0077](./0077-fallas-del-upstream-detras-de-cloudflare.md) | Las fallas del upstream responden 503 (Cloudflare tapa los 502 y 504 del origen) y el upstream tiene 45 s para mandar headers en un stream | Aceptada | Usuario + Default |
 | [0078](./0078-formato-anthropic-para-claude-code.md) | El formato de Anthropic en `/anthropic` para Claude Code y sus SDKs: misma key y mismo cobro, sin recortar la salida, errores y streaming de Anthropic | Aceptada | Usuario + Default |
 | [0079](./0079-reserva-con-tope-por-request.md) | La salida mínima de una reserva baja a 256 tokens, y una key de solo plan no reserva más de media ventana de 5 horas | Aceptada | Usuario + Default |
+| [0080](./0080-plan-3-sin-fable.md) | `plan-3` no incluye Claude Fable: no cachea en InferHub y su ventana alcanza para 3 o 4 vueltas de Deska Harness | Aceptada | Usuario + Default |
 
 ## Plantilla
 
