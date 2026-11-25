@@ -26,7 +26,7 @@ export const HERO_MODELS = [
   "anthropic/claude-opus-5.5",
   "openai/gpt-6.2-sol",
   "deepseek/deepseek-v4.1-flash",
-  "google/gemini-4-neon",
+  "google/gemini-4-carbon",
 ] as const;
 
 /** Descuento mínimo para que Opus o GPT encabecen el hero: 80 %, en puntos base. */

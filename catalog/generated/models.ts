@@ -3,6 +3,27 @@ import type { CatalogEntry } from "@/lib/catalog/types";
 
 export const IMPORTED_MODELS: CatalogEntry[] = [
   {
+    "id": "anthropic/claude-fable-5",
+    "name": "Claude Fable 5",
+    "author": "anthropic",
+    "description": {
+      "en": "Claude Fable 5. Accepts text and image input.",
+      "es": "Claude Fable 5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [],
+    "officialInput": 10000000,
+    "officialOutput": 50000000,
+    "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
     "id": "anthropic/claude-fable-5.1",
     "name": "Claude Fable 5.1",
     "author": "anthropic",
@@ -12,11 +33,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [],
     "officialInput": 10000000,
     "officialOutput": 50000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6100,
+    "discountBps": 6000,
     "tags": [
       "vision"
     ],
@@ -32,11 +54,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [],
     "officialInput": 8000000,
     "officialOutput": 40000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 6200,
     "tags": [
       "vision"
     ],
@@ -52,6 +75,11 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 200000,
     "maxOutputTokens": 64000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 1000000,
     "officialOutput": 5000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
@@ -75,11 +103,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 100000,
     "officialOutput": 500000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
+    "discountBps": 4100,
     "tags": [
       "vision",
       "reasoning"
@@ -96,11 +130,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 200000,
     "maxOutputTokens": 64000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
+    "discountBps": 4100,
     "tags": [
       "vision",
       "reasoning"
@@ -117,11 +157,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [],
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 6700,
+    "discountBps": 7300,
     "tags": [
       "vision"
     ],
@@ -137,11 +178,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
+    "discountBps": 6400,
     "tags": [
       "vision",
       "reasoning"
@@ -158,11 +205,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 4100,
     "tags": [
       "vision",
       "reasoning"
@@ -179,11 +232,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 5000000,
     "officialOutput": 25000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 5500,
     "tags": [
       "vision",
       "reasoning"
@@ -200,11 +259,16 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 4000000,
     "officialOutput": 20000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8000,
+    "discountBps": 8100,
     "tags": [
       "vision",
       "reasoning"
@@ -221,6 +285,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 64000,
+    "reasoningLevels": [],
     "officialInput": 3000000,
     "officialOutput": 15000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
@@ -241,6 +306,11 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 64000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
@@ -262,6 +332,11 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
@@ -283,6 +358,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 164000,
     "maxOutputTokens": 64000,
+    "reasoningLevels": [],
     "officialInput": 280000,
     "officialOutput": 420000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
@@ -301,11 +377,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 128000,
+    "reasoningLevels": [],
     "officialInput": 220000,
     "officialOutput": 660000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7500,
+    "discountBps": 7400,
     "tags": [
       "vision"
     ],
@@ -321,11 +398,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
+    "reasoningLevels": [],
     "officialInput": 220000,
     "officialOutput": 660000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8400,
+    "discountBps": 6300,
     "tags": [],
     "status": "active"
   },
@@ -334,17 +412,24 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "name": "DeepSeek V4 Pro",
     "author": "deepseek",
     "description": {
-      "en": "DeepSeek V4 Pro. Accepts text and image input.",
-      "es": "DeepSeek V4 Pro. Admite entradas de texto e imagen."
+      "en": "DeepSeek V4 Pro. Accepts text input.",
+      "es": "DeepSeek V4 Pro. Admite entradas de texto."
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
-    "officialInput": 660000,
-    "officialOutput": 1980000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 1320000,
+    "officialOutput": 3960000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7500,
+    "discountBps": 8800,
     "tags": [
+      "reasoning",
       "vision"
     ],
     "status": "active"
@@ -359,11 +444,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
+    "reasoningLevels": [],
     "officialInput": 660000,
     "officialOutput": 1980000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8400,
+    "discountBps": 7400,
     "tags": [],
     "status": "active"
   },
@@ -377,11 +463,12 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
+    "reasoningLevels": [],
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
+    "discountBps": 8700,
     "tags": [
       "vision",
       "fast",
@@ -392,22 +479,28 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
   },
   {
     "id": "deepseek/deepseek-v4.1-flash-1017",
-    "name": "DeepSeek V4.1 Flash 1017",
+    "name": "DeepSeek V4.1 Flash (1017)",
     "author": "deepseek",
     "description": {
-      "en": "DeepSeek V4.1 Flash 1017. Accepts text and image input.",
-      "es": "DeepSeek V4.1 Flash 1017. Admite entradas de texto e imagen."
+      "en": "DeepSeek V4.1 Flash (1017). Accepts text input.",
+      "es": "DeepSeek V4.1 Flash (1017). Admite entradas de texto."
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
-    "officialInput": 150000,
-    "officialOutput": 600000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 300000,
+    "officialOutput": 1200000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
+    "discountBps": 8800,
     "tags": [
-      "vision",
-      "reasoning"
+      "reasoning",
+      "vision"
     ],
     "status": "active"
   },
@@ -421,11 +514,17 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "max"
+    ],
     "officialInput": 160000,
     "officialOutput": 580000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
+    "discountBps": 3500,
     "tags": [
       "reasoning"
     ],
@@ -441,6 +540,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 393216,
+    "reasoningLevels": [],
     "officialInput": 150000,
     "officialOutput": 600000,
     "officialPriceSourceUrl": "https://api-docs.deepseek.com/quick_start/pricing",
@@ -461,11 +561,42 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1000000,
     "maxOutputTokens": 65536,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 750000,
     "officialOutput": 3750000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
+    "discountBps": 6100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "google/gemini-4-argon",
+    "name": "Gemini 4 Argon",
+    "author": "google",
+    "description": {
+      "en": "Gemini 4 Argon. Accepts text and image input.",
+      "es": "Gemini 4 Argon. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1048576,
+    "maxOutputTokens": 65536,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4100,
     "tags": [
       "vision",
       "reasoning"
@@ -482,6 +613,11 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     },
     "contextLength": 1048576,
     "maxOutputTokens": 65536,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 4000000,
     "officialOutput": 20000000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
@@ -502,12 +638,1692 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "es": "Gemini 4 Carbon. Admite entradas de texto e imagen."
     },
     "contextLength": 1048576,
-    "maxOutputTokens": 262144,
+    "maxOutputTokens": 65536,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
     "officialInput": 2000000,
     "officialOutput": 10000000,
     "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
     "officialPriceVerifiedAt": null,
+    "discountBps": 4100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "google/gemini-4-hydrogen",
+    "name": "Gemini 4 Hydrogen",
+    "author": "google",
+    "description": {
+      "en": "Gemini 4 Hydrogen. Accepts text and image input.",
+      "es": "Gemini 4 Hydrogen. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1048576,
+    "maxOutputTokens": 65536,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 1500000,
+    "officialOutput": 7500000,
+    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6900,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-ember-1.0",
+    "name": "Muse Ember 1.0",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Ember 1.0. Accepts text input.",
+      "es": "Muse Ember 1.0. Admite entradas de texto."
+    },
+    "contextLength": 1048576,
+    "maxOutputTokens": 524288,
+    "reasoningLevels": [],
+    "officialInput": 100000,
+    "officialOutput": 500000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-1.1",
+    "name": "Muse Spark 1.1",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark 1.1. Accepts text and image input.",
+      "es": "Muse Spark 1.1. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1048576,
+    "reasoningLevels": [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 1250000,
+    "officialOutput": 4250000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-1.2",
+    "name": "Muse Spark 1.2",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark 1.2. Accepts text input.",
+      "es": "Muse Spark 1.2. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 1250000,
+    "officialOutput": 4250000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-1.2-contributor",
+    "name": "Muse Spark 1.2 Contributor",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark 1.2 Contributor. Accepts text input.",
+      "es": "Muse Spark 1.2 Contributor. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 100000,
+    "officialOutput": 200000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-1.3",
+    "name": "Muse Spark 1.3",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark 1.3. Accepts text input.",
+      "es": "Muse Spark 1.3. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 1250000,
+    "officialOutput": 4250000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-1.3-contributor",
+    "name": "Muse Spark 1.3 Contributor",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark 1.3 Contributor. Accepts text input.",
+      "es": "Muse Spark 1.3 Contributor. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 100000,
+    "officialOutput": 200000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-spark-open",
+    "name": "Muse Spark Open",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Spark Open. Accepts text input.",
+      "es": "Muse Spark Open. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 1250000,
+    "officialOutput": 4250000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "meta-llama/muse-wonder-1.0",
+    "name": "Muse Wonder 1.0",
+    "author": "meta-llama",
+    "description": {
+      "en": "Muse Wonder 1.0. Accepts text and image input.",
+      "es": "Muse Wonder 1.0. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1048576,
+    "reasoningLevels": [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 4000000,
+    "officialOutput": 20000000,
+    "officialPriceSourceUrl": "https://www.meta.ai/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m2.1",
+    "name": "MiniMax M2.1",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.1. Accepts text input.",
+      "es": "MiniMax M2.1. Admite entradas de texto."
+    },
+    "contextLength": 196000,
+    "maxOutputTokens": 64000,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4800,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m2.5",
+    "name": "MiniMax M2.5",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.5. Accepts text input.",
+      "es": "MiniMax M2.5. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
     "discountBps": 7400,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m2.5-highspeed",
+    "name": "MiniMax M2.5 HighSpeed",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.5 HighSpeed. Accepts text input.",
+      "es": "MiniMax M2.5 HighSpeed. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "reasoningLevels": [],
+    "officialInput": 600000,
+    "officialOutput": 2400000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 9000,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m2.7",
+    "name": "MiniMax M2.7",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.7. Accepts text input.",
+      "es": "MiniMax M2.7. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m2.7-highspeed",
+    "name": "MiniMax M2.7 HighSpeed",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M2.7 HighSpeed. Accepts text input.",
+      "es": "MiniMax M2.7 HighSpeed. Admite entradas de texto."
+    },
+    "contextLength": 204800,
+    "reasoningLevels": [],
+    "officialInput": 600000,
+    "officialOutput": 2400000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m3",
+    "name": "MiniMax M3",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M3. Accepts text and image input.",
+      "es": "MiniMax M3. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 48000,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m3.1-flash",
+    "name": "MiniMax M3.1 Flash",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M3.1 Flash. Accepts text and image input.",
+      "es": "MiniMax M3.1 Flash. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 150000,
+    "officialOutput": 600000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "minimax/minimax-m3.1-flash-preview",
+    "name": "MiniMax M3.1 Flash Preview",
+    "author": "minimax",
+    "description": {
+      "en": "MiniMax M3.1 Flash Preview. Accepts text and image input.",
+      "es": "MiniMax M3.1 Flash Preview. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 524288,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 150000,
+    "officialOutput": 600000,
+    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "mistralai/mistral-large-4",
+    "name": "Mistral Large 4",
+    "author": "mistralai",
+    "description": {
+      "en": "Mistral Large 4. Accepts text input.",
+      "es": "Mistral Large 4. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 262144,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 700000,
+    "officialOutput": 2100000,
+    "officialPriceSourceUrl": "https://mistral.ai/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "mistralai/mistral-medium-3.5",
+    "name": "Mistral Medium 3.5",
+    "author": "mistralai",
+    "description": {
+      "en": "Mistral Medium 3.5. Accepts text input.",
+      "es": "Mistral Medium 3.5. Admite entradas de texto."
+    },
+    "contextLength": 262144,
+    "reasoningLevels": [
+      "none",
+      "high"
+    ],
+    "officialInput": 1500000,
+    "officialOutput": 7500000,
+    "officialPriceSourceUrl": "https://mistral.ai/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8800,
+    "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-for-coding-highspeed-k2.7-code",
+    "name": "Kimi For Coding HighSpeed (K2.7 Code)",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi For Coding HighSpeed (K2.7 Code). Accepts text and image input.",
+      "es": "Kimi For Coding HighSpeed (K2.7 Code). Admite entradas de texto e imagen."
+    },
+    "contextLength": 262144,
+    "reasoningLevels": [],
+    "officialInput": 1900000,
+    "officialOutput": 8000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-for-coding-k2.8-preview",
+    "name": "Kimi For Coding (K2.8 Preview)",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi For Coding (K2.8 Preview). Accepts text and image input.",
+      "es": "Kimi For Coding (K2.8 Preview). Admite entradas de texto e imagen."
+    },
+    "contextLength": 1048576,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 950000,
+    "officialOutput": 4000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning",
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k2.5",
+    "name": "Kimi K2.5",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K2.5. Accepts text and image input.",
+      "es": "Kimi K2.5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 164000,
+    "maxOutputTokens": 32000,
+    "reasoningLevels": [],
+    "officialInput": 600000,
+    "officialOutput": 3000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k2.6",
+    "name": "Kimi K2.6",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K2.6. Accepts text and image input.",
+      "es": "Kimi K2.6. Admite entradas de texto e imagen."
+    },
+    "contextLength": 262144,
+    "maxOutputTokens": 32000,
+    "reasoningLevels": [],
+    "officialInput": 950000,
+    "officialOutput": 4000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k2.7-code",
+    "name": "Kimi K2.7 Code",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K2.7 Code. Accepts text and image input.",
+      "es": "Kimi K2.7 Code. Admite entradas de texto e imagen."
+    },
+    "contextLength": 262144,
+    "maxOutputTokens": 32000,
+    "reasoningLevels": [],
+    "officialInput": 950000,
+    "officialOutput": 4000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k2.7-code-highspeed",
+    "name": "Kimi K2.7 Code HighSpeed",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K2.7 Code HighSpeed. Accepts text input.",
+      "es": "Kimi K2.7 Code HighSpeed. Admite entradas de texto."
+    },
+    "contextLength": 262144,
+    "reasoningLevels": [],
+    "officialInput": 1900000,
+    "officialOutput": 8000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k2.8-preview",
+    "name": "Kimi K2.8 Preview",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K2.8 Preview. Accepts text and image input.",
+      "es": "Kimi K2.8 Preview. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 32000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 950000,
+    "officialOutput": 4000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k3",
+    "name": "Kimi K3",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K3. Accepts text and image input.",
+      "es": "Kimi K3. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 32000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 3000000,
+    "officialOutput": 15000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k3-256k",
+    "name": "Kimi K3 (256K)",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K3 (256K). Accepts text and image input.",
+      "es": "Kimi K3 (256K). Admite entradas de texto e imagen."
+    },
+    "contextLength": 262144,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 3000000,
+    "officialOutput": 15000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k3.1-pro",
+    "name": "Kimi K3.1 Pro",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K3.1 Pro. Accepts text and image input.",
+      "es": "Kimi K3.1 Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "moonshotai/kimi-k3.1-pro-highspeed",
+    "name": "Kimi K3.1 Pro HighSpeed",
+    "author": "moonshotai",
+    "description": {
+      "en": "Kimi K3.1 Pro HighSpeed. Accepts text and image input.",
+      "es": "Kimi K3.1 Pro HighSpeed. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 4000000,
+    "officialOutput": 20000000,
+    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3600,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.3-codex",
+    "name": "GPT 5.3 Codex",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.3 Codex. Accepts text and image input.",
+      "es": "GPT 5.3 Codex. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 1750000,
+    "officialOutput": 14000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning",
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.4",
+    "name": "GPT 5.4",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.4. Accepts text and image input.",
+      "es": "GPT 5.4. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 2500000,
+    "officialOutput": 15000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.4-mini",
+    "name": "GPT 5.4 Mini",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.4 Mini. Accepts text and image input.",
+      "es": "GPT 5.4 Mini. Admite entradas de texto e imagen."
+    },
+    "contextLength": 400000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 750000,
+    "officialOutput": 4500000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.5",
+    "name": "GPT 5.5",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.5. Accepts text and image input.",
+      "es": "GPT 5.5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 5000000,
+    "officialOutput": 30000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.6-luna",
+    "name": "GPT 5.6 Luna",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.6 Luna. Accepts text and image input.",
+      "es": "GPT 5.6 Luna. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 200000,
+    "officialOutput": 1200000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.6-sol",
+    "name": "GPT 5.6 Sol",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.6 Sol. Accepts text and image input.",
+      "es": "GPT 5.6 Sol. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 5000000,
+    "officialOutput": 30000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-5.6-terra",
+    "name": "GPT 5.6 Terra",
+    "author": "openai",
+    "description": {
+      "en": "GPT 5.6 Terra. Accepts text and image input.",
+      "es": "GPT 5.6 Terra. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 12000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6100,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6-astra",
+    "name": "GPT 6 Astra",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Astra. Accepts text and image input.",
+      "es": "GPT 6 Astra. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 10000000,
+    "officialOutput": 50000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6-luna",
+    "name": "GPT 6 Luna",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Luna. Accepts text and image input.",
+      "es": "GPT 6 Luna. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 100000,
+    "officialOutput": 500000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6-sol",
+    "name": "GPT 6 Sol",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6 Sol. Accepts text and image input.",
+      "es": "GPT 6 Sol. Admite entradas de texto e imagen."
+    },
+    "contextLength": 272000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.1-sol",
+    "name": "GPT 6.1 Sol",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.1 Sol. Accepts text and image input.",
+      "es": "GPT 6.1 Sol. Admite entradas de texto e imagen."
+    },
+    "contextLength": 500000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.1-terra",
+    "name": "GPT 6.1 Terra",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.1 Terra. Accepts text and image input.",
+      "es": "GPT 6.1 Terra. Admite entradas de texto e imagen."
+    },
+    "contextLength": 500000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 1000000,
+    "officialOutput": 5000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.2-astra",
+    "name": "GPT 6.2 Astra",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.2 Astra. Accepts text and image input.",
+      "es": "GPT 6.2 Astra. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 8000000,
+    "officialOutput": 40000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "openai/gpt-6.2-sol",
+    "name": "GPT 6.2 Sol",
+    "author": "openai",
+    "description": {
+      "en": "GPT 6.2 Sol. Accepts text and image input.",
+      "es": "GPT 6.2 Sol. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1050000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 10000000,
+    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3-coder-next",
+    "name": "Qwen3 Coder Next",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3 Coder Next. Accepts text input.",
+      "es": "Qwen3 Coder Next. Admite entradas de texto."
+    },
+    "contextLength": 256000,
+    "maxOutputTokens": 64000,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 1500000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 4800,
+    "tags": [
+      "coding"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.6-flash",
+    "name": "Qwen3.6 Flash",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.6 Flash. Accepts text input.",
+      "es": "Qwen3.6 Flash. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "reasoningLevels": [],
+    "officialInput": 250000,
+    "officialOutput": 1500000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.7-max",
+    "name": "Qwen3.7 Max",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.7 Max. Accepts text input.",
+      "es": "Qwen3.7 Max. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 2400000,
+    "officialOutput": 9600000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.7-plus",
+    "name": "Qwen3.7 Plus",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.7 Plus. Accepts text and image input.",
+      "es": "Qwen3.7 Plus. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 1200000,
+    "officialOutput": 4800000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-2.4t-a95b",
+    "name": "Qwen3.8 2.4T-A95B",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 2.4T-A95B. Accepts text input.",
+      "es": "Qwen3.8 2.4T-A95B. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-27b",
+    "name": "Qwen3.8 27B",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 27B. Accepts text and image input.",
+      "es": "Qwen3.8 27B. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 500000,
+    "officialOutput": 3000000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-flash",
+    "name": "Qwen3.8 Flash",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 Flash. Accepts text and image input.",
+      "es": "Qwen3.8 Flash. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 150000,
+    "officialOutput": 470000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision",
+      "fast"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-max",
+    "name": "Qwen3.8 Max",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 Max. Accepts text and image input.",
+      "es": "Qwen3.8 Max. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-max-0902",
+    "name": "Qwen3.8 Max 0902",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 Max 0902. Accepts text and image input.",
+      "es": "Qwen3.8 Max 0902. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7400,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen3.8-omni-flash",
+    "name": "Qwen3.8 Omni Flash",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen3.8 Omni Flash. Accepts text and image input.",
+      "es": "Qwen3.8 Omni Flash. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 150000,
+    "officialOutput": 470000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 7100,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen4-max",
+    "name": "Qwen4 Max",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen4 Max. Accepts text and image input.",
+      "es": "Qwen4 Max. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 262144,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 1500000,
+    "officialOutput": 4500000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "qwen/qwen4-max-preview",
+    "name": "Qwen4 Max Preview",
+    "author": "qwen",
+    "description": {
+      "en": "Qwen4 Max Preview. Accepts text and image input.",
+      "es": "Qwen4 Max Preview. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 393216,
+    "reasoningLevels": [
+      "none",
+      "low",
+      "medium",
+      "xhigh"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3700,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "x-ai/grok-4.5",
+    "name": "Grok 4.5",
+    "author": "x-ai",
+    "description": {
+      "en": "Grok 4.5. Accepts text and image input.",
+      "es": "Grok 4.5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 500000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6200,
+    "tags": [
+      "vision",
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "x-ai/grok-4.6",
+    "name": "Grok 4.6",
+    "author": "x-ai",
+    "description": {
+      "en": "Grok 4.6. Accepts text input.",
+      "es": "Grok 4.6. Admite entradas de texto."
+    },
+    "contextLength": 500000,
+    "reasoningLevels": [],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6200,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "x-ai/grok-4.7",
+    "name": "Grok 4.7",
+    "author": "x-ai",
+    "description": {
+      "en": "Grok 4.7. Accepts text input.",
+      "es": "Grok 4.7. Admite entradas de texto."
+    },
+    "contextLength": 500000,
+    "reasoningLevels": [],
+    "officialInput": 2000000,
+    "officialOutput": 6000000,
+    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6200,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "x-ai/grok-4.7-fast",
+    "name": "Grok 4.7 Fast",
+    "author": "x-ai",
+    "description": {
+      "en": "Grok 4.7 Fast. Accepts text input.",
+      "es": "Grok 4.7 Fast. Admite entradas de texto."
+    },
+    "contextLength": 500000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "officialInput": 4000000,
+    "officialOutput": 12000000,
+    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6200,
+    "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "xiaomi/mimo-v2.5",
+    "name": "MiMo V2.5",
+    "author": "xiaomi",
+    "description": {
+      "en": "MiMo V2.5. Accepts text and image input.",
+      "es": "MiMo V2.5. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 140000,
+    "officialOutput": 280000,
+    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "xiaomi/mimo-v2.6-flash",
+    "name": "MiMo V2.6 Flash",
+    "author": "xiaomi",
+    "description": {
+      "en": "MiMo V2.6 Flash. Accepts text input.",
+      "es": "MiMo V2.6 Flash. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [],
+    "officialInput": 140000,
+    "officialOutput": 280000,
+    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "xiaomi/mimo-v2.6-pro",
+    "name": "MiMo V2.6 Pro",
+    "author": "xiaomi",
+    "description": {
+      "en": "MiMo V2.6 Pro. Accepts text and image input.",
+      "es": "MiMo V2.6 Pro. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [],
+    "officialInput": 435000,
+    "officialOutput": 870000,
+    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-4.6v-vision",
+    "name": "GLM 4.6V (vision)",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 4.6V (vision). Accepts text and image input.",
+      "es": "GLM 4.6V (vision). Admite entradas de texto e imagen."
+    },
+    "contextLength": 200000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [],
+    "officialInput": 300000,
+    "officialOutput": 900000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 6700,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5",
+    "name": "GLM 5",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5. Accepts text input.",
+      "es": "GLM 5. Admite entradas de texto."
+    },
+    "contextLength": 200000,
+    "maxOutputTokens": 64000,
+    "reasoningLevels": [],
+    "officialInput": 1000000,
+    "officialOutput": 3200000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.1",
+    "name": "GLM 5.1",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.1. Accepts text and image input.",
+      "es": "GLM 5.1. Admite entradas de texto e imagen."
+    },
+    "contextLength": 200000,
+    "maxOutputTokens": 48000,
+    "reasoningLevels": [],
+    "officialInput": 1400000,
+    "officialOutput": 4400000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.2",
+    "name": "GLM 5.2",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.2. Accepts text input.",
+      "es": "GLM 5.2. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 48000,
+    "reasoningLevels": [
+      "high",
+      "max"
+    ],
+    "officialInput": 1400000,
+    "officialOutput": 4400000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.3",
+    "name": "GLM 5.3",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.3. Accepts text input.",
+      "es": "GLM 5.3. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 1400000,
+    "officialOutput": 4400000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8800,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.3-flash",
+    "name": "GLM 5.3 Flash",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.3 Flash. Accepts text input.",
+      "es": "GLM 5.3 Flash. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 48000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 150000,
+    "officialOutput": 500000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8700,
+    "tags": [
+      "reasoning",
+      "vision",
+      "fast"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.3-flashx",
+    "name": "GLM 5.3 FlashX",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.3 FlashX. Accepts text input.",
+      "es": "GLM 5.3 FlashX. Admite entradas de texto."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 370000,
+    "officialOutput": 1250000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 3500,
+    "tags": [
+      "reasoning"
+    ],
+    "status": "active"
+  },
+  {
+    "id": "z-ai/glm-5.4",
+    "name": "GLM 5.4",
+    "author": "z-ai",
+    "description": {
+      "en": "GLM 5.4. Accepts text and image input.",
+      "es": "GLM 5.4. Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 131072,
+    "reasoningLevels": [
+      "low",
+      "high",
+      "max"
+    ],
+    "officialInput": 1400000,
+    "officialOutput": 4400000,
+    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 8800,
     "tags": [
       "vision",
       "reasoning"
@@ -533,1201 +2349,7 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
       "vision",
       "reasoning"
     ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-ember-1.0",
-    "name": "Muse Ember 1.0",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Ember 1.0. Accepts text input.",
-      "es": "Muse Ember 1.0. Admite entradas de texto."
-    },
-    "contextLength": 1048576,
-    "maxOutputTokens": 524288,
-    "officialInput": 100000,
-    "officialOutput": 500000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-1.1",
-    "name": "Muse Spark 1.1",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark 1.1. Accepts text and image input.",
-      "es": "Muse Spark 1.1. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1048576,
-    "officialInput": 1250000,
-    "officialOutput": 4250000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-1.2",
-    "name": "Muse Spark 1.2",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark 1.2. Accepts text input.",
-      "es": "Muse Spark 1.2. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 1250000,
-    "officialOutput": 4250000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-1.2-contributor",
-    "name": "Muse Spark 1.2 Contributor",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark 1.2 Contributor. Accepts text input.",
-      "es": "Muse Spark 1.2 Contributor. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 100000,
-    "officialOutput": 200000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-1.3",
-    "name": "Muse Spark 1.3",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark 1.3. Accepts text input.",
-      "es": "Muse Spark 1.3. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 1250000,
-    "officialOutput": 4250000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-1.3-contributor",
-    "name": "Muse Spark 1.3 Contributor",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark 1.3 Contributor. Accepts text input.",
-      "es": "Muse Spark 1.3 Contributor. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 100000,
-    "officialOutput": 200000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-spark-open",
-    "name": "Muse Spark Open",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Spark Open. Accepts text input.",
-      "es": "Muse Spark Open. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 1250000,
-    "officialOutput": 4250000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "meta-llama/muse-wonder-1.0",
-    "name": "Muse Wonder 1.0",
-    "author": "meta-llama",
-    "description": {
-      "en": "Muse Wonder 1.0. Accepts text and image input.",
-      "es": "Muse Wonder 1.0. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1048576,
-    "officialInput": 4000000,
-    "officialOutput": 20000000,
-    "officialPriceSourceUrl": "https://www.meta.ai/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.1",
-    "name": "MiniMax M2.1",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.1. Accepts text input.",
-      "es": "MiniMax M2.1. Admite entradas de texto."
-    },
-    "contextLength": 196000,
-    "maxOutputTokens": 64000,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.5",
-    "name": "MiniMax M2.5",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.5. Accepts text input.",
-      "es": "MiniMax M2.5. Admite entradas de texto."
-    },
-    "contextLength": 204800,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.5-highspeed",
-    "name": "MiniMax M2.5 HighSpeed",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.5 HighSpeed. Accepts text input.",
-      "es": "MiniMax M2.5 HighSpeed. Admite entradas de texto."
-    },
-    "contextLength": 204800,
-    "officialInput": 600000,
-    "officialOutput": 2400000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.7",
-    "name": "MiniMax M2.7",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.7. Accepts text input.",
-      "es": "MiniMax M2.7. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7500,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m2.7-highspeed",
-    "name": "MiniMax M2.7 HighSpeed",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M2.7 HighSpeed. Accepts text input.",
-      "es": "MiniMax M2.7 HighSpeed. Admite entradas de texto."
-    },
-    "contextLength": 204800,
-    "officialInput": 600000,
-    "officialOutput": 2400000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m3",
-    "name": "MiniMax M3",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M3. Accepts text and image input.",
-      "es": "MiniMax M3. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 48000,
-    "officialInput": 300000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m3.1-flash",
-    "name": "MiniMax M3.1 Flash",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M3.1 Flash. Accepts text and image input.",
-      "es": "MiniMax M3.1 Flash. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 128000,
-    "officialInput": 150000,
-    "officialOutput": 600000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "minimax/minimax-m3.1-flash-preview",
-    "name": "MiniMax M3.1 Flash Preview",
-    "author": "minimax",
-    "description": {
-      "en": "MiniMax M3.1 Flash Preview. Accepts text and image input.",
-      "es": "MiniMax M3.1 Flash Preview. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 524288,
-    "officialInput": 150000,
-    "officialOutput": 600000,
-    "officialPriceSourceUrl": "https://platform.minimax.io/docs/pricing/pay-as-you-go",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "mistralai/mistral-large-4",
-    "name": "Mistral Large 4",
-    "author": "mistralai",
-    "description": {
-      "en": "Mistral Large 4. Accepts text input.",
-      "es": "Mistral Large 4. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 262144,
-    "officialInput": 700000,
-    "officialOutput": 2100000,
-    "officialPriceSourceUrl": "https://mistral.ai/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "mistralai/mistral-medium-3.5",
-    "name": "Mistral Medium 3.5",
-    "author": "mistralai",
-    "description": {
-      "en": "Mistral Medium 3.5. Accepts text input.",
-      "es": "Mistral Medium 3.5. Admite entradas de texto."
-    },
-    "contextLength": 262144,
-    "officialInput": 1500000,
-    "officialOutput": 7500000,
-    "officialPriceSourceUrl": "https://mistral.ai/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
-    "tags": [
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-for-coding-highspeed-k2.7-code",
-    "name": "Kimi For Coding HighSpeed (K2.7 Code)",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi For Coding HighSpeed (K2.7 Code). Accepts text and image input.",
-      "es": "Kimi For Coding HighSpeed (K2.7 Code). Admite entradas de texto e imagen."
-    },
-    "contextLength": 262144,
-    "officialInput": 1900000,
-    "officialOutput": 8000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-for-coding-k2.8-preview",
-    "name": "Kimi For Coding (K2.8 Preview)",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi For Coding (K2.8 Preview). Accepts text and image input.",
-      "es": "Kimi For Coding (K2.8 Preview). Admite entradas de texto e imagen."
-    },
-    "contextLength": 1048576,
-    "officialInput": 950000,
-    "officialOutput": 4000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3600,
-    "tags": [
-      "vision",
-      "reasoning",
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k2.5",
-    "name": "Kimi K2.5",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K2.5. Accepts text and image input.",
-      "es": "Kimi K2.5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 164000,
-    "maxOutputTokens": 32000,
-    "officialInput": 600000,
-    "officialOutput": 3000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k2.6",
-    "name": "Kimi K2.6",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K2.6. Accepts text and image input.",
-      "es": "Kimi K2.6. Admite entradas de texto e imagen."
-    },
-    "contextLength": 262144,
-    "maxOutputTokens": 32000,
-    "officialInput": 950000,
-    "officialOutput": 4000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k2.7-code",
-    "name": "Kimi K2.7 Code",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K2.7 Code. Accepts text and image input.",
-      "es": "Kimi K2.7 Code. Admite entradas de texto e imagen."
-    },
-    "contextLength": 262144,
-    "maxOutputTokens": 32000,
-    "officialInput": 950000,
-    "officialOutput": 4000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k2.7-code-highspeed",
-    "name": "Kimi K2.7 Code HighSpeed",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K2.7 Code HighSpeed. Accepts text input.",
-      "es": "Kimi K2.7 Code HighSpeed. Admite entradas de texto."
-    },
-    "contextLength": 262144,
-    "officialInput": 1900000,
-    "officialOutput": 8000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k2.8-preview",
-    "name": "Kimi K2.8 Preview",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K2.8 Preview. Accepts text and image input.",
-      "es": "Kimi K2.8 Preview. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 32000,
-    "officialInput": 950000,
-    "officialOutput": 4000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k3",
-    "name": "Kimi K3",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K3. Accepts text and image input.",
-      "es": "Kimi K3. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 32000,
-    "officialInput": 3000000,
-    "officialOutput": 15000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k3-256k",
-    "name": "Kimi K3 (256K)",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K3 (256K). Accepts text and image input.",
-      "es": "Kimi K3 (256K). Admite entradas de texto e imagen."
-    },
-    "contextLength": 262144,
-    "maxOutputTokens": 131072,
-    "officialInput": 3000000,
-    "officialOutput": 15000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k3.1-pro",
-    "name": "Kimi K3.1 Pro",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K3.1 Pro. Accepts text and image input.",
-      "es": "Kimi K3.1 Pro. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "officialInput": 2000000,
-    "officialOutput": 10000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "moonshotai/kimi-k3.1-pro-highspeed",
-    "name": "Kimi K3.1 Pro HighSpeed",
-    "author": "moonshotai",
-    "description": {
-      "en": "Kimi K3.1 Pro HighSpeed. Accepts text and image input.",
-      "es": "Kimi K3.1 Pro HighSpeed. Admite entradas de texto e imagen."
-    },
-    "contextLength": 262144,
-    "maxOutputTokens": 131072,
-    "officialInput": 4000000,
-    "officialOutput": 20000000,
-    "officialPriceSourceUrl": "https://platform.moonshot.ai/docs/pricing/chat",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.3-codex",
-    "name": "GPT 5.3 Codex",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.3 Codex. Accepts text and image input.",
-      "es": "GPT 5.3 Codex. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 1750000,
-    "officialOutput": 14000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning",
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.4",
-    "name": "GPT 5.4",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.4. Accepts text and image input.",
-      "es": "GPT 5.4. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1050000,
-    "maxOutputTokens": 128000,
-    "officialInput": 2500000,
-    "officialOutput": 15000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.4-mini",
-    "name": "GPT 5.4 Mini",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.4 Mini. Accepts text and image input.",
-      "es": "GPT 5.4 Mini. Admite entradas de texto e imagen."
-    },
-    "contextLength": 400000,
-    "maxOutputTokens": 128000,
-    "officialInput": 750000,
-    "officialOutput": 4500000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.5",
-    "name": "GPT 5.5",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.5. Accepts text and image input.",
-      "es": "GPT 5.5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1050000,
-    "maxOutputTokens": 128000,
-    "officialInput": 5000000,
-    "officialOutput": 30000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.6-luna",
-    "name": "GPT 5.6 Luna",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.6 Luna. Accepts text and image input.",
-      "es": "GPT 5.6 Luna. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 200000,
-    "officialOutput": 1200000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8000,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.6-sol",
-    "name": "GPT 5.6 Sol",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.6 Sol. Accepts text and image input.",
-      "es": "GPT 5.6 Sol. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 5000000,
-    "officialOutput": 30000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-5.6-terra",
-    "name": "GPT 5.6 Terra",
-    "author": "openai",
-    "description": {
-      "en": "GPT 5.6 Terra. Accepts text and image input.",
-      "es": "GPT 5.6 Terra. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1050000,
-    "maxOutputTokens": 128000,
-    "officialInput": 2000000,
-    "officialOutput": 12000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6-astra",
-    "name": "GPT 6 Astra",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6 Astra. Accepts text and image input.",
-      "es": "GPT 6 Astra. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 10000000,
-    "officialOutput": 50000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6-luna",
-    "name": "GPT 6 Luna",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6 Luna. Accepts text and image input.",
-      "es": "GPT 6 Luna. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 100000,
-    "officialOutput": 500000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8000,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6-sol",
-    "name": "GPT 6 Sol",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6 Sol. Accepts text and image input.",
-      "es": "GPT 6 Sol. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 2000000,
-    "officialOutput": 10000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6.1-sol",
-    "name": "GPT 6.1 Sol",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6.1 Sol. Accepts text and image input.",
-      "es": "GPT 6.1 Sol. Admite entradas de texto e imagen."
-    },
-    "contextLength": 500000,
-    "maxOutputTokens": 128000,
-    "officialInput": 2000000,
-    "officialOutput": 10000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6.1-terra",
-    "name": "GPT 6.1 Terra",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6.1 Terra. Accepts text and image input.",
-      "es": "GPT 6.1 Terra. Admite entradas de texto e imagen."
-    },
-    "contextLength": 500000,
-    "maxOutputTokens": 128000,
-    "officialInput": 1000000,
-    "officialOutput": 5000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6.2-astra",
-    "name": "GPT 6.2 Astra",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6.2 Astra. Accepts text and image input.",
-      "es": "GPT 6.2 Astra. Admite entradas de texto e imagen."
-    },
-    "contextLength": 272000,
-    "maxOutputTokens": 128000,
-    "officialInput": 8000000,
-    "officialOutput": 40000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "openai/gpt-6.2-sol",
-    "name": "GPT 6.2 Sol",
-    "author": "openai",
-    "description": {
-      "en": "GPT 6.2 Sol. Accepts text and image input.",
-      "es": "GPT 6.2 Sol. Admite entradas de texto e imagen."
-    },
-    "contextLength": 500000,
-    "maxOutputTokens": 128000,
-    "officialInput": 2000000,
-    "officialOutput": 10000000,
-    "officialPriceSourceUrl": "https://openai.com/api/pricing/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3-coder-next",
-    "name": "Qwen3 Coder Next",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3 Coder Next. Accepts text input.",
-      "es": "Qwen3 Coder Next. Admite entradas de texto."
-    },
-    "contextLength": 256000,
-    "maxOutputTokens": 64000,
-    "officialInput": 300000,
-    "officialOutput": 1500000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "coding"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.6-flash",
-    "name": "Qwen3.6 Flash",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.6 Flash. Accepts text input.",
-      "es": "Qwen3.6 Flash. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "officialInput": 250000,
-    "officialOutput": 1500000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.7-max",
-    "name": "Qwen3.7 Max",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.7 Max. Accepts text input.",
-      "es": "Qwen3.7 Max. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 2400000,
-    "officialOutput": 9600000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.7-plus",
-    "name": "Qwen3.7 Plus",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.7 Plus. Accepts text and image input.",
-      "es": "Qwen3.7 Plus. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 1200000,
-    "officialOutput": 4800000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-2.4t-a95b",
-    "name": "Qwen3.8 2.4T-A95B",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 2.4T-A95B. Accepts text input.",
-      "es": "Qwen3.8 2.4T-A95B. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-27b",
-    "name": "Qwen3.8 27B",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 27B. Accepts text and image input.",
-      "es": "Qwen3.8 27B. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 500000,
-    "officialOutput": 3000000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-flash",
-    "name": "Qwen3.8 Flash",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 Flash. Accepts text and image input.",
-      "es": "Qwen3.8 Flash. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 150000,
-    "officialOutput": 470000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8400,
-    "tags": [
-      "vision",
-      "fast"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-max",
-    "name": "Qwen3.8 Max",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 Max. Accepts text and image input.",
-      "es": "Qwen3.8 Max. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8100,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-max-0902",
-    "name": "Qwen3.8 Max 0902",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 Max 0902. Accepts text and image input.",
-      "es": "Qwen3.8 Max 0902. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen3.8-omni-flash",
-    "name": "Qwen3.8 Omni Flash",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen3.8 Omni Flash. Accepts text and image input.",
-      "es": "Qwen3.8 Omni Flash. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 150000,
-    "officialOutput": 470000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen4-max",
-    "name": "Qwen4 Max",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen4 Max. Accepts text and image input.",
-      "es": "Qwen4 Max. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 262144,
-    "officialInput": 1500000,
-    "officialOutput": 4500000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 6100,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "qwen/qwen4-max-preview",
-    "name": "Qwen4 Max Preview",
-    "author": "qwen",
-    "description": {
-      "en": "Qwen4 Max Preview. Accepts text and image input.",
-      "es": "Qwen4 Max Preview. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 393216,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "x-ai/grok-4.5",
-    "name": "Grok 4.5",
-    "author": "x-ai",
-    "description": {
-      "en": "Grok 4.5. Accepts text and image input.",
-      "es": "Grok 4.5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 500000,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 6200,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "x-ai/grok-4.6",
-    "name": "Grok 4.6",
-    "author": "x-ai",
-    "description": {
-      "en": "Grok 4.6. Accepts text input.",
-      "es": "Grok 4.6. Admite entradas de texto."
-    },
-    "contextLength": 500000,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 6200,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "x-ai/grok-4.7",
-    "name": "Grok 4.7",
-    "author": "x-ai",
-    "description": {
-      "en": "Grok 4.7. Accepts text input.",
-      "es": "Grok 4.7. Admite entradas de texto."
-    },
-    "contextLength": 500000,
-    "officialInput": 2000000,
-    "officialOutput": 6000000,
-    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 6200,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "x-ai/grok-4.7-fast",
-    "name": "Grok 4.7 Fast",
-    "author": "x-ai",
-    "description": {
-      "en": "Grok 4.7 Fast. Accepts text input.",
-      "es": "Grok 4.7 Fast. Admite entradas de texto."
-    },
-    "contextLength": 500000,
-    "officialInput": 4000000,
-    "officialOutput": 12000000,
-    "officialPriceSourceUrl": "https://docs.x.ai/docs/models",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 6200,
-    "tags": [
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "xiaomi/mimo-v2.5",
-    "name": "MiMo V2.5",
-    "author": "xiaomi",
-    "description": {
-      "en": "MiMo V2.5. Accepts text and image input.",
-      "es": "MiMo V2.5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 140000,
-    "officialOutput": 280000,
-    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
+    "status": "retired"
   },
   {
     "id": "xiaomi/mimo-v2.5-pro",
@@ -1745,246 +2367,6 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialPriceVerifiedAt": null,
     "discountBps": 3500,
     "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "xiaomi/mimo-v2.6-flash",
-    "name": "MiMo V2.6 Flash",
-    "author": "xiaomi",
-    "description": {
-      "en": "MiMo V2.6 Flash. Accepts text and image input.",
-      "es": "MiMo V2.6 Flash. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 131072,
-    "officialInput": 140000,
-    "officialOutput": 280000,
-    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 4100,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "xiaomi/mimo-v2.6-pro",
-    "name": "MiMo V2.6 Pro",
-    "author": "xiaomi",
-    "description": {
-      "en": "MiMo V2.6 Pro. Accepts text and image input.",
-      "es": "MiMo V2.6 Pro. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 128000,
-    "officialInput": 435000,
-    "officialOutput": 870000,
-    "officialPriceSourceUrl": "https://platform.xiaomimimo.com/",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7400,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-4.6v-vision",
-    "name": "GLM 4.6V (vision)",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 4.6V (vision). Accepts text and image input.",
-      "es": "GLM 4.6V (vision). Admite entradas de texto e imagen."
-    },
-    "contextLength": 200000,
-    "maxOutputTokens": 128000,
-    "officialInput": 300000,
-    "officialOutput": 900000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 5400,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5",
-    "name": "GLM 5",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5. Accepts text input.",
-      "es": "GLM 5. Admite entradas de texto."
-    },
-    "contextLength": 200000,
-    "maxOutputTokens": 64000,
-    "officialInput": 1000000,
-    "officialOutput": 3200000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 4800,
-    "tags": [],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5.1",
-    "name": "GLM 5.1",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5.1. Accepts text and image input.",
-      "es": "GLM 5.1. Admite entradas de texto e imagen."
-    },
-    "contextLength": 200000,
-    "maxOutputTokens": 48000,
-    "officialInput": 1400000,
-    "officialOutput": 4400000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 7500,
-    "tags": [
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5.2",
-    "name": "GLM 5.2",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5.2. Accepts text input.",
-      "es": "GLM 5.2. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 48000,
-    "officialInput": 1400000,
-    "officialOutput": 4400000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5.3",
-    "name": "GLM 5.3",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5.3. Accepts text input.",
-      "es": "GLM 5.3. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 128000,
-    "officialInput": 1400000,
-    "officialOutput": 4400000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8900,
-    "tags": [
-      "reasoning",
-      "vision"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5.3-flash",
-    "name": "GLM 5.3 Flash",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5.3 Flash. Accepts text input.",
-      "es": "GLM 5.3 Flash. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 48000,
-    "officialInput": 150000,
-    "officialOutput": 500000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8700,
-    "tags": [
-      "reasoning",
-      "vision",
-      "fast"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "z-ai/glm-5.3-flashx",
-    "name": "GLM 5.3 FlashX",
-    "author": "z-ai",
-    "description": {
-      "en": "GLM 5.3 FlashX. Accepts text input.",
-      "es": "GLM 5.3 FlashX. Admite entradas de texto."
-    },
-    "contextLength": 1000000,
-    "maxOutputTokens": 128000,
-    "officialInput": 370000,
-    "officialOutput": 1250000,
-    "officialPriceSourceUrl": "https://docs.z.ai/guides/overview/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "reasoning"
-    ],
-    "status": "active"
-  },
-  {
-    "id": "anthropic/claude-fable-5",
-    "name": "Claude Fable 5",
-    "author": "anthropic",
-    "description": {
-      "en": "Claude Fable 5. Accepts text and image input.",
-      "es": "Claude Fable 5. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "officialInput": 10000000,
-    "officialOutput": 50000000,
-    "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 3500,
-    "tags": [
-      "vision"
-    ],
-    "status": "retired"
-  },
-  {
-    "id": "google/gemini-4-argon",
-    "name": "Gemini 4 Argon",
-    "author": "google",
-    "description": {
-      "en": "Gemini 4 Argon. Accepts text and image input.",
-      "es": "Gemini 4 Argon. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1000000,
-    "officialInput": 2000000,
-    "officialOutput": 12000000,
-    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 9000,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
-    "status": "retired"
-  },
-  {
-    "id": "google/gemini-4-hydrogen",
-    "name": "Gemini 4 Hydrogen",
-    "author": "google",
-    "description": {
-      "en": "Gemini 4 Hydrogen. Accepts text and image input.",
-      "es": "Gemini 4 Hydrogen. Admite entradas de texto e imagen."
-    },
-    "contextLength": 1048576,
-    "officialInput": 1500000,
-    "officialOutput": 7500000,
-    "officialPriceSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
-    "officialPriceVerifiedAt": null,
-    "discountBps": 8800,
-    "tags": [
-      "vision",
-      "reasoning"
-    ],
     "status": "retired"
   },
   {
@@ -2310,6 +2692,32 @@ export const IMPORTED_MODELS: CatalogEntry[] = [
     "officialPriceSourceUrl": "https://openai.com/api/pricing/",
     "officialPriceVerifiedAt": null,
     "discountBps": 4500,
+    "tags": [
+      "reasoning",
+      "vision"
+    ],
+    "status": "retired"
+  },
+  {
+    "id": "anthropic/claude-opus-5.5-fast",
+    "name": "Claude Opus 5.5 (Fast)",
+    "author": "anthropic",
+    "description": {
+      "en": "Claude Opus 5.5 (Fast). Accepts text and image input.",
+      "es": "Claude Opus 5.5 (Fast). Admite entradas de texto e imagen."
+    },
+    "contextLength": 1000000,
+    "maxOutputTokens": 128000,
+    "reasoningLevels": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "officialInput": 8000000,
+    "officialOutput": 40000000,
+    "officialPriceSourceUrl": "https://www.anthropic.com/pricing",
+    "officialPriceVerifiedAt": null,
+    "discountBps": 9000,
     "tags": [
       "reasoning",
       "vision"

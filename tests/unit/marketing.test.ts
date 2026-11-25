@@ -106,7 +106,7 @@ describe("hero: Opus y GPT con al menos 80 % de descuento (ADR-0074)", () => {
   const opus = "anthropic/claude-opus-5.5";
   const gpt = "openai/gpt-6.2-sol";
   const deepseek = "deepseek/deepseek-v4.1-flash";
-  const gemini = "google/gemini-4-neon";
+  const gemini = "google/gemini-4-carbon";
 
   it.each([
     { opusBps: 8500, gptBps: 8200, expected: [opus, gpt, deepseek, gemini] },
