@@ -114,6 +114,68 @@ for await (const chunk of stream) {
 }
 
 
+/**
+ * Claude Code con nuestra base URL de Anthropic (ADR-0078). `ANTHROPIC_AUTH_TOKEN` va como `Authorization: Bearer`
+ * y no pide confirmar la key como `ANTHROPIC_API_KEY`.
+ */
+export function buildClaudeCodeSnippet({ baseUrl, apiKey }: { baseUrl: string; apiKey: string }): string {
+  return `export ANTHROPIC_BASE_URL="${baseUrl}"
+export ANTHROPIC_AUTH_TOKEN="${apiKey}"
+claude`;
+}
+
+/** Lo mismo en `~/.claude/settings.json`, para no exportarlo en cada terminal. */
+export function buildClaudeCodeSettings({ baseUrl, apiKey }: { baseUrl: string; apiKey: string }): string {
+  return JSON.stringify({ env: { ANTHROPIC_BASE_URL: baseUrl, ANTHROPIC_AUTH_TOKEN: apiKey } }, null, 2);
+}
+
+/** Los modelos que usa Claude Code, con nuestros IDs: el principal, el de tareas de fondo y el de subagentes. */
+export function buildClaudeCodeModelsSnippet({ main, fast }: { main: string; fast: string }): string {
+  return `export ANTHROPIC_MODEL="${main}"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="${fast}"
+export CLAUDE_CODE_SUBAGENT_MODEL="${fast}"
+export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`;
+}
+
+/** El mismo primer request con el SDK oficial de Anthropic: solo cambian la base URL y la key. */
+export function buildAnthropicSnippets({ baseUrl, apiKey, model }: QuickstartOptions): Record<SnippetLanguage, string> {
+  return {
+    python: `from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="${baseUrl}",
+    api_key="${apiKey}",
+)
+
+message = client.messages.create(
+    model="${model}",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(message.content[0].text)`,
+
+    javascript: `import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  baseURL: "${baseUrl}",
+  apiKey: "${apiKey}",
+});
+
+const message = await client.messages.create({
+  model: "${model}",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(message.content[0].type === "text" ? message.content[0].text : "");`,
+
+    curl: `curl ${baseUrl}/v1/messages \\
+  -H "x-api-key: ${apiKey}" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model": "${model}", "max_tokens": 1024, "messages": [{"role": "user", "content": "Hello!"}]}'`,
+  };
+}
+
 /** Ejemplos de inicio desde cero para el detalle; los snippets de migración siguen arriba. */
 export const MODEL_QUICKSTART_LANGUAGES = ["javascript", "python", "curl"] as const;
 

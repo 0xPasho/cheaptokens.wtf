@@ -20,6 +20,10 @@ import type { BillingSource } from "@/lib/billing/limits";
 import { PLAN_IDS, PLANS } from "@/lib/billing/plans";
 import { getLiveCatalog } from "@/lib/catalog/live";
 import { formatCount, formatUsd } from "@/lib/format";
+import {
+  ANTHROPIC_ERROR_TYPES, ANTHROPIC_ERRORS, ANTHROPIC_PING, anthropicErrorBody, type AnthropicErrorType, encodeAnthropicEvent,
+  type MessagesContext, MID_STREAM_FAILURE, sanitizeMessage, sanitizeStreamEvent,
+} from "@/lib/gateway/anthropic";
 import { errorBody, streamErrorChunk } from "@/lib/gateway/errors";
 import { MIN_CHARGE_MICRO_USD } from "@/lib/gateway/metering";
 import { DEFAULT_MAX_OUTPUT_TOKENS, MIN_OUTPUT_TOKENS } from "@/lib/gateway/request-cost";
@@ -29,8 +33,10 @@ import { GATEWAY_ERROR_STATUS, type GatewayErrorCode, type ResponseContext } fro
 import { type Dictionary, t } from "@/lib/i18n/dictionaries";
 import { getLocaleAndDictionary } from "@/lib/i18n/server";
 import { DEFAULT_RATE_LIMIT_RPM } from "@/lib/marketing";
-import { API_BASE_URL } from "@/lib/site";
-import { buildStreamingSnippets } from "@/lib/snippets";
+import { ANTHROPIC_BASE_URL, API_BASE_URL } from "@/lib/site";
+import {
+  buildAnthropicSnippets, buildClaudeCodeModelsSnippet, buildClaudeCodeSettings, buildClaudeCodeSnippet, buildStreamingSnippets,
+} from "@/lib/snippets";
 
 /** El modelo de los ejemplos, el mismo de docs/04. Si sale del catálogo, se usa el primero. */
 const EXAMPLE_MODEL_ID = "anthropic/claude-haiku-4.5";
@@ -46,9 +52,9 @@ type Docs = Dictionary["docs"];
  * orden de la página salen de aquí.
  */
 const SECTIONS = {
-  start: ["setup", "quickstart"],
+  start: ["setup", "quickstart", "anthropic"],
   use: ["models", "features", "streaming", "billing", "keys", "rate-limit"],
-  reference: ["troubleshooting", "errors", "stream-format"],
+  reference: ["troubleshooting", "errors", "stream-format", "anthropic-format"],
 } as const satisfies Record<keyof Docs["groups"], readonly string[]>;
 
 type SectionId = (typeof SECTIONS)[keyof typeof SECTIONS][number];
@@ -57,6 +63,7 @@ function sectionTitles(d: Docs): Record<SectionId, string> {
   return {
     setup: d.setup.title,
     quickstart: d.quickstart.title,
+    anthropic: d.anthropic.title,
     models: d.models.title,
     features: d.features.title,
     streaming: d.streaming.title,
@@ -66,6 +73,7 @@ function sectionTitles(d: Docs): Record<SectionId, string> {
     troubleshooting: d.troubleshooting.title,
     errors: d.errors.title,
     "stream-format": d.streamFormat.title,
+    "anthropic-format": d.anthropicFormat.title,
   };
 }
 
@@ -113,7 +121,8 @@ const TOOLS: { key: keyof Docs["features"]["toolRows"]; support: keyof typeof SU
   { key: "langchain", support: "yes" },
   { key: "vercelAiSdk", support: "yes" },
   { key: "editors", support: "untested" },
-  { key: "claudeCode", support: "no" },
+  { key: "claudeCode", support: "yes" },
+  { key: "anthropicSdk", support: "yes" },
 ];
 
 /**
@@ -142,6 +151,43 @@ function streamExamples(model: string) {
   };
 }
 
+/** Las rutas de `/anthropic` (ADR-0078), con su texto en el diccionario. */
+const ANTHROPIC_ENDPOINTS = [
+  ["POST /anthropic/v1/messages", "messages"],
+  ["POST /anthropic/v1/messages/count_tokens", "countTokens"],
+  ["GET /anthropic/v1/models", "models"],
+  ["GET /anthropic/v1/models/{id}", "model"],
+] as const satisfies readonly (readonly [string, keyof Docs["anthropicFormat"]["endpoints"]])[];
+
+/** El status de cada tipo de error de Anthropic, del mismo mapa que usa el gateway. */
+const ANTHROPIC_ERROR_STATUS = Object.fromEntries(
+  Object.values(ANTHROPIC_ERRORS).map(({ type, status }) => [type, status]),
+) as Record<AnthropicErrorType, number>;
+
+/** Los ejemplos del formato de Anthropic salen del mismo saneo que `/anthropic/v1/messages`. */
+function anthropicExamples(model: string) {
+  const ctx: MessagesContext = { id: "msg_req_...", model };
+  const event = (payload: Record<string, unknown>) => encodeAnthropicEvent(sanitizeStreamEvent(payload, ctx) ?? payload);
+  const text = (index: number, delta: string) => event({ type: "content_block_delta", index, delta: { type: "text_delta", text: delta } });
+  const events = (...lines: string[]) => lines.join("").trimEnd();
+  const start = event({ type: "message_start", message: { content: [], usage: { input_tokens: 9, output_tokens: 1 } } });
+  const blockStart = event({ type: "content_block_start", index: 0, content_block: { type: "text", text: "" } });
+  return {
+    response: JSON.stringify(sanitizeMessage({
+      content: [{ type: "text", text: "Hello!" }], stop_reason: "end_turn",
+      usage: { input_tokens: 9, output_tokens: 3, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    }, ctx), null, 2),
+    error: JSON.stringify(anthropicErrorBody("insufficient_credits"), null, 2),
+    stream: events(
+      start, blockStart, text(0, "Hel"), ANTHROPIC_PING, text(0, "lo!"),
+      event({ type: "content_block_stop", index: 0 }),
+      event({ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 3 } }),
+      event({ type: "message_stop" }),
+    ),
+    streamError: events(start, blockStart, text(0, "Hel"), encodeAnthropicEvent(anthropicErrorBody("upstream_error", MID_STREAM_FAILURE))),
+  };
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const [, dict] = await getLocaleAndDictionary();
   return { title: dict.docs.title, description: dict.docs.metaDescription };
@@ -158,6 +204,11 @@ export default async function DocsPage() {
   const copy = { copyLabel: dict.copy.copy, copiedLabel: dict.copy.copied };
   const catalog = await getLiveCatalog();
   const model = (catalog.find((entry) => entry.id === EXAMPLE_MODEL_ID) ?? catalog[0])?.id ?? EXAMPLE_MODEL_ID;
+  // Los ejemplos de Anthropic usan un Claude del catálogo; si no hay, el mismo modelo de los demás ejemplos.
+  const claude = (family: string) => catalog.find((entry) => entry.author === "anthropic" && entry.id.includes(family))?.id;
+  const claudeModel = claude("sonnet") ?? catalog.find((entry) => entry.author === "anthropic")?.id ?? model;
+  const claudeFastModel = claude("haiku") ?? claudeModel;
+  const anthropic = anthropicExamples(claudeModel);
   const examples = streamExamples(model);
   // formatUsd recibe number; 10 µUSD caben exactos, y es solo para mostrarlo.
   const minimum = formatUsd(Number(MIN_CHARGE_MICRO_USD), locale, "cost");
@@ -214,6 +265,13 @@ export default async function DocsPage() {
                 <dd>{d.glance.formatValue}</dd>
               </div>
               <div>
+                <dt>{d.glance.anthropic}</dt>
+                <dd>
+                  <code>{ANTHROPIC_BASE_URL}</code>
+                  <CopyButton value={ANTHROPIC_BASE_URL} {...copy} />
+                </dd>
+              </div>
+              <div>
                 <dt>{d.glance.models}</dt>
                 <dd>
                   <span>
@@ -263,6 +321,27 @@ export default async function DocsPage() {
                 <RichText text={t(d.quickstart.maxTokensBody, { tokens: maxTokens })} />
               </AlertDescription>
             </Alert>
+          </DocsSection>
+
+          <DocsSection id="anthropic" title={titles.anthropic}>
+            <Paragraph text={d.anthropic.body} />
+            <SubHeading>{d.anthropic.claudeCodeTitle}</SubHeading>
+            <Paragraph text={d.anthropic.claudeCodeBody} />
+            <CodeBlock code={buildClaudeCodeSnippet({ baseUrl: ANTHROPIC_BASE_URL, apiKey: "wtf_..." })} {...copy} />
+            <Paragraph text={d.anthropic.settingsBody} />
+            <CodeBlock code={buildClaudeCodeSettings({ baseUrl: ANTHROPIC_BASE_URL, apiKey: "wtf_..." })} {...copy} />
+            <SubHeading>{d.anthropic.modelsTitle}</SubHeading>
+            <Paragraph text={d.anthropic.modelsBody} />
+            <CodeBlock code={buildClaudeCodeModelsSnippet({ main: claudeModel, fast: claudeFastModel })} {...copy} />
+            <BulletList items={d.anthropic.modelVars} />
+            <Paragraph text={d.anthropic.unknownModel} />
+            <Paragraph text={d.anthropic.betas} />
+            <SubHeading>{d.anthropic.sdkTitle}</SubHeading>
+            <Paragraph text={d.anthropic.sdkBody} />
+            <SnippetTabs
+              snippets={buildAnthropicSnippets({ baseUrl: ANTHROPIC_BASE_URL, apiKey: "wtf_...", model: claudeModel })}
+              {...copy}
+            />
           </DocsSection>
 
           <DocsSection
@@ -502,6 +581,65 @@ export default async function DocsPage() {
             <SubHeading>{d.streamFormat.errorTitle}</SubHeading>
             <Paragraph text={d.streamFormat.errorBody} />
             <CodeBlock code={examples.error} {...copy} />
+          </DocsSection>
+
+          <DocsSection id="anthropic-format" title={titles["anthropic-format"]}>
+            <Paragraph text={d.anthropicFormat.body} />
+            <Table regionLabel={d.anthropicFormat.endpointsLabel}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{d.anthropicFormat.endpoint}</TableHead>
+                  <TableHead>{d.anthropicFormat.what}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ANTHROPIC_ENDPOINTS.map(([route, key]) => (
+                  <TableRow key={key}>
+                    <TableCell className="align-top whitespace-nowrap">
+                      <code className="font-mono text-xs">{route}</code>
+                    </TableCell>
+                    <TableCell className="min-w-56 align-top whitespace-normal text-pretty">
+                      <RichText text={d.anthropicFormat.endpoints[key]} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <SubHeading>{d.anthropicFormat.changesTitle}</SubHeading>
+            <BulletList items={d.anthropicFormat.notes} />
+            <SubHeading>{d.anthropicFormat.responseTitle}</SubHeading>
+            <Paragraph text={d.anthropicFormat.responseBody} />
+            <CodeBlock code={anthropic.response} {...copy} />
+            <SubHeading>{d.anthropicFormat.errorsTitle}</SubHeading>
+            <Paragraph text={d.anthropicFormat.errorsBody} />
+            <CodeBlock code={anthropic.error} {...copy} />
+            <Table regionLabel={d.anthropicFormat.errorsLabel}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>HTTP</TableHead>
+                  <TableHead>{d.anthropicFormat.type}</TableHead>
+                  <TableHead>{d.anthropicFormat.when}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ANTHROPIC_ERROR_TYPES.map((type) => (
+                  <TableRow key={type}>
+                    <TableCell className="align-top tabular-nums">{ANTHROPIC_ERROR_STATUS[type]}</TableCell>
+                    <TableCell className="align-top">
+                      <code className="font-mono text-xs">{type}</code>
+                    </TableCell>
+                    <TableCell className="min-w-56 align-top whitespace-normal text-pretty">
+                      <RichText text={d.anthropicFormat.errorTypes[type]} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <SubHeading>{d.anthropicFormat.streamTitle}</SubHeading>
+            <Paragraph text={d.anthropicFormat.streamBody} />
+            <CodeBlock code={anthropic.stream} {...copy} />
+            <Paragraph text={d.anthropicFormat.streamErrorBody} />
+            <CodeBlock code={anthropic.streamError} {...copy} />
           </DocsSection>
         </div>
       </div>

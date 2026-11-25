@@ -146,7 +146,7 @@ export const en = {
         langchain: "LangChain",
         vercel: "Vercel AI",
         editors: "Compatible code editors",
-        claudeCode: "Claude Code: not yet",
+        claudeCode: "Claude Code",
       },
     },
     faq: {
@@ -557,7 +557,7 @@ export const en = {
       },
       compatible: {
         q: "How do I connect my app or editor?",
-        a: "Set our URL and your API key in a compatible tool. Use the same connection for every model; choose which one to call with each request. The docs have examples and the compatibility list. Claude Code isn't supported yet.",
+        a: "Set our URL and your API key in a compatible tool. Use the same connection for every model; choose which one to call with each request. The docs have examples and the compatibility list. Claude Code gets a base URL with Anthropic's format: `https://api.cheapllm.wtf/anthropic`.",
       },
       endpoints: {
         q: "Which endpoints are there?",
@@ -733,6 +733,7 @@ export const en = {
       formatValue: "Same as OpenAI Chat Completions",
       models: "Models",
       modelsValue: "`GET /v1/models`, public, no key needed",
+      anthropic: "Anthropic format",
     },
     setup: {
       title: "Before your first request",
@@ -793,7 +794,7 @@ export const en = {
       },
       notYetTitle: "Not available yet",
       notYet:
-        "`/v1/messages` (Anthropic's format), the Responses API, `/v1/completions`, embeddings, image generation, audio and batch.",
+        "OpenAI's Responses API (the one Codex uses), `/v1/completions`, embeddings, image generation, audio and batch.",
       toolsTitle: "Compatible tools",
       toolsBody: "Anything that lets you change the OpenAI base URL should work.",
       toolsTableLabel: "Compatible tools",
@@ -807,8 +808,78 @@ export const en = {
           name: "Editors and agents that accept an OpenAI base URL",
           status: "Should work. We haven't tested them one by one yet.",
         },
-        claudeCode: { name: "Claude Code", status: "Not yet: it needs `/v1/messages`, which comes later." },
+        claudeCode: { name: "Claude Code", status: "Works with the Anthropic base URL. See Claude Code and Anthropic." },
+        anthropicSdk: { name: "Claude Agent SDK and Anthropic SDKs", status: "Work with the Anthropic base URL." },
       },
+    },
+    anthropic: {
+      title: "Claude Code and Anthropic",
+      body: "Claude Code, the Claude Agent SDK and Anthropic's SDKs get a second base URL with Anthropic's format (`/v1/messages`). Same key, same billing. What differs from Anthropic is in Anthropic format, under Reference.",
+      claudeCodeTitle: "Claude Code",
+      claudeCodeBody: "Set these two variables and run `claude`. Claude Code appends `/v1/messages` to the base URL.",
+      settingsBody:
+        "To skip exporting them in every terminal, put them in `~/.claude/settings.json`. For a single project, use `.claude/settings.local.json`, never the `.claude/settings.json` that goes into the repo.",
+      modelsTitle: "Choosing the model",
+      modelsBody:
+        "Claude Code asks for its models by Anthropic's name (`claude-sonnet-5-5`) and we resolve them in the catalog. To pin others, use our ID:",
+      modelVars: [
+        "`ANTHROPIC_MODEL`: the main model.",
+        "`ANTHROPIC_DEFAULT_HAIKU_MODEL`: the one for background tasks, which Claude Code runs on a fast model.",
+        "`CLAUDE_CODE_SUBAGENT_MODEL`: the one for subagents.",
+        "`CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`: lists our models in `/model`.",
+      ],
+      unknownModel: "A name that isn't in the catalog fails on the first request with `404 not_found_error`.",
+      betas:
+        "If a model rejects an `anthropic-beta` header with `Unexpected value(s)`, set `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`. If you get a `401`, check that the key is in `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_API_KEY`.",
+      sdkTitle: "Anthropic SDK",
+      sdkBody: "In Python and JavaScript only the base URL and the key change.",
+    },
+    anthropicFormat: {
+      title: "Anthropic format",
+      body: "What `https://api.cheapllm.wtf/anthropic` serves: Anthropic's Messages API. This covers only what differs from Anthropic's.",
+      endpointsLabel: "Anthropic format routes",
+      endpoint: "Route",
+      what: "What it does",
+      endpoints: {
+        messages: "Generates a response, with or without streaming. Needs a key.",
+        countTokens: "Estimates the prompt's tokens, without calling the model or charging. Needs a key.",
+        models: "The catalog's models in Anthropic's shape. Public.",
+        model: "One model, by our ID or by Anthropic's. Public.",
+      },
+      changesTitle: "What differs from Anthropic",
+      notes: [
+        "Send the key in `x-api-key` (`ANTHROPIC_API_KEY`) or in `Authorization: Bearer` (`ANTHROPIC_AUTH_TOKEN`). `anthropic-version` and `anthropic-beta` reach the model as they are.",
+        "Use Anthropic's name (`claude-sonnet-5-5`, with or without a date) or ours (`anthropic/claude-sonnet-5.5`). The response repeats the one you sent.",
+        "Thinking, tools, images, PDFs and `cache_control` reach the model as they are. Thinking blocks come back with their `signature` intact, so they work across turns.",
+        "You pay what it cost, cache included. A cache read never costs more than regular input.",
+        "If your balance or plan can't cover the `max_tokens` you ask for, you get an error before the model starts. The response is never cut short.",
+        "If you cancel a stream, you pay for what the model generated until it finished, as in the OpenAI format.",
+      ],
+      responseTitle: "Response",
+      responseBody: "Anthropic's. `content` arrives as it is; `id`, `model` and `usage` are ours, with no `cost` or provider fields.",
+      errorsTitle: "Errors",
+      errorsBody:
+        "The body is Anthropic's and every response carries `request-id`, so their SDKs throw the usual error class. The `message` is the same as in the OpenAI format: the Errors table explains each one.",
+      errorsLabel: "Anthropic format error types",
+      type: "Type",
+      when: "When",
+      errorTypes: {
+        invalid_request_error: "The body isn't valid, or the model rejected a parameter.",
+        authentication_error: "The key is missing or invalid.",
+        billing_error: "Your balance or plan can't cover the request with the `max_tokens` you asked for.",
+        permission_error: "The key reached its spending limit, can't use that model, or the account is suspended.",
+        not_found_error: "The model isn't in the catalog or was retired.",
+        request_too_large: "The body is over the maximum size.",
+        rate_limit_error: "You went over the rate limit or your plan's limit. Check `retry-after`.",
+        api_error: "The model failed. Try again.",
+        timeout_error: "The model took too long to answer.",
+        overloaded_error: "No capacity right now. Anthropic's SDKs retry on their own.",
+      },
+      streamTitle: "Streaming",
+      streamBody:
+        "Events carry their name, in Anthropic's order, from `message_start` to `message_stop`. If the model takes a while, for example while it thinks, `ping` events keep the connection open. Anthropic's SDKs ignore them.",
+      streamErrorBody:
+        "If the model fails mid-stream, the `200` status has already gone out: an `error` event arrives and the stream ends. You pay for what it generated.",
     },
     streaming: {
       title: "Streaming",

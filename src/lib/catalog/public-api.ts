@@ -28,3 +28,27 @@ export function buildModelsResponse(entries?: CatalogEntry[]) {
     })),
   };
 }
+
+/** Un modelo en el formato de `GET /anthropic/v1/models` (ADR-0078). */
+function anthropicModel(model: { id: string; name: string }) {
+  return { type: "model", id: model.id, display_name: model.name, created_at: new Date(MODEL_CREATED * 1000).toISOString() };
+}
+
+/**
+ * `GET /anthropic/v1/models`: los mismos modelos que `/v1/models`, con la forma de Anthropic. Los IDs son los nuestros
+ * (`anthropic/claude-sonnet-5.5`); el gateway también acepta los de Anthropic (`claude-sonnet-5-5`) al pedir un modelo.
+ */
+export function buildAnthropicModelsResponse(entries?: CatalogEntry[]) {
+  const data = getCatalog(entries).map(anthropicModel);
+  return { data, has_more: false, first_id: data[0]?.id ?? null, last_id: data.at(-1)?.id ?? null };
+}
+
+/** Un modelo por cualquiera de sus nombres, o null. `candidates` sale de `modelCandidates` del gateway. */
+export function findAnthropicModel(candidates: readonly string[], entries?: CatalogEntry[]) {
+  const models = getCatalog(entries);
+  for (const candidate of candidates) {
+    const model = models.find((item) => item.id === candidate);
+    if (model) return anthropicModel(model);
+  }
+  return null;
+}

@@ -26,7 +26,7 @@ Legalmente, cheapllm.wtf es un **intermediario** con entidad en México: da acce
 
 Desarrolladores de **cualquier país** que ya usan el SDK de OpenAI o herramientas compatibles (LangChain, Vercel AI SDK, scripts propios, editores que aceptan una base URL de OpenAI) y quieren pagar menos. La interfaz arranca en inglés y español ([ADR-0015](./adr/0015-i18n-nativo.md)).
 
-Fuera del MVP: usuarios de Claude Code, que necesitan el formato `/v1/messages` de Anthropic (fase 2, ver [roadmap](./11-roadmap.md)).
+Claude Code y los SDKs de Anthropic entran con el formato de Anthropic en `/anthropic` ([ADR-0078](./adr/0078-formato-anthropic-para-claude-code.md)).
 
 ## Principios
 

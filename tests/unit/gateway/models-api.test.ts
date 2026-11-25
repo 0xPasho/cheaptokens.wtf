@@ -12,6 +12,8 @@ vi.mock("next/cache", () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }));
 
 import { cacheTag } from "next/cache";
 
+import { GET as getAnthropicModel } from "@/app/anthropic/v1/models/[...id]/route";
+import { GET as getAnthropicModels } from "@/app/anthropic/v1/models/route";
 import { GET } from "@/app/v1/models/route";
 
 describe("GET /v1/models", () => {
@@ -63,5 +65,29 @@ describe("GET /v1/models", () => {
     ["1000000", "1.00"], ["1100000", "1.10"], ["9007199254740993123456", "9007199254740993.123456"],
   ])("formats %s micro USD without floats", (input, expected) => {
     expect(priceInUsd(BigInt(input))).toBe(expected);
+  });
+});
+
+describe("GET /anthropic/v1/models", () => {
+  const params = (id: string[]) => ({ params: Promise.resolve({ id }) }) as RouteContext<"/anthropic/v1/models/[...id]">;
+
+  it("lists the same catalog with Anthropic's shape", async () => {
+    const body = await (await getAnthropicModels()).json();
+    expect(Object.keys(body).sort()).toEqual(["data", "first_id", "has_more", "last_id"]);
+    expect(body.has_more).toBe(false);
+    expect(body.data.map((model: { id: string }) => model.id)).toEqual(getCatalog().map((model) => model.id));
+    expect(body.data.find((model: { id: string }) => model.id === "anthropic/claude-haiku-4.5")).toEqual({
+      type: "model", id: "anthropic/claude-haiku-4.5", display_name: "Claude Haiku 4.5", created_at: "2025-10-09T08:53:20.000Z",
+    });
+  });
+
+  it("finds a model by our ID or Anthropic's, and answers 404 in Anthropic's format", async () => {
+    const ours = await getAnthropicModel(new Request("https://api.cheapllm.wtf"), params(["anthropic", "claude-haiku-4.5"]));
+    expect(await ours.json()).toMatchObject({ id: "anthropic/claude-haiku-4.5" });
+    const theirs = await getAnthropicModel(new Request("https://api.cheapllm.wtf"), params(["claude-haiku-4-5-20251001"]));
+    expect(await theirs.json()).toMatchObject({ id: "anthropic/claude-haiku-4.5" });
+    const missing = await getAnthropicModel(new Request("https://api.cheapllm.wtf"), params(["claude-nonexistent-9"]));
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toMatchObject({ type: "error", error: { type: "not_found_error" } });
   });
 });

@@ -109,6 +109,31 @@ function event(response: ServerResponse, payload: unknown): void {
   if (!response.destroyed && !response.writableEnded) response.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
 
+/** Un evento con nombre, como los manda Anthropic en `/v1/messages`. */
+function namedEvent(response: ServerResponse, payload: Record<string, unknown>): void {
+  if (!response.destroyed && !response.writableEnded) response.write(`event: ${String(payload.type)}\ndata: ${JSON.stringify(payload)}\n\n`);
+}
+
+/** Tokens de prompt de un body de Anthropic: sistema y mensajes, a caracteres ÷ 4. */
+function messagesPromptTokens(body: Record<string, unknown>): number {
+  let characters = 0;
+  const visit = (content: unknown) => {
+    if (typeof content === "string") characters += [...content].length;
+    else if (Array.isArray(content)) {
+      for (const block of content) {
+        const text = object(block).text;
+        if (typeof text === "string") characters += [...text].length;
+      }
+    }
+  };
+  visit(body.system);
+  if (Array.isArray(body.messages)) for (const message of body.messages) visit(object(message).content);
+  return Math.ceil(characters / 4);
+}
+
+/** La firma del bloque de thinking: el gateway tiene que devolverla byte por byte. */
+export const MOCK_THINKING_SIGNATURE = "EqQBCkgIARABGAIiQL7sXk/7+eY9mZr0TBUOzKJ5hq0p+v1wzq3uYdW8x2E=";
+
 // Cancelar el temporizador evita dejar tareas vivas después de abortar o cerrar el mock.
 function pause(response: ServerResponse, milliseconds: number): Promise<boolean> {
   if (response.destroyed) return Promise.resolve(false);
@@ -164,7 +189,8 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       } catch {
         recorded.body = null;
       }
-      if (request.method !== "POST" || request.url?.split("?")[0] !== "/v1/chat/completions") {
+      const path = request.url?.split("?")[0];
+      if (request.method !== "POST" || (path !== "/v1/chat/completions" && path !== "/v1/messages")) {
         json(response, 404, errors.model_not_found_404);
         return;
       }
@@ -237,6 +263,101 @@ export async function startMockUpstream(options: MockUpstreamOptions = {}): Prom
       if (failure) {
         json(response, failure.status, failure.body);
         return;
+      }
+
+      if (path === "/v1/messages") {
+        await respondMessages();
+        return;
+      }
+
+      /** `/v1/messages` en el formato de Anthropic, con lo que agrega InferHub: `usage.cost`, `provider`, `request_id`. */
+      async function respondMessages(): Promise<void> {
+        const cacheRead = nonnegativeInteger(control.cacheRead, 0);
+        const cacheWrite = nonnegativeInteger(control.cacheWrite, 0);
+        const prompt = messagesPromptTokens(body);
+        const text = contentChunk.repeat(chunks);
+        const thinking = reasoning.join("");
+        const completion = reasoning.length + chunks * tokensPerChunk;
+        const cost = usageCost(prompt + cacheRead + cacheWrite, completion, input!, output!);
+        const messageId = `msg_upstream_${randomBytes(6).toString("hex")}`;
+        const toolUse = scenario === "tool-use";
+        const tool = { type: "tool_use", id: "toolu_01A09q90qw90lq917835lq9", name: "get_weather", input: { location: "Ciudad de México", unit: "celsius" } };
+        const stopReason = toolUse ? "tool_use" : "end_turn";
+        const inputUsage = { input_tokens: prompt, cache_creation_input_tokens: cacheWrite, cache_read_input_tokens: cacheRead };
+        const noUsage = scenario === "no-usage";
+        if (body.stream !== true) {
+          if (scenario === "stream-error-200" || scenario === "mid-stream-error") {
+            json(response, 200, { type: "error", error: { type: "api_error", message: "InferHub provider failed" } });
+            return;
+          }
+          if (scenario === "empty-stream") {
+            json(response, 200, {});
+            return;
+          }
+          json(response, 200, {
+            id: messageId, type: "message", role: "assistant", model, provider: "inferhub", request_id: requestId,
+            content: [
+              { type: "thinking", thinking, signature: MOCK_THINKING_SIGNATURE },
+              toolUse ? tool : { type: "text", text },
+            ],
+            stop_reason: stopReason, stop_sequence: null,
+            ...(noUsage ? {} : { usage: { ...inputUsage, output_tokens: completion, service_tier: "standard", cost } }),
+          });
+          return;
+        }
+        response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" });
+        response.write(": INFERHUB PROCESSING\n\n");
+        if (scenario === "stream-error-200") {
+          namedEvent(response, { type: "error", error: { type: "overloaded_error", message: "InferHub provider overloaded" } });
+          response.end();
+          return;
+        }
+        namedEvent(response, {
+          type: "message_start", provider: "inferhub",
+          message: {
+            id: messageId, type: "message", role: "assistant", model, content: [], stop_reason: null, stop_sequence: null,
+            ...(noUsage ? {} : { usage: { ...inputUsage, output_tokens: 1 } }),
+          },
+        });
+        namedEvent(response, { type: "ping" });
+        namedEvent(response, { type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } });
+        for (const part of reasoning) namedEvent(response, { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: part } });
+        namedEvent(response, { type: "content_block_delta", index: 0, delta: { type: "signature_delta", signature: MOCK_THINKING_SIGNATURE } });
+        namedEvent(response, { type: "content_block_stop", index: 0 });
+        if (toolUse) {
+          namedEvent(response, { type: "content_block_start", index: 1, content_block: { ...tool, input: {} } });
+          for (const part of toolArgumentChunks) {
+            namedEvent(response, { type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: part } });
+            if (!await pause(response, chunkDelayMs)) return;
+          }
+        } else {
+          namedEvent(response, { type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+          for (let index = 0; index < chunks; index++) {
+            if (response.destroyed) return;
+            namedEvent(response, { type: "content_block_delta", index: 1, delta: { type: "text_delta", text: contentChunk } });
+            if (!await pause(response, index < chunks - 1 ? chunkDelayMs : 0)) return;
+          }
+        }
+        if (scenario === "cut") {
+          serverAborted = true;
+          response.destroy();
+          return;
+        }
+        if (scenario === "mid-stream-error") {
+          namedEvent(response, { type: "error", error: { type: "api_error", message: "InferHub provider failed" } });
+          response.end();
+          return;
+        }
+        namedEvent(response, { type: "content_block_stop", index: 1 });
+        const lateCost = scenario === "late-cost";
+        namedEvent(response, {
+          type: "message_delta", delta: { stop_reason: stopReason, stop_sequence: null },
+          ...(noUsage ? {} : { usage: { output_tokens: completion, ...(lateCost ? {} : { cost }) } }),
+        });
+        namedEvent(response, { type: "message_stop" });
+        // Algunos upstreams mandan su costo en un evento propio, después de `message_stop`.
+        if (lateCost) namedEvent(response, { type: "inferhub_usage", usage: { cost } });
+        if (!response.destroyed) response.end();
       }
 
       const prompt = promptTokens(body);

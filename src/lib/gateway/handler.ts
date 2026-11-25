@@ -2,13 +2,11 @@ import { chargeRequest } from "@/lib/billing/ledger";
 import type { RequestRecord, RequestStatus } from "@/lib/billing/types";
 import { countRun, deskaRun } from "@/lib/partner/runs";
 
-import { planUsageHeaders } from "@/lib/billing/headers";
-import { budgetShortfall } from "@/lib/billing/limits";
-
-import { admitUsage, authenticate, checkAccount } from "./authenticate";
-import { errorResponse, HOLD_MESSAGES, streamErrorChunk } from "./errors";
+import { chargeThenRelease, type HoldState, reserveRequest } from "./admission";
+import { authenticate, checkAccount } from "./authenticate";
+import { errorResponse, streamErrorChunk } from "./errors";
 import { computeRequestCosts, createUsageAccumulator, estimateTokens } from "./metering";
-import { estimatePromptTokens, type RequestShape, sizeHold, withOutputLimit } from "./request-cost";
+import { estimatePromptTokens, type RequestShape, withOutputLimit } from "./request-cost";
 import { buildUsageChunk, sanitizeChunk, sanitizeCompletion } from "./sanitize";
 import { callUpstream } from "./select-upstream";
 import { encodeSseData, SSE_DONE, SSE_KEEP_ALIVE } from "./sse";
@@ -16,7 +14,8 @@ import { GATEWAY_ERROR_STATUS, type GatewayDeps, type GatewayErrorCode, type Ups
 import { validateChatRequest } from "./validate";
 
 const MAX_BODY_BYTES = 4_500_000;
-const UPSTREAM_DURATION_MS = 790_000;
+/** Lo que puede durar el request al upstream: un poco menos que el `maxDuration` de 800 s de la ruta. */
+export const UPSTREAM_DURATION_MS = 790_000;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -61,7 +60,8 @@ function measureOutput(payload: unknown, field: "message" | "delta"): { characte
   return { characters: count, hasContent: count > 0 || hasTools };
 }
 
-async function readBody(request: Request): Promise<string | null> {
+/** El body como texto, o null si pasa de 4,5 MB. Lo comparten los dos formatos. */
+export async function readBody(request: Request): Promise<string | null> {
   const declared = request.headers.get("content-length");
   if (declared !== null && Number(declared) > MAX_BODY_BYTES) return null;
   if (!request.body) return "";
@@ -86,7 +86,7 @@ async function readBody(request: Request): Promise<string | null> {
   }
 }
 
-async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId: string): Promise<void> {
+export async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId: string): Promise<void> {
   try {
     await chargeRequest(deps.db, record, deps.now());
   } catch {
@@ -99,13 +99,6 @@ async function recordRequest(deps: GatewayDeps, record: RequestRecord, requestId
     cachedTokens: record.cachedTokens, usageEstimated: record.usageEstimated,
     ttfbMs: record.ttfbMs, latencyMs: record.latencyMs,
   });
-}
-
-/** La reserva del request (ADR-0066): se libera después de su cobro, o al fallar antes de agendarlo. */
-interface HoldState {
-  release: () => void;
-  /** True cuando ya hay una tarea en `after()` que cobra y después libera. */
-  scheduled: boolean;
 }
 
 export async function handleChatCompletion(request: Request, deps: GatewayDeps): Promise<Response> {
@@ -167,53 +160,15 @@ async function processChatCompletion(
     requestedOutputTokens: validated.maxOutputTokens,
     choices: validated.choices,
   };
-  const wanted = sizeHold(model, shape, null);
-  const wantedMicroUsd = wanted.ok ? wanted.amountMicroUsd : BigInt(0);
-  const admissionNow = deps.now();
-  const retryAfter = (retryAt: number | null) => retryAt === null ? undefined : (retryAt - admissionNow) / 1000;
-  const heldNow = () => deps.holds.held(context.workspaceId, context.apiKeyId, holdMark);
-  // El plan solo alcanza si cubre este request además de lo que ya reservan los que están en curso.
-  let admission = await admitUsage(context, model.id, deps.db, admissionNow, wantedMicroUsd + heldNow().workspace);
-  let held = heldNow();
-  if (admission.ok && admission.planOnly && admission.budgetMicroUsd - held.workspace < wantedMicroUsd) {
-    // Otro request reservó mientras se leía la base y el plan ya no alcanza solo: ahora sí cuentan los
-    // paquetes y el excedente de socio.
-    admission = await admitUsage(context, model.id, deps.db, admissionNow, null);
-    held = heldNow();
+  const reservation = await reserveRequest({ deps, context, model, shape, holdMark, hold });
+  if (!reservation.ok) {
+    return errorResponse(reservation.code, { requestId, message: reservation.message, retryAfterSeconds: reservation.retryAfterSeconds });
   }
-  if (!admission.ok) {
-    return errorResponse(admission.code, { requestId, retryAfterSeconds: retryAfter(admission.retryAt) });
-  }
-  // Solo se admite lo que cabe en lo que queda, descontado lo que reservan los requests en curso (ADR-0066).
-  // Desde la última lectura de `held` hasta `hold()` no hay await: dos requests no pueden reservar el mismo saldo.
-  const workspaceBudget = admission.budgetMicroUsd - held.workspace;
-  const keyBudget = context.spendLimitMicroUsd === null ? null : context.spendLimitMicroUsd - context.spentMicroUsd - held.key;
-  const keyBinds = keyBudget !== null && keyBudget < workspaceBudget;
-  const size = sizeHold(model, shape, keyBinds ? keyBudget : workspaceBudget);
-  if (!size.ok) {
-    if (keyBinds) return reject("key_limit_exceeded", HOLD_MESSAGES.key_limit_exceeded);
-    const shortfall = budgetShortfall(context.billingSource, context.plan, admissionNow);
-    return errorResponse(shortfall.code, {
-      requestId, message: HOLD_MESSAGES[shortfall.code], retryAfterSeconds: retryAfter(shortfall.retryAt),
-    });
-  }
-  hold.release = deps.holds.hold(context.workspaceId, context.apiKeyId, size.amountMicroUsd);
   // Cobra y después libera: la reserva sigue contando hasta que el cobro está en la base.
-  const afterThenRelease = (task: () => Promise<void>) => {
-    deps.after(async () => {
-      try {
-        await task();
-      } finally {
-        hold.release();
-      }
-    });
-    // Solo cuando `after()` aceptó la tarea: si lanza, la reserva la libera `handleChatCompletion`.
-    hold.scheduled = true;
-  };
+  const afterThenRelease = (task: () => Promise<void>) => chargeThenRelease(deps, hold, task);
   // Sin salida fijada, o con más de la que cabe, el upstream recibe el máximo que se reservó.
-  const upstreamBody = size.limitsOutput ? withOutputLimit(validated.body, size.maxOutputTokens) : validated.body;
-  // Lo que queda del plan antes de este request (ADR-0049). Sin plan, sin headers.
-  const usageHeaders = context.billingSource === "prepaid_only" ? {} : planUsageHeaders(context.plan, admissionNow);
+  const upstreamBody = reservation.limitsOutput ? withOutputLimit(validated.body, reservation.maxOutputTokens) : validated.body;
+  const usageHeaders = reservation.usageHeaders;
 
   const responseContext = { id: `chatcmpl-${requestId}`, model: model.id, created: Math.floor(startedAt / 1000) };
   const abort = new AbortController();

@@ -160,11 +160,21 @@ export interface UpstreamTimeouts {
   firstByteReasoningMs: number;
 }
 
+/**
+ * El formato del request: `chat` es `/chat/completions` (OpenAI); `messages` es `/messages` (Anthropic, ADR-0078).
+ * El mismo upstream sirve los dos bajo su `baseUrl`.
+ */
+export type UpstreamApi = "chat" | "messages";
+
 export interface CallUpstreamOptions {
   model: GatewayModel;
   /** Body del cliente ya validado. `callUpstream` reemplaza `model`, fuerza `stream_options.include_usage` si es stream y no lo muta. */
   body: Readonly<Record<string, unknown>>;
   stream: boolean;
+  /** Default `chat`. */
+  api?: UpstreamApi;
+  /** Headers del formato que pasan tal cual (`anthropic-version`, `anthropic-beta`). Nunca la key del cliente. */
+  headers?: Readonly<Record<string, string>>;
   fetch: typeof fetch;
   now: () => number;
   log: Logger;

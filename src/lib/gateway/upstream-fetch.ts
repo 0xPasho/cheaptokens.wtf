@@ -109,8 +109,10 @@ export async function fetchUpstream(
   apiKey: string | null,
 ): Promise<UpstreamAttemptResult> {
   options.signal?.throwIfAborted();
-  // Un tope inválido es un error de configuración, no una falla de red.
-  const headers: Record<string, string> = { "content-type": "application/json" };
+  const messages = options.api === "messages";
+  // Un tope inválido es un error de configuración, no una falla de red. Los headers del formato van primero:
+  // ninguno puede reemplazar la key, el tope ni el content-type.
+  const headers: Record<string, string> = { ...options.headers, "content-type": "application/json" };
   if (apiKey) headers.authorization = `Bearer ${apiKey}`;
   if (target.sendsPriceCap) {
     headers["x-max-input-price"] = priceCap(target.costInputPer1M);
@@ -148,11 +150,12 @@ export async function fetchUpstream(
 
   try {
     const body: Record<string, unknown> = { ...options.body, model: target.upstreamModel };
-    if (options.stream) {
+    // `include_usage` es de OpenAI: el formato de Anthropic manda el `usage` en `message_start` y `message_delta`.
+    if (options.stream && !messages) {
       const streamOptions = isObject(options.body.stream_options) ? options.body.stream_options : {};
       body.stream_options = { ...streamOptions, include_usage: true };
     }
-    const response = await options.fetch(`${target.baseUrl}/chat/completions`, {
+    const response = await options.fetch(`${target.baseUrl}${messages ? "/messages" : "/chat/completions"}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -172,7 +175,10 @@ export async function fetchUpstream(
     }
     if (!options.stream) {
       const payload: unknown = await response.json();
-      if (!isObject(payload) || "error" in payload || !Array.isArray(payload.choices)) {
+      const valid = messages
+        ? isObject(payload) && payload.type === "message" && Array.isArray(payload.content)
+        : isObject(payload) && !("error" in payload) && Array.isArray(payload.choices);
+      if (!valid) {
         return { ok: false, failure: { kind: "stream_error" }, clientMessage: null };
       }
       return { ok: true, stream: false, body: payload };
@@ -191,7 +197,8 @@ export async function fetchUpstream(
         await iterator.return?.();
         return { ok: false, failure: { kind: "stream_error" }, clientMessage: null };
       }
-      if (!isObject(payload) || "error" in payload) {
+      // En Anthropic el error llega como un evento `error`; en OpenAI, como un chunk con `error` en la raíz.
+      if (!isObject(payload) || "error" in payload || payload.type === "error") {
         await iterator.return?.();
         return { ok: false, failure: { kind: "stream_error" }, clientMessage: null };
       }

@@ -107,7 +107,8 @@ Lo que cambie una decisión de ADR-0066 va con un ADR nuevo que la reemplace.
 
 ## Fase 2 · Crecer el uso
 
-- `/v1/messages` compatible con Anthropic, para Claude Code y el SDK de Anthropic.
+- [x] `/v1/messages` compatible con Anthropic, para Claude Code y el SDK de Anthropic: `/anthropic` ([ADR-0078](./adr/0078-formato-anthropic-para-claude-code.md)).
+- Responses API de OpenAI, para Codex.
 - Precio de input cacheado por modelo.
 - `GET /v1/credits` (saldo vía API).
 - Gráficas de uso y tabla de resumen diario.

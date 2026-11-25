@@ -8,7 +8,7 @@
 de ese momento y se cobra lo que costó, nunca más que el precio publicado.</p>
 
 <p>
-<img alt="API: compatible con OpenAI" src="https://img.shields.io/badge/API-compatible%20con%20OpenAI-262626?style=flat-square&labelColor=0d0d0d&logo=openai&logoColor=white"> <img alt="Pagos: USDC · Bitcoin" src="https://img.shields.io/badge/Pagos-USDC%20%C2%B7%20Bitcoin-262626?style=flat-square&labelColor=0d0d0d&logo=bitcoin&logoColor=white"> <img alt="Prompts: no se guardan" src="https://img.shields.io/badge/Prompts-no%20se%20guardan-262626?style=flat-square&labelColor=0d0d0d"> <img alt="Idiomas: español · English" src="https://img.shields.io/badge/Idiomas-espa%C3%B1ol%20%C2%B7%20English-262626?style=flat-square&labelColor=0d0d0d">
+<img alt="API: compatible con OpenAI" src="https://img.shields.io/badge/API-compatible%20con%20OpenAI-262626?style=flat-square&labelColor=0d0d0d&logo=openai&logoColor=white"> <img alt="Claude Code: compatible" src="https://img.shields.io/badge/Claude%20Code-compatible-262626?style=flat-square&labelColor=0d0d0d&logo=anthropic&logoColor=white"> <img alt="Pagos: USDC · Bitcoin" src="https://img.shields.io/badge/Pagos-USDC%20%C2%B7%20Bitcoin-262626?style=flat-square&labelColor=0d0d0d&logo=bitcoin&logoColor=white"> <img alt="Prompts: no se guardan" src="https://img.shields.io/badge/Prompts-no%20se%20guardan-262626?style=flat-square&labelColor=0d0d0d"> <img alt="Idiomas: español · English" src="https://img.shields.io/badge/Idiomas-espa%C3%B1ol%20%C2%B7%20English-262626?style=flat-square&labelColor=0d0d0d">
 </p>
 
 <p>
@@ -40,8 +40,8 @@ de ese momento y se cobra lo que costó, nunca más que el precio publicado.</p>
 <table>
   <tr>
     <td width="33%" valign="top">
-      <h3>Compatible con OpenAI</h3>
-      Cambias la URL base y la key. El SDK, las herramientas y el streaming siguen igual.
+      <h3>OpenAI y Anthropic</h3>
+      Cambias la URL base y la key. El SDK de OpenAI, Claude Code y el streaming siguen igual.
     </td>
     <td width="33%" valign="top">
       <h3>El precio es un tope</h3>
@@ -75,6 +75,14 @@ client = OpenAI(
     base_url="https://api.cheapllm.wtf/v1",  # antes: https://api.openai.com/v1
     api_key="wtf_...",
 )
+```
+
+Claude Code y los SDKs de Anthropic usan el formato de Anthropic, en su propia URL base:
+
+```sh
+export ANTHROPIC_BASE_URL="https://api.cheapllm.wtf/anthropic"
+export ANTHROPIC_AUTH_TOKEN="wtf_..."
+claude
 ```
 
 ## Cómo viaja un request

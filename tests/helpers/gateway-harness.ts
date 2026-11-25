@@ -13,6 +13,7 @@ import { uuidv7 } from "@/lib/db/uuid";
 import { readServerEnv, type EnvSource } from "@/lib/env";
 import { createAccountRotation } from "@/lib/gateway/accounts";
 import { createCatalogSource, loadCatalogSnapshot } from "@/lib/gateway/catalog-snapshot";
+import { handleAnthropicCountTokens, handleAnthropicMessages } from "@/lib/gateway/anthropic-handler";
 import { handleChatCompletion } from "@/lib/gateway/handler";
 import { createHoldBook } from "@/lib/gateway/holds";
 import { createJsonLogger } from "@/lib/gateway/logger";
@@ -118,8 +119,15 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
       log: createJsonLogger((line) => logs.push(line)), env: readServerEnv(env),
       after(task) { tasks.push(Promise.resolve().then(task)); },
     };
+    // Las rutas de la app: `/v1/chat/completions` y el formato de Anthropic (ADR-0078).
+    const route = (request: Request) => {
+      const { pathname } = new URL(request.url);
+      if (pathname === "/anthropic/v1/messages") return handleAnthropicMessages(request, deps);
+      if (pathname === "/anthropic/v1/messages/count_tokens") return handleAnthropicCountTokens(request, deps);
+      return handleChatCompletion(request, deps);
+    };
     const handle = (request: Request) => {
-      const pending = handleChatCompletion(request, deps);
+      const pending = route(request);
       handlers.add(pending);
       const settled = () => { handlers.delete(pending); };
       void pending.then(settled, settled);
@@ -132,7 +140,7 @@ export async function startGatewayHarness(options: GatewayHarnessOptions = {}) {
     if (!address || typeof address === "string") throw new Error("Gateway did not bind a TCP port");
     let closing: Promise<void> | undefined;
     return {
-      baseUrl: `http://127.0.0.1:${address.port}/v1`, apiKey: key.key,
+      baseUrl: `http://127.0.0.1:${address.port}/v1`, anthropicBaseUrl: `http://127.0.0.1:${address.port}/anthropic`, apiKey: key.key,
       workspaceId: workspace.id, apiKeyId: key.id, db, mock, logs, flushAfter, holds,
       close(): Promise<void> {
         closing ??= (async () => {

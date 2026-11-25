@@ -78,7 +78,7 @@ export function SwitchDiff({ locale, dict }: { locale: Locale; dict: Dictionary 
             <li><ToolLogo file="langchain" />{tools.langchain}</li>
             <li><ToolLogo file="vercel" />{tools.vercel}</li>
             <li>{tools.editors}</li>
-            <li data-soon>{tools.claudeCode}</li>
+            <li><ToolLogo file="anthropic" />{tools.claudeCode}</li>
           </ul>
         </div>
       </div>

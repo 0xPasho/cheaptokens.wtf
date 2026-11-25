@@ -1,6 +1,6 @@
 # 04 · API pública
 
-Compatible con **OpenAI Chat Completions** ([ADR-0002](./adr/0002-api-compatible-openai.md)). Cualquier cliente que permita cambiar `base_url` funciona sin más cambios.
+Compatible con **OpenAI Chat Completions** ([ADR-0002](./adr/0002-api-compatible-openai.md)). Cualquier cliente que permita cambiar `base_url` funciona sin más cambios. Para Claude Code y los SDKs de Anthropic hay una segunda base URL con el formato de Anthropic: ver [Formato de Anthropic](#formato-de-anthropic-anthropic).
 
 - **Base URL:** `https://api.cheapllm.wtf/v1` ([ADR-0051](./adr/0051-marca-cheapllm-wtf.md)).
 - **Autenticación:** `Authorization: Bearer wtf_...`
@@ -13,6 +13,9 @@ Compatible con **OpenAI Chat Completions** ([ADR-0002](./adr/0002-api-compatible
 |---|---|---|---|
 | `POST` | `/v1/chat/completions` | API key | Genera una respuesta, con o sin streaming |
 | `GET` | `/v1/models` | Pública | Lista los modelos con precios, descuentos y tags |
+| `POST` | `/anthropic/v1/messages` | API key | Lo mismo con el formato de Anthropic ([ADR-0078](./adr/0078-formato-anthropic-para-claude-code.md)) |
+| `POST` | `/anthropic/v1/messages/count_tokens` | API key | Estima los tokens del prompt, sin cobrar |
+| `GET` | `/anthropic/v1/models` | Pública | El catálogo con la forma de Anthropic |
 
 ## `POST /v1/chat/completions`
 
@@ -180,6 +183,52 @@ Usan el formato de OpenAI, así los SDKs los parsean sin cambios:
 
 Los mensajes nunca mencionan al upstream. Las tres fallas del upstream responden 503 y se distinguen por `code`: Cloudflare reemplaza un 502 o un 504 del origen por su propio error ([ADR-0077](./adr/0077-fallas-del-upstream-detras-de-cloudflare.md)).
 
+## Formato de Anthropic (`/anthropic`)
+
+Para Claude Code, el Claude Agent SDK y los SDKs de Anthropic ([ADR-0078](./adr/0078-formato-anthropic-para-claude-code.md)).
+
+- **Base URL:** `https://api.cheapllm.wtf/anthropic`. El cliente le agrega `/v1/messages`.
+- **Autenticación:** `x-api-key: wtf_...` o `Authorization: Bearer wtf_...`. La misma key de `/v1`.
+- **Headers:** `anthropic-version` (por defecto `2023-06-01`) y `anthropic-beta` llegan al modelo tal cual.
+- **Modelo:** nuestro ID (`anthropic/claude-sonnet-5.5`) o el de Anthropic (`claude-sonnet-5-5`, con fecha, `-latest` o `[1m]`). La respuesta repite el que mandaste.
+- **Body y respuesta:** los de Anthropic. El contenido vuelve tal cual, firmas de thinking incluidas. `id`, `model` y `usage` son nuestros, sin `cost` ni campos del upstream.
+- **Cobro:** el mismo de `/v1/chat/completions`, con una diferencia: si la reserva no cubre el `max_tokens` pedido, el request responde `402 billing_error` en vez de recortar la salida.
+- **Streaming:** eventos con nombre (`message_start` … `message_stop`), `ping` cada 15 s sin bytes y un evento `error` si el modelo falla a mitad.
+- **`count_tokens`:** una estimación local. No llama al modelo ni cobra.
+- **`GET /anthropic/v1/models`:** `{ data: [{ type, id, display_name, created_at }], has_more, first_id, last_id }`, con nuestros IDs. Claude Code lo usa para llenar `/model` si tiene `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`.
+
+### Claude Code
+
+```sh
+export ANTHROPIC_BASE_URL="https://api.cheapllm.wtf/anthropic"
+export ANTHROPIC_AUTH_TOKEN="wtf_..."
+claude
+```
+
+- Lo mismo va en `~/.claude/settings.json`, dentro de `"env"`. En un proyecto, en `.claude/settings.local.json`: la key nunca en el `.claude/settings.json` del repo.
+- `ANTHROPIC_AUTH_TOKEN` va como `Authorization: Bearer`. `ANTHROPIC_API_KEY` va como `x-api-key` y Claude Code pide aprobarla una vez.
+- Modelos: `ANTHROPIC_MODEL` (principal), `ANTHROPIC_DEFAULT_HAIKU_MODEL` (tareas de fondo) y `CLAUDE_CODE_SUBAGENT_MODEL` (subagentes), con nuestro ID o el de Anthropic. Un nombre fuera del catálogo falla en el primer request con `404`.
+- Si un modelo rechaza un `anthropic-beta`, `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` los quita.
+
+### Errores del formato de Anthropic
+
+| HTTP | `error.type` | Códigos nuestros |
+|---|---|---|
+| 400 | `invalid_request_error` | `invalid_request`, y el `400` del modelo |
+| 401 | `authentication_error` | `invalid_api_key` |
+| 402 | `billing_error` | `insufficient_credits`, `no_active_plan` |
+| 403 | `permission_error` | `key_limit_exceeded`, `account_suspended`, `model_not_allowed_for_key` |
+| 404 | `not_found_error` | `model_not_found`, `model_retired` |
+| 413 | `request_too_large` | `request_too_large` |
+| 429 | `rate_limit_error` | `rate_limit_exceeded`, `usage_limit_reached` (con `retry-after`) |
+| 503 | `api_error` | `upstream_error` |
+| 503 | `timeout_error` | `upstream_timeout` |
+| 503 | `overloaded_error` | `no_upstream_available` |
+
+Las tres fallas del upstream van con `503`, como en el formato OpenAI: Cloudflare tapa un 502 o un 504 del origen ([ADR-0077](./adr/0077-fallas-del-upstream-detras-de-cloudflare.md)). El `type` dice cuál fue, y los SDKs de Anthropic reintentan un 503 solos.
+
+El `message` es el mismo del formato OpenAI. A mitad del stream, un error llega como evento `error` con el mismo body y el stream termina. Se cobra lo generado.
+
 ## Rate limits
 
 - **Inicial:** 60 requests por minuto por workspace, configurable por workspace ([ADR-0017](./adr/0017-rate-limit-upstash.md)). Con un plan activo vale el del plan: 60 en Plus, 120 en Pro y 300 en Max. El override del workspace manda sobre los dos.
@@ -207,7 +256,8 @@ Con un plan, cada request gasta de dos límites lo que cuesta a precio cheapllm.
 | LangChain (`ChatOpenAI` con `base_url`) | ✅ |
 | Vercel AI SDK (proveedor compatible con OpenAI) | ✅ |
 | Editores que aceptan una base URL de OpenAI | ✅ Probar caso por caso antes de anunciarlos |
-| Claude Code | ❌ Requiere `/v1/messages` (fase 2) |
+| Claude Code | ✅ Con `ANTHROPIC_BASE_URL=https://api.cheapllm.wtf/anthropic` |
+| Claude Agent SDK y SDKs de Anthropic | ✅ Con la base URL de Anthropic |
 
 ## Versionado
 
@@ -215,4 +265,4 @@ Con un plan, cada request gasta de dos límites lo que cuesta a precio cheapllm.
 
 ## Fuera del MVP
 
-`/v1/messages` (formato Anthropic), Responses API, `/v1/completions` (legacy), embeddings, generación de imágenes, audio, batch y `GET /v1/credits`. Ver [roadmap](./11-roadmap.md).
+Responses API (Codex), `/v1/completions` (legacy), embeddings, generación de imágenes, audio, batch y `GET /v1/credits`. Ver [roadmap](./11-roadmap.md).
