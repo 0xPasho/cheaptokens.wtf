@@ -165,7 +165,7 @@ El cálculo de latencia: la key y el rate limit corren en paralelo y la base est
 
 | Timeout | Valor inicial | Qué pasa al vencer |
 |---|---|---|
-| Conexión al upstream | 10 s | Fallback al siguiente upstream |
+| Hasta los headers del upstream (streams) | 45 s ([ADR-0077](./adr/0077-fallas-del-upstream-detras-de-cloudflare.md)) | Fallback al siguiente upstream |
 | Primer byte (modelos normales) | 60 s | Fallback |
 | Primer byte (modelos con tag `reasoning`) | 180 s | Fallback |
 | Duración total | 800 s (`maxDuration`) | Se corta, se cobra lo estimado |

@@ -174,11 +174,11 @@ Usan el formato de OpenAI, así los SDKs los parsean sin cambios:
 | 413 | `request_too_large` | Body mayor a 4.5 MB |
 | 429 | `rate_limit_exceeded` | Se pasó el rate limit del workspace. Incluye `retry-after` |
 | 429 | `usage_limit_reached` | El plan llegó a su límite y el excedente no cubre (apagado, sin paquete o en el tope). Incluye `retry-after` hasta el reinicio |
-| 502 | `upstream_error` | Todos los upstreams fallaron con un error |
+| 503 | `upstream_error` | Todos los upstreams fallaron con un error |
 | 503 | `no_upstream_available` | El modelo no tiene ningún upstream habilitado |
-| 504 | `upstream_timeout` | Venció el timeout del primer byte en todos los upstreams |
+| 503 | `upstream_timeout` | Ningún upstream empezó a responder a tiempo |
 
-Los mensajes nunca mencionan al upstream.
+Los mensajes nunca mencionan al upstream. Las tres fallas del upstream responden 503 y se distinguen por `code`: Cloudflare reemplaza un 502 o un 504 del origen por su propio error ([ADR-0077](./adr/0077-fallas-del-upstream-detras-de-cloudflare.md)).
 
 ## Rate limits
 

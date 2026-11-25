@@ -255,7 +255,7 @@ describe("gateway handler", () => {
   it.each(["error-400", "error-500"])("records failed upstream calls at zero cost: %s", async (scenario) => {
     const harness = await start({ upstreams: scenarioUpstreams(scenario) });
     const response = await post(harness, { ...basicBody, x_mock: { scenario } });
-    await failure(response, scenario === "error-400" ? 400 : 502, scenario === "error-400" ? "invalid_request" : "upstream_error");
+    await failure(response, scenario === "error-400" ? 400 : 503, scenario === "error-400" ? "invalid_request" : "upstream_error");
     await harness.flushAfter();
     expect(await harness.db.select().from(requests)).toMatchObject([{
       status: scenario === "error-400" ? "invalid_request" : "upstream_error", costMicroUsd: BigInt(0), upstreamCostMicroUsd: BigInt(0), officialCostMicroUsd: BigInt(0),
@@ -386,11 +386,11 @@ describe("gateway handler", () => {
       const text = await response.text();
       expect(chunks(text).at(-1)).toHaveProperty("error");
       expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
-    } else await failure(response, 504, "upstream_timeout");
+    } else await failure(response, 503, "upstream_timeout");
     await tasks[0]();
     timer.mockRestore();
     expect(await harness.db.select().from(requests)).toMatchObject([{
-      status: "upstream_timeout", httpStatus: stream ? 200 : 504,
+      status: "upstream_timeout", httpStatus: stream ? 200 : 503,
       completionTokens: stream ? reportedUsage ? 100 : 2 : 0, promptTokens: stream ? reportedUsage ? 100 : 1 : 0,
       usageEstimated: stream && !reportedUsage, costMicroUsd: BigInt(stream ? reportedUsage ? 12 : 10 : 0),
     }]);
@@ -477,7 +477,7 @@ describe("gateway handler", () => {
         init?.signal?.addEventListener("abort", () => reject(new Error("Timeout")), { once: true });
       });
     };
-    await failure(await handleChatCompletion(directRequest(harness), deps), 504, "upstream_timeout");
+    await failure(await handleChatCompletion(directRequest(harness), deps), 503, "upstream_timeout");
     await tasks[0]();
     expect(await harness.db.select().from(requests)).toMatchObject([{
       status: "upstream_timeout", attempts: 2, upstreamId: "mock", costMicroUsd: BigInt(0),
@@ -519,19 +519,19 @@ describe("gateway handler", () => {
     const response = await handleChatCompletion(directRequest(harness), directDeps(harness, {
       holds, after: () => { throw new Error("after() called outside a request scope"); },
     }));
-    await failure(response, 502, "upstream_error");
+    await failure(response, 503, "upstream_error");
     expect(holds.held(harness.workspaceId, harness.apiKeyId, holds.mark())).toEqual({ workspace: BigInt(0), key: BigInt(0) });
   });
 
-  it("returns 502 and records upstream_error when sanitizing a completion throws", async () => {
+  it("returns 503 and records upstream_error when sanitizing a completion throws", async () => {
     const harness = await start();
     const tasks: (() => Promise<void>)[] = [];
     vi.spyOn(sanitizers, "sanitizeCompletion").mockImplementationOnce(() => { throw new Error("secret upstream content"); });
     const response = await handleChatCompletion(directRequest(harness), directDeps(harness, { after: (task) => tasks.push(task) }));
-    await failure(response, 502, "upstream_error");
+    await failure(response, 503, "upstream_error");
     await tasks[0]();
     expect(await harness.db.select().from(requests)).toMatchObject([{
-      status: "upstream_error", httpStatus: 502, errorCode: "upstream_error", completionTokens: 14, usageEstimated: false,
+      status: "upstream_error", httpStatus: 503, errorCode: "upstream_error", completionTokens: 14, usageEstimated: false,
     }]);
     expect(harness.logs.filter((line) => line.includes('"request_completed"'))).toHaveLength(1);
     expect(harness.logs.join("\n")).not.toContain("secret");

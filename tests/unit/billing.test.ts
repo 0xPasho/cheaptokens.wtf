@@ -134,7 +134,7 @@ describe("billing ledger, workspaces and reconciliation", () => {
     const { db } = testDb;
     const request = record(fixture, {
       costMicroUsd: BigInt(0), upstreamCostMicroUsd: BigInt(0), officialCostMicroUsd: BigInt(0),
-      upstreamId: null, status: "upstream_timeout", httpStatus: 504, errorCode: "upstream_timeout",
+      upstreamId: null, status: "upstream_timeout", httpStatus: 503, errorCode: "upstream_timeout",
       promptTokens: 0, completionTokens: 0, ttfbMs: null,
     });
     await chargeRequest(db, request);

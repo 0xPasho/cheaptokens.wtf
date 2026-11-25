@@ -32,9 +32,10 @@ export const GATEWAY_ERROR_STATUS = {
   request_too_large: 413,
   rate_limit_exceeded: 429,
   usage_limit_reached: 429,
-  upstream_error: 502,
+  // Las fallas del upstream son 503: Cloudflare cambia un 502 o un 504 del origen por su propio error (ADR-0077).
+  upstream_error: 503,
   no_upstream_available: 503,
-  upstream_timeout: 504,
+  upstream_timeout: 503,
 } as const;
 
 export type GatewayErrorCode = keyof typeof GATEWAY_ERROR_STATUS;

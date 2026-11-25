@@ -234,11 +234,10 @@ function assertNoLeaks(client: Capture, upstreams: Capture[], ownRateLimit = fal
 }
 
 function expectedStatus(name: string, stream: boolean): number {
-  if (name === "hang") return 504;
   if (name === "error-400" || name === "error-422") return 400;
   if (name === "tool-call" || name === "ok" || name === "no-usage" || name.startsWith("slow-first-byte")) return 200;
   if (stream && (name === "cut" || name === "mid-stream-error")) return 200;
-  return 502;
+  return 503;
 }
 
 async function createHarness(rateLimitRpm = "10000"): Promise<Harness> {

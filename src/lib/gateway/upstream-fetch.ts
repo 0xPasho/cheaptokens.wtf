@@ -8,7 +8,8 @@ export type UpstreamAttemptResult =
   | { ok: false; failure: UpstreamFailure; clientMessage: string | null };
 
 const DEFAULT_TIMEOUTS: UpstreamTimeouts = {
-  connectMs: 10_000,
+  // Hasta los headers, no solo la conexión: InferHub los manda con el primer token (ADR-0077).
+  connectMs: 45_000,
   firstByteMs: 60_000,
   firstByteReasoningMs: 180_000,
 };

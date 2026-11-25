@@ -88,6 +88,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0074](./0074-prioridad-del-hero-por-descuento.md) | Opus y GPT 6.2 compiten por el primer lugar del hero con al menos 80 % de descuento; si ninguno llega, empieza DeepSeek | Aceptada | Usuario + Default |
 | [0075](./0075-rediseno-de-precios-como-funciona-y-dashboard.md) | Precios, Cómo funciona (con scroll) y el dashboard sin líneas ni cards anidadas; botón con degradado, diálogo de una superficie y datos de cuenta ocultos tras un ojo | Aceptada | Usuario + Default |
 | [0076](./0076-niveles-de-razonamiento-por-modelo.md) | `GET /v1/models` publica `reasoning_levels`: los `reasoning_effort` que aceptan todas las rutas que sirven cada modelo, según el proveedor | Aceptada | Usuario + Default |
+| [0077](./0077-fallas-del-upstream-detras-de-cloudflare.md) | Las fallas del upstream responden 503 (Cloudflare tapa los 502 y 504 del origen) y el upstream tiene 45 s para mandar headers en un stream | Aceptada | Usuario + Default |
 
 ## Plantilla
 

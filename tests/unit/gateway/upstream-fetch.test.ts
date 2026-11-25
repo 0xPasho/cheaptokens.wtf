@@ -271,7 +271,7 @@ it("limita la lectura de errores a 64 KiB y aborta el resto", async () => {
 });
 
 it.each([
-  [true, false, 10_000, "connect"],
+  [true, false, 45_000, "connect"],
   [false, false, 60_000, "first_byte"],
   [false, true, 180_000, "first_byte"],
 ])("timeouts por defecto (stream=%s, reasoning=%s)", async (stream, reasoning, milliseconds, phase) => {
@@ -296,7 +296,7 @@ it.each([
 });
 
 it.each([
-  [true, false, 10_000, "connect"],
+  [true, false, 45_000, "connect"],
   [false, false, 60_000, "first_byte"],
   [false, true, 180_000, "first_byte"],
 ])("undefined conserva los timeouts por defecto (stream=%s, reasoning=%s)", async (stream, reasoning, milliseconds, phase) => {

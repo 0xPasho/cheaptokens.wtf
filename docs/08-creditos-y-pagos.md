@@ -186,7 +186,7 @@ Antes de llamar al upstream, el gateway calcula lo máximo que puede costar el r
 | Caso | ¿Se cobra? |
 |---|---|
 | Rechazado antes del upstream (401, 402, 403, 404, 429) | No. Tampoco se registra en `requests` |
-| Todos los upstreams fallaron (502, 503, 504) | No. Se registra con costo 0 |
+| Todos los upstreams fallaron (503) | No. Se registra con costo 0 |
 | `400` del upstream (request inválido) | No, salvo que el upstream reporte `usage` |
 | El stream se cortó a la mitad por el upstream | Se cobra el `usage` reportado. Si no llegó, se estima ([ADR-0013](./adr/0013-medicion-con-usage-upstream.md)) |
 | El cliente se desconectó | Se cobra todo lo que el upstream generó, porque a nosotros nos lo cobra |

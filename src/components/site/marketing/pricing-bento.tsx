@@ -89,14 +89,14 @@ export function PricingBento({ models, model, locale, dict }: {
         <div className="nr-bento-text"><h3>{t(b.models.title, { count: formatCount(models.length, locale) })}</h3><p>{b.models.body}</p></div>
       </article>
 
-      {/* Si falla: el aviso de un 502 llega por las pistas y cuesta cero. */}
+      {/* Si falla: el aviso de un 503 llega por las pistas y cuesta cero. */}
       <article className="nr-bento-card">
         <div className="nr-bento-visual nr-bv-fail" aria-hidden>
           <span className="nr-bv-trace" style={{ "--y": "30%", "--d": "0s" } as React.CSSProperties} />
           <span className="nr-bv-trace" style={{ "--y": "50%", "--d": "-0.9s" } as React.CSSProperties} />
           <span className="nr-bv-trace" style={{ "--y": "70%", "--d": "-1.8s" } as React.CSSProperties} />
           <div className="nr-bv-toast">
-            <span className="nr-bv-toast-icon">502</span>
+            <span className="nr-bv-toast-icon">503</span>
             <span className="nr-bv-toast-text"><b>{b.fail.event}</b><code>upstream_error</code></span>
             <span className="nr-bv-toast-amount">{usd(0, "balance")}</span>
           </div>

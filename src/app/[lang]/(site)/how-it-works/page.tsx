@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Con qué error se detiene cada paso (04 · API › Errores), o `null` si el paso ya no detiene el request. */
-const STOPS = ["401 invalid_api_key", "402 insufficient_credits", "503 no_upstream_available", "502 upstream_error", null, null];
+const STOPS = ["401 invalid_api_key", "402 insufficient_credits", "503 no_upstream_available", "503 upstream_error", null, null];
 /** Intentos por request, contando los cambios de cuenta (07 · Upstreams › Selección y fallback). */
 const MAX_ATTEMPTS = 3;
 /** El hint de una key de ejemplo, con el formato de 05 · API keys. */

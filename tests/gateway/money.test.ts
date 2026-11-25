@@ -373,12 +373,12 @@ describe("gateway money under load", () => {
     // Los tres destinos usan el mismo servidor local, antes de cargar el primer snapshot.
     await harness.db.update(upstreams).set({ baseUrl: harness.mock.baseUrl });
     const before = await account(harness);
-    await failure(await post(harness, { ...basicBody, stream, x_mock: { scenario: "error-500" } }), 502, "upstream_error");
+    await failure(await post(harness, { ...basicBody, stream, x_mock: { scenario: "error-500" } }), 503, "upstream_error");
     await harness.flushAfter();
     expect(harness.mock.requests).toHaveLength(3);
     for (const request of harness.mock.requests) expect(request.body).toHaveProperty("x_mock.scenario", "error-500");
     expect(await harness.db.select().from(requests)).toMatchObject([{
-      status: "upstream_error", httpStatus: 502, errorCode: "upstream_error", stream, attempts: 3,
+      status: "upstream_error", httpStatus: 503, errorCode: "upstream_error", stream, attempts: 3,
       promptTokens: 0, completionTokens: 0, usageEstimated: false,
       costMicroUsd: BigInt(0), upstreamCostMicroUsd: BigInt(0), officialCostMicroUsd: BigInt(0),
     }]);
