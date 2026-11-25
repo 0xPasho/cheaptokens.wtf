@@ -326,9 +326,9 @@ test.describe("docs", () => {
     // ADR-0049: el rate limit de cada plan, de src/lib/billing/plans.ts.
     const rateLimit = page.getByRole("region", { name: "Rate limit by plan" });
     await expect(rateLimit.locator("tbody tr").filter({ hasText: "Max" })).toContainText("300");
-    // ADR-0066: la salida por defecto y el mínimo que se reserva, de src/lib/gateway/request-cost.ts.
+    // ADR-0066 y ADR-0079: la salida por defecto y el mínimo que se reserva, de src/lib/gateway/request-cost.ts.
     await expect(page.locator("#quickstart")).toContainText("32,768");
-    await expect(page.locator("#billing")).toContainText("1,024");
+    await expect(page.locator("#billing")).toContainText("If not even 256 output tokens fit");
   });
 
   test.describe("en un teléfono", () => {

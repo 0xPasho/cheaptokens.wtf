@@ -17,7 +17,9 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: "tests/e2e/.report" }]],
   outputDir: "tests/e2e/.results",
   expect: {
-    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled" },
+    // Con un mouse conectado, macOS muestra barras de scroll fijas de 15 px y las capturas salen más angostas.
+    // La hoja las oculta al capturar, así el ancho no depende de la configuración de la máquina.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled", stylePath: "tests/e2e/screenshot.css" },
   },
   use: {
     baseURL: `http://localhost:${PORT}`,

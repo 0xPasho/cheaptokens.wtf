@@ -1,0 +1,9 @@
+/* Solo al capturar (playwright.config.ts › stylePath): sin barras de scroll fijas, el ancho de la página no
+   depende de si macOS las muestra siempre. */
+html {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
