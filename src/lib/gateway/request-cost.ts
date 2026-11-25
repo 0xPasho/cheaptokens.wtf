@@ -10,8 +10,8 @@ import type { GatewayModel } from "./types";
 
 /** Salida máxima cuando ni el cliente ni el catálogo la fijan. Se manda como `max_tokens` al upstream. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 32_768;
-/** Si no alcanza ni para esta salida (o para la pedida, si es menor), se rechaza en vez de recortar. */
-export const MIN_OUTPUT_TOKENS = 1_024;
+/** Si no alcanza ni para esta salida (o para la pedida, si es menor), se rechaza en vez de recortar (ADR-0079). */
+export const MIN_OUTPUT_TOKENS = 256;
 /** Lo que se reserva por imagen: el tamaño de su base64 no dice cuántos tokens cobra el modelo. */
 export const IMAGE_PROMPT_TOKENS = 2_000;
 /** Bytes por token al estimar el prompt hacia arriba. El texto suele dar 4 o más; código y CJK, cerca de 3. */
@@ -110,19 +110,28 @@ function wantedOutputTokens(model: GatewayModel, requested: number | null): numb
 /**
  * Cuánto reservar para un request con `budget` disponible (null: sin límite). Si la salida pedida no cabe, la
  * recorta a lo que alcanza; si ni el prompt con `MIN_OUTPUT_TOKENS` de salida cabe, no hay reserva posible.
+ * `capMicroUsd` (null: sin tope) es lo más que reserva un solo request: solo recorta la salida, nunca por
+ * debajo del mínimo, y nunca rechaza (ADR-0079).
  */
-export function sizeHold(model: GatewayModel, shape: RequestShape, budget: bigint | null): HoldSize {
+export function sizeHold(model: GatewayModel, shape: RequestShape, budget: bigint | null, capMicroUsd: bigint | null = null): HoldSize {
   const prices = holdPrices(model);
   const choices = BigInt(Math.max(1, shape.choices));
   const promptCost = ceilDiv(BigInt(shape.promptTokens) * prices.input, ONE_MILLION);
   const outputCost = (tokens: number) => ceilDiv(BigInt(tokens) * choices * prices.output, ONE_MILLION);
   const wanted = wantedOutputTokens(model, shape.requestedOutputTokens);
   const floor = Math.min(wanted, MIN_OUTPUT_TOKENS);
-  if (budget !== null && promptCost + outputCost(floor) > budget) return { ok: false };
+  const floorCost = promptCost + outputCost(floor);
+  if (budget !== null && floorCost > budget) return { ok: false };
 
+  // Lo que puede reservar este request: el presupuesto, acotado por el tope sin bajar del mínimo.
+  let ceiling = budget;
+  if (capMicroUsd !== null) {
+    const cap = capMicroUsd > floorCost ? capMicroUsd : floorCost;
+    if (ceiling === null || cap < ceiling) ceiling = cap;
+  }
   let maxOutputTokens = wanted;
-  if (budget !== null && prices.output > ZERO && promptCost + outputCost(wanted) > budget) {
-    const affordable = ((budget - promptCost) * ONE_MILLION) / (choices * prices.output);
+  if (ceiling !== null && prices.output > ZERO && promptCost + outputCost(wanted) > ceiling) {
+    const affordable = ((ceiling - promptCost) * ONE_MILLION) / (choices * prices.output);
     maxOutputTokens = Math.max(floor, Math.min(wanted, Number(affordable)));
   }
   const amount = promptCost + outputCost(maxOutputTokens);

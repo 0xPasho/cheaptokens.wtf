@@ -63,7 +63,7 @@ async function holdFor(harness: Harness, body: Record<string, unknown>): Promise
   const size = sizeHold(gatewayModel, {
     promptTokens: estimatePromptTokens(JSON.stringify(body), body, gatewayModel.contextLength),
     requestedOutputTokens: typeof body.max_tokens === "number" ? body.max_tokens : null,
-    choices: 1,
+    choices: typeof body.n === "number" ? body.n : 1,
   }, null);
   if (!size.ok) throw new Error("An unlimited budget always fits");
   return size.amountMicroUsd;
@@ -241,6 +241,37 @@ describe("gateway money under load", () => {
     const [window] = await harness.db.select().from(usageWindows)
       .where(and(eq(usageWindows.workspaceId, harness.workspaceId), eq(usageWindows.kind, "five_hour")));
     expect(window.usedMicroUsd).toBeLessThanOrEqual(PLANS.plus.fiveHourLimitMicroUsd);
+  });
+
+  it("caps each plan-only request at half the 5-hour window so a long one does not block the next (ADR-0079)", async () => {
+    const harness = await start({ balanceUsd: "0" });
+    const now = Date.now();
+    const body = {
+      model: "anthropic/claude-haiku-4.5", messages: [{ role: "user", content: "hi" }], stream: true, max_tokens: 150_000, n: 6,
+      x_mock: { chunks: 8, latencyMs: 1500, chunkDelayMs: 30 },
+    };
+    // Sin el tope, el primero reservaría la ventana entera y el segundo recibiría 429.
+    expect(await holdFor(harness, body)).toBeGreaterThan(PLANS.plus.fiveHourLimitMicroUsd);
+    await harness.db.update(apiKeys).set({ billingSource: "plan_only" }).where(eq(apiKeys.id, harness.apiKeyId));
+    await harness.db.insert(subscriptions).values({
+      workspaceId: harness.workspaceId, planId: "plus", status: "active", paymentProvider: "dev",
+      currentPeriodStart: new Date(now - DAY_MS), currentPeriodEnd: new Date(now + DAY_MS),
+    });
+
+    const responses = await Promise.all([post(harness, body), post(harness, body)]);
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    for (const response of responses) expect(await response.text()).toContain("data: [DONE]");
+    await harness.flushAfter();
+
+    // Los dos salieron recortados a lo que cabe en media ventana.
+    const sent = harness.mock.requests.map((request) => (request.body as Record<string, unknown>).max_tokens);
+    expect(sent).toHaveLength(2);
+    for (const tokens of sent) {
+      expect(tokens).toBeGreaterThan(MIN_OUTPUT_TOKENS);
+      expect(tokens).toBeLessThan(150_000);
+    }
+    for (const row of await harness.db.select().from(requests)) expect(row.absorbedMicroUsd).toBe(BigInt(0));
+    await expectReconciled(harness);
   });
 
   it("lets concurrent requests reach the model pack when the plan only covers the first one", async () => {

@@ -90,6 +90,7 @@ Cada ADR registra **una** decisión: el contexto, qué se decidió, las consecue
 | [0076](./0076-niveles-de-razonamiento-por-modelo.md) | `GET /v1/models` publica `reasoning_levels`: los `reasoning_effort` que aceptan todas las rutas que sirven cada modelo, según el proveedor | Aceptada | Usuario + Default |
 | [0077](./0077-fallas-del-upstream-detras-de-cloudflare.md) | Las fallas del upstream responden 503 (Cloudflare tapa los 502 y 504 del origen) y el upstream tiene 45 s para mandar headers en un stream | Aceptada | Usuario + Default |
 | [0078](./0078-formato-anthropic-para-claude-code.md) | El formato de Anthropic en `/anthropic` para Claude Code y sus SDKs: misma key y mismo cobro, sin recortar la salida, errores y streaming de Anthropic | Aceptada | Usuario + Default |
+| [0079](./0079-reserva-con-tope-por-request.md) | La salida mínima de una reserva baja a 256 tokens, y una key de solo plan no reserva más de media ventana de 5 horas | Aceptada | Usuario + Default |
 
 ## Plantilla
 

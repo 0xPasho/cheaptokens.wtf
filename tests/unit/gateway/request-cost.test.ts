@@ -91,7 +91,26 @@ describe("sizeHold", () => {
     expect(sizeHold(model, shape({ requestedOutputTokens: 4_000, choices: 4 }), big(81_000)))
       .toMatchObject({ ok: true, maxOutputTokens: 2_000, amountMicroUsd: big(81_000) });
     // Una salida pedida por debajo del mínimo no se recorta: o cabe completa o se rechaza.
-    expect(sizeHold(model, shape({ requestedOutputTokens: 1_000, choices: 4 }), big(40_999))).toEqual({ ok: false });
+    expect(sizeHold(model, shape({ requestedOutputTokens: 200, choices: 4 }), big(8_999))).toEqual({ ok: false });
+  });
+
+  it("caps what one request reserves by trimming its output (ADR-0079)", () => {
+    expect(sizeHold(model, shape({ requestedOutputTokens: 8_000 }), big(1_000_000), big(21_000)))
+      .toEqual({ ok: true, maxOutputTokens: 2_000, limitsOutput: true, amountMicroUsd: big(21_000) });
+    expect(sizeHold(model, shape(), null, big(21_000))).toMatchObject({ ok: true, maxOutputTokens: 2_000, amountMicroUsd: big(21_000) });
+    // Un tope mayor que el presupuesto no cambia nada: manda el presupuesto.
+    expect(sizeHold(model, shape({ requestedOutputTokens: 8_000 }), big(51_000), big(1_000_000)))
+      .toMatchObject({ ok: true, maxOutputTokens: 5_000, amountMicroUsd: big(51_000) });
+  });
+
+  it("never trims below the minimum output nor rejects because of the cap", () => {
+    const floorCost = big(1_000 + MIN_OUTPUT_TOKENS * 10);
+    expect(sizeHold(model, shape(), big(1_000_000), big(500)))
+      .toEqual({ ok: true, maxOutputTokens: MIN_OUTPUT_TOKENS, limitsOutput: true, amountMicroUsd: floorCost });
+    expect(sizeHold(model, shape(), floorCost, big(1))).toMatchObject({ ok: true, maxOutputTokens: MIN_OUTPUT_TOKENS });
+    expect(sizeHold(model, shape(), floorCost - big(1), big(1_000_000))).toEqual({ ok: false });
+    expect(sizeHold(model, shape({ requestedOutputTokens: 100 }), big(1_000_000), big(1)))
+      .toEqual({ ok: true, maxOutputTokens: 100, limitsOutput: false, amountMicroUsd: big(2_000) });
   });
 
   it("bounds the output by the model's known maximum and its context", () => {

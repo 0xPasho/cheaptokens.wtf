@@ -77,6 +77,8 @@ La semana es el 60 % del precio, como en Plus, Pro y Max; la ventana, el 14 %, t
 
 Los modelos de un plan son los del catálogo público (`active` y `deprecated`), los mismos en los cuatro planes. Una key los recibe en `allowed_models` al emitirse, y las keys vivas los vuelven a recibir en cada `PATCH`, que es cuando el socio también refresca su lista.
 
+Con el excedente apagado, las keys son `plan_only` y un request reserva como mucho media ventana de 5 horas ([ADR-0079](./adr/0079-reserva-con-tope-por-request.md)). En `plan-3` son $0.21: dos corridas pueden ir a la vez aunque una pida 16 384 tokens de salida.
+
 ## Excedente pospago
 
 - **Apagado** (el default y `capMicroUsd: null`): el workspace queda en `overflow_mode = stop` y sus keys en `plan_only`. Al llegar al límite, `429 usage_limit_reached` con `retry-after`.

@@ -43,7 +43,12 @@ export async function reserveRequest(input: {
   fullOutput?: boolean;
 }): Promise<Reservation> {
   const { deps, context, model, shape, holdMark, hold } = input;
-  const wanted = sizeHold(model, shape, null);
+  // Una key de solo plan no reserva más de media ventana: un request largo o colgado no bloquea a otro (ADR-0079).
+  // Con `fullOutput` no hay tope: recortaría la salida, y ahí se prefiere el error al recorte.
+  const requestCap = !input.fullOutput && context.billingSource === "plan_only" && context.plan !== null
+    ? context.plan.plan.fiveHourLimitMicroUsd / BigInt(2)
+    : null;
+  const wanted = sizeHold(model, shape, null, requestCap);
   const wantedMicroUsd = wanted.ok ? wanted.amountMicroUsd : BigInt(0);
   const admissionNow = deps.now();
   const retryAfter = (retryAt: number | null) => retryAt === null ? undefined : (retryAt - admissionNow) / 1000;
@@ -65,7 +70,7 @@ export async function reserveRequest(input: {
   const workspaceBudget = admission.budgetMicroUsd - held.workspace;
   const keyBudget = context.spendLimitMicroUsd === null ? null : context.spendLimitMicroUsd - context.spentMicroUsd - held.key;
   const keyBinds = keyBudget !== null && keyBudget < workspaceBudget;
-  const size = sizeHold(model, shape, keyBinds ? keyBudget : workspaceBudget);
+  const size = sizeHold(model, shape, keyBinds ? keyBudget : workspaceBudget, requestCap);
   const fits = size.ok && (!input.fullOutput || !wanted.ok || size.maxOutputTokens >= wanted.maxOutputTokens);
   if (!size.ok || !fits) {
     if (keyBinds) return { ok: false, code: "key_limit_exceeded", message: HOLD_MESSAGES.key_limit_exceeded };

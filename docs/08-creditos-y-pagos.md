@@ -177,7 +177,8 @@ COMMIT;
 
 Antes de llamar al upstream, el gateway calcula lo máximo que puede costar el request: el prompt estimado hacia arriba más la salida máxima (`max_tokens`, o 32 768 si no viene). Lo reserva contra lo que queda del plan, el paquete y los créditos, descontadas las reservas de los requests en curso ([ADR-0066](./adr/0066-reserva-por-request.md)).
 
-- **Si la salida no cabe,** se recorta a lo que alcanza y el upstream recibe ese `max_tokens`. Si ni el prompt con 1 024 tokens de salida cabe, se rechaza con `402`, `429` o `403`, sin llamar al upstream.
+- **Si la salida no cabe,** se recorta a lo que alcanza y el upstream recibe ese `max_tokens`. Si ni el prompt con 256 tokens de salida cabe, se rechaza con `402`, `429` o `403`, sin llamar al upstream ([ADR-0079](./adr/0079-reserva-con-tope-por-request.md)).
+- **Una key que solo paga con el plan** (`plan_only`) no reserva más de la mitad de la ventana de 5 horas: si pide más, se le recorta la salida. Así un request largo, o uno colgado en el upstream, siempre deja lugar para otro.
 - **La reserva se libera cuando el cobro ya está en la base.** Vive en memoria, por instancia, como el rate limiter.
 - **El saldo solo queda negativo** si el upstream cobra más de lo estimado, por ejemplo un vendedor que reporta más tokens que el `max_tokens` pedido. Con saldo negativo, todo request siguiente recibe `402`, y la siguiente recarga cubre primero la deuda.
 
