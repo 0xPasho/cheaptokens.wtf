@@ -319,7 +319,8 @@ test.describe("docs", () => {
     await open(page, "/en/docs");
     const index = page.getByRole("navigation", { name: "On this page" });
     const links = index.getByRole("link");
-    await expect(links).toHaveCount(11);
+    // 13 con las dos del formato de Anthropic (ADR-0078).
+    await expect(links).toHaveCount(13);
     for (const href of await links.evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href")))) {
       await expect(page.locator(`section${href}`)).toHaveCount(1);
     }
